@@ -45,7 +45,7 @@ call plug#end()
 
 syntax enable
 set background=dark
-colorscheme jellybeans
+colorscheme solarized
 
 set laststatus=2
 set noshowmode
