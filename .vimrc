@@ -25,6 +25,7 @@ call plug#begin('~/.vim/plugged')
     Plug 'tomasr/molokai'
     Plug 'nanotech/jellybeans.vim'
   "Others
+    Plug 'Shougo/vimfiler.vim'
     Plug 'christoomey/vim-tmux-navigator'
     Plug 'itchyny/lightline.vim'
     Plug 'Shougo/unite.vim'
@@ -40,15 +41,27 @@ call plug#begin('~/.vim/plugged')
     Plug 'sjl/gundo.vim'
     Plug 'majutsushi/tagbar'
     Plug 'mhinz/vim-signify'
+    Plug 'drmikehenry/vim-fixkey'
     Plug 'fholgado/minibufexpl.vim'
 call plug#end()
 
+"My Settings
 syntax enable
 set background=dark
-colorscheme solarized
+colorscheme jellybeans
 
 set laststatus=2
 set noshowmode
+set number
+
+set wildcharm=<C-Z>
+let mapleader= ' '
+map <leader>; :b <C-Z>
+map <leader>. :bn<CR>
+map <leader>, :bp<CR>
+map <leader>f :NERDTreeFocus<CR>
+
+"plugins config
 
 let g:lightline = {
       \ 'colorscheme': 'wombat',
