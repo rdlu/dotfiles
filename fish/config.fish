@@ -12,7 +12,7 @@ set fish_custom $HOME/dotfiles/oh-my-fish
 Plugin 'xdg'
 Plugin 'balias'
 Plugin 'theme'
-Plugin 'rbenv'
+#Plugin 'rbenv'
 Theme 'cmorrell.com'
 
 #RBENV
@@ -23,11 +23,14 @@ rbenv rehash >/dev/null ^&1
 
 set PATH $HOME/.local/bin $PATH
 
+set EDITOR "vim"
+set VISUAL "vim"
+
 #NPM
 set NPM_PACKAGES $HOME/.npm-packages
 set NODE_PATH $NPM_PACKAGES/lib/node_modules $NODE_PATH
 set PATH $NPM_PACKAGES/bin $PATH
-set -e MANPATH 
+set -e MANPATH
 # delete if you already modified MANPATH elsewhere in your config
 set MANPATH $NPM_PACKAGES/share/man (manpath)
 
@@ -58,3 +61,14 @@ function cd......
   cd ../../../../../..
 end
 
+function -e fish_preexec _run_fasd
+  fasd --proc (fasd --sanitize "$argv") > "/dev/null" 2>&1
+  end
+
+ function j
+  cd (fasd -d -e 'printf %s' "$argv")
+ end
+
+ set PATH ~/bin $PATH ~/.fzf
+
+. .config/fish/config.local
