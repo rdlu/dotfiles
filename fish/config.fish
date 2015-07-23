@@ -23,8 +23,8 @@ rbenv rehash >/dev/null ^&1
 
 set PATH $HOME/.local/bin $PATH
 
-set EDITOR "vim"
-set VISUAL "vim"
+set -Ux EDITOR vim
+set -Ux VISUAL vim
 
 #NPM
 set NPM_PACKAGES $HOME/.npm-packages
