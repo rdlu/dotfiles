@@ -43,6 +43,7 @@ call plug#begin('~/.vim/plugged')
     Plug 'mhinz/vim-signify'
     Plug 'drmikehenry/vim-fixkey'
     Plug 'fholgado/minibufexpl.vim'
+    Plug 'easymotion/vim-easymotion'
 call plug#end()
 
 "My Settings

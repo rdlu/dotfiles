@@ -37,6 +37,13 @@ set MANPATH $NPM_PACKAGES/share/man (manpath)
 #set fish_function_path $fish_function_path "/home/rodrigo/.local/lib/python2.7/site-packages/powerline/bindings/fish"
 #powerline-setup
 
+#abbreviations
+abbr -a gps git push
+abbr -a gpl git pull
+abbr -a gc git commit -a
+abbr -a tf tail -f
+abbr -a lsah ls -lah
+
 
 # cd aliases
 function ..
