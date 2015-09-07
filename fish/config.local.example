@@ -1,0 +1,3 @@
+set PATH $PATH (ruby -e 'print Gem.user_dir')/bin
+source (envoy -p -f -d|psub)
+eval (python -m virtualfish)
