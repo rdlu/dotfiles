@@ -1,4 +1,4 @@
-set PATH $HOME/.local/bin $PATH
+set PATH  $PATH
 
 set -Ux EDITOR vim
 set -Ux VISUAL vim
@@ -6,13 +6,22 @@ set -Ux VISUAL vim
 #NPM
 set NPM_PACKAGES $HOME/.npm-packages
 set NODE_PATH $NPM_PACKAGES/lib/node_modules $NODE_PATH
-set PATH $NPM_PACKAGES/bin $PATH
 set -e MANPATH
-# delete if you already modified MANPATH elsewhere in your config
 set MANPATH $NPM_PACKAGES/share/man (manpath)
 
-#set fish_function_path $fish_function_path "/home/rodrigo/.local/lib/python2.7/site-packages/powerline/bindings/fish"
-#powerline-setup
+set -gx GOPATH ~/Apps/go
+set -gx ANDROID_HOME /opt/android-sdk
+set -gx BD_OPT 'insensitive'
+
+set -gx PATH $HOME/.local/bin ~/bin $NPM_PACKAGES/bin $PATH ~/Apps/go/bin ~/.fzf
+
+function fish_user_key_bindings
+  # ...
+  bind \e\e 'thefuck-command-line'  # Bind EscEsc to thefuck
+  # or
+  bind \cf 'thefuck-command-line'  # Bind Ctrl+F to thefuck
+  # ...
+end
 
 #abbreviations
 abbr -a gps git push
@@ -52,7 +61,5 @@ function -e fish_preexec _run_fasd
  function j
   cd (fasd -d -e 'printf %s' "$argv")
  end
-
- set PATH ~/bin $PATH ~/.fzf
 
 . .config/fish/config.local
