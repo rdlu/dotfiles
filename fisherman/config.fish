@@ -1,8 +1,5 @@
 set PATH  $PATH
 
-set -Ux EDITOR vim
-set -Ux VISUAL vim
-
 #NPM
 set NPM_PACKAGES $HOME/.npm-packages
 set NODE_PATH $NPM_PACKAGES/lib/node_modules $NODE_PATH
@@ -10,10 +7,9 @@ set -e MANPATH
 set MANPATH $NPM_PACKAGES/share/man (manpath)
 
 set -gx GOPATH ~/Apps/go
-set -gx ANDROID_HOME /opt/android-sdk
 set -gx BD_OPT 'insensitive'
 
-set -gx PATH $HOME/.local/bin ~/bin $NPM_PACKAGES/bin $PATH ~/Apps/go/bin ~/.fzf
+set -gx PATH $HOME/.local/bin ~/bin $NPM_PACKAGES/bin $PATH ~/.fzf
 
 function fish_user_key_bindings
   # ...
@@ -62,4 +58,4 @@ function -e fish_preexec _run_fasd
   cd (fasd -d -e 'printf %s' "$argv")
  end
 
-. .config/fish/config.local
+test -e {$HOME}/.iterm2_shell_integration.fish ; and source {$HOME}/.iterm2_shell_integration.fish
