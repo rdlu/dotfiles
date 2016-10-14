@@ -10,7 +10,6 @@ call plug#begin('~/.vim/plugged')
     Plug 'tpope/vim-haml'
     Plug 'othree/html5.vim'
     Plug 'elzr/vim-json'
-    Plug 'elzr/vim-json'
     Plug 'elixir-lang/vim-elixir'
     Plug 'mustache/vim-mustache-handlebars'
     Plug 'nginx.vim'
@@ -44,6 +43,7 @@ call plug#begin('~/.vim/plugged')
     Plug 'drmikehenry/vim-fixkey'
     Plug 'fholgado/minibufexpl.vim'
     Plug 'easymotion/vim-easymotion'
+    Plug 'slashmili/alchemist.vim'
 call plug#end()
 
 "My Settings
