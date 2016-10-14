@@ -40,7 +40,7 @@ call plug#begin('~/.vim/plugged')
     Plug 'sjl/gundo.vim'
     Plug 'majutsushi/tagbar'
     Plug 'mhinz/vim-signify'
-    Plug 'drmikehenry/vim-fixkey'
+"    Plug 'drmikehenry/vim-fixkey'
     Plug 'fholgado/minibufexpl.vim'
     Plug 'easymotion/vim-easymotion'
     Plug 'slashmili/alchemist.vim'
