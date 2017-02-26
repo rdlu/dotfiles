@@ -9,7 +9,7 @@ set MANPATH $NPM_PACKAGES/share/man (manpath)
 set -gx GOPATH ~/Apps/go
 set -gx BD_OPT 'insensitive'
 
-set -gx PATH $HOME/.local/bin ~/bin $NPM_PACKAGES/bin $PATH ~/.fzf
+set -gx PATH $HOME/.local/bin $NPM_PACKAGES/bin $PATH $HOME/.fzf
 
 function fish_user_key_bindings
   # ...
@@ -49,10 +49,6 @@ end
 function cd......
   cd ../../../../../..
 end
-
-function -e fish_preexec _run_fasd
-  fasd --proc (fasd --sanitize "$argv") > "/dev/null" 2>&1
-  end
 
  function j
   cd (fasd -d -e 'printf %s' "$argv")
