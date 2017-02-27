@@ -13,9 +13,9 @@ set -gx PATH $HOME/.local/bin $NPM_PACKAGES/bin $PATH $HOME/.fzf
 
 function fish_user_key_bindings
   # ...
-  bind \e\e 'thefuck-command-line'  # Bind EscEsc to thefuck
+  bind \e\e 'fuck'  # Bind EscEsc to thefuck
   # or
-  bind \cf 'thefuck-command-line'  # Bind Ctrl+F to thefuck
+  bind \cf 'fuck'  # Bind Ctrl+F to thefuck
   # ...
 end
 
@@ -26,6 +26,8 @@ abbr -a gc git commit -a
 abbr -a tf tail -f
 abbr -a lsah ls -lah
 
+
+thefuck --alias | source
 
 # cd aliases
 function ..
