@@ -56,4 +56,4 @@ end
   cd (fasd -d -e 'printf %s' "$argv")
  end
 
-test -e {$HOME}/.iterm2_shell_integration.fish ; and source {$HOME}/.iterm2_shell_integration.fish
+test -e {$HOME}/.config/fish/config.local ; and source {$HOME}/.config/fish/config.local
