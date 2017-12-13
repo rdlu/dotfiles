@@ -1,6 +1,7 @@
 fisherman/anicode
 oh-my-fish/plugin-argu
 fisherman/await
+nyarly/fish-bang-bang
 0rax/fish-bd
 fisherman/choices
 fisherman/done
@@ -15,7 +16,6 @@ fisherman/humanize_duration
 fisherman/last_job_id
 oh-my-fish/plugin-nodenv
 laughedelic/pisces
-fisherman/pyenv
 fisherman/rbenv
 simnalamburt/shellder
 fisherman/spin
