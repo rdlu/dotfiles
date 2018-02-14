@@ -2,8 +2,10 @@ fisherman/anicode
 oh-my-fish/plugin-argu
 fisherman/await
 nyarly/fish-bang-bang
+edc/bass
 0rax/fish-bd
 fisherman/choices
+fisherman/cprintf
 fisherman/done
 oh-my-fish/plugin-errno
 oh-my-fish/plugin-expand
@@ -11,11 +13,10 @@ fisherman/fzf
 fisherman/get
 fisherman/getopts
 fisherman/git_util
-oh-my-fish/plugin-grc
+fisherman/grc
 fisherman/humanize_duration
 fisherman/last_job_id
 oh-my-fish/plugin-nodenv
-laughedelic/pisces
 fisherman/rbenv
 simnalamburt/shellder
 fisherman/spin
