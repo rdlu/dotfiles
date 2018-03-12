@@ -1,4 +1,3 @@
 set ANACONDA_DIR /opt/anaconda
-ln -sf /opt/anaconda/bin/conda ~/.bin/conda
-set -gx PATH ~/.bin $PATH
-source (conda info --root)/etc/fish/conf.d/conda.fish
+set -gx PATH $PATH $ANACONDA_DIR/bin
+source $ANACONDA_DIR/etc/fish/conf.d/conda.fish
