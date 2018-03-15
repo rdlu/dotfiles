@@ -10,4 +10,5 @@ set MANPATH $NPM_PACKAGES/share/man (manpath)
 set -gx GOPATH ~/Apps/go
 set -gx BD_OPT 'insensitive'
 
+mkdir -p $HOME/.local/bin $NPM_PACKAGES/bin $PATH $HOME/.fzf
 set -gx PATH $HOME/.local/bin $NPM_PACKAGES/bin $PATH $HOME/.fzf
