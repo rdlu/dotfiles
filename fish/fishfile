@@ -1,4 +1,3 @@
-fisherman/anicode
 oh-my-fish/plugin-argu
 fisherman/await
 nyarly/fish-bang-bang
@@ -7,7 +6,6 @@ edc/bass
 fisherman/choices
 fisherman/cprintf
 fisherman/debug
-fisherman/done
 oh-my-fish/plugin-errno
 oh-my-fish/plugin-expand
 fisherman/fzf
