@@ -10,6 +10,7 @@ abbr -a pacman sudo pacman
 abbr -a systart sudo systemctl start
 abbr -a systatus sudo systemctl status
 abbr -a systop sudo systemctl stop
+abbr -a mux tmux new -A -s mux0 fish
 
 # cd aliases
 function ..
