@@ -13,6 +13,8 @@ abbr -a systatus sudo systemctl status
 abbr -a systop sudo systemctl stop
 abbr -a mux tmux new -A -s mux0 fish
 
+alias f_echo fancy_print_line
+
 # cd aliases
 function ..
   cd ..

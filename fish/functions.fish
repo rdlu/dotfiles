@@ -22,7 +22,7 @@ function git-mirror-add
   git remote rm origin 2> /dev/null
   git remote rm github 2> /dev/null
   git remote rm gitlab 2> /dev/null
-  echo "Setting multiple git origin on "$GIT_ORG"/"$PROJ_NAME
+  fancy_print_title "Setting multiple git origin on "$GIT_ORG"/"$PROJ_NAME
   git remote add origin ssh://git@gitlab.com/$GIT_ORG/$PROJ_NAME.git
   git remote set-url origin --add ssh://git@github.com/$GIT_ORG/$PROJ_NAME.git
   # git remote set-url origin --add https://bitbucket.org/$GIT_USER_NAME/(basename (pwd)).git
@@ -30,3 +30,24 @@ function git-mirror-add
   git remote add github ssh://git@github.com/$GIT_ORG/$PROJ_NAME.git
   # git remote add bitbucket https://bitbucket.org/$GIT_USER_NAME/(basename (pwd)).git
 end
+
+function fancy_print_line
+  set DEF_COLOR red
+  if set -q argv[1]
+    set_color $DEF_COLOR; printf $argv"\n"
+  else
+    fancy_print_line "It's just a function to echo in fancy way."
+  end
+end
+
+function fancy_print_title
+  set DEF_COLOR purple
+  if set -q argv[1]
+    set_color $DEF_COLOR; echo "--------------------------------------"
+    fancy_print_line $argv
+    set_color $DEF_COLOR; echo "--------------------------------------"
+  else
+    fancy_print_title "It's just a function to echo in fancy way."
+  end
+end
+
