@@ -1,5 +1,6 @@
 # abbreviations
-abbr -a gps git push
+abbr -a gf git fetch --all
+abbr -a gps git push --all
 abbr -a gpl git pull
 abbr -a gc git commit -a
 abbr -a gst git status
