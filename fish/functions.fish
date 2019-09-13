@@ -19,9 +19,9 @@ function git-mirror-add
   end
 
   set PROJ_NAME (basename (pwd) | sed "s/.//" )
-  git remote rm origin
-  git remote rm github
-  git remote rm gitlab
+  git remote rm origin 2> /dev/null
+  git remote rm github 2> /dev/null
+  git remote rm gitlab 2> /dev/null
   echo "Setting multiple git origin on "$GIT_ORG"/"$PROJ_NAME
   git remote add origin ssh://git@gitlab.com/$GIT_ORG/$PROJ_NAME.git
   git remote set-url origin --add ssh://git@github.com/$GIT_ORG/$PROJ_NAME.git
