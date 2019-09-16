@@ -18,7 +18,7 @@ function git-mirror-add
     set GIT_ORG rdlu
   end
 
-  set PROJ_NAME (basename (pwd) | sed "s/.//" )
+  set PROJ_NAME (basename (pwd) | sed "s/\.//" )
   git remote rm origin 2> /dev/null
   git remote rm github 2> /dev/null
   git remote rm gitlab 2> /dev/null
