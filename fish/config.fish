@@ -1,4 +1,4 @@
-for snippet in {$HOME}/.dotfiles/fish/conf.d/*
+kefor snippet in {$HOME}/.dotfiles/fish/conf.d/*
     source $snippet
 end
 
