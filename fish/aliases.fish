@@ -12,6 +12,19 @@ abbr -a systart sudo systemctl start
 abbr -a systatus sudo systemctl status
 abbr -a systop sudo systemctl stop
 abbr -a mux tmux new -A -s mux0 fish
+abbr -a mkdir mkdir -pv
+
+abbr -a lsock 'sudo /usr/sbin/lsof -i -P'             # lsock:        Display open sockets
+abbr -a lsockU 'sudo /usr/sbin/lsof -nP | grep UDP'   # lsockU:       Display only open UDP sockets
+abbr -a lsockT 'sudo /usr/sbin/lsof -nP | grep TCP'   # lsockT:       Display only open TCP sockets
+abbr -a openPorts 'sudo lsof -i | grep LISTEN'        # openPorts:    All listening connections
+abbr -a myip 'dig +short myip.opendns.com @resolver1.opendns.com'    
+abbr -a myip2 'dig TXT +short o-o.myaddr.l.google.com @ns1.google.com'
+
+alias path 'echo -e {$PATH\n}'
+alias less 'less -FSRXc'
+
+
 
 alias f_echo fancy_print_line
 
@@ -34,4 +47,16 @@ end
 
 function j
   cd (fasd -d -e 'printf %s' "$argv")
+end
+
+function mcd
+  mkdir -p $argv && cd $argv
+end
+
+function mans
+  man $argv[1] | grep -iC2 --color=always $argv[2] | less -FSRXc
+end
+
+function myps
+  ps $argv -u $USER -o pid,%cpu,%mem,start,time,bsdtime,command
 end
