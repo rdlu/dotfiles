@@ -20,6 +20,7 @@ abbr -a lsockT 'sudo /usr/sbin/lsof -nP | grep TCP'   # lsockT:       Display on
 abbr -a openPorts 'sudo lsof -i | grep LISTEN'        # openPorts:    All listening connections
 abbr -a myip 'dig +short myip.opendns.com @resolver1.opendns.com'    
 abbr -a myip2 'dig TXT +short o-o.myaddr.l.google.com @ns1.google.com'
+abbr -a bootlog 'sudo journalctl -b-1`'
 
 alias path 'echo -e {$PATH\n}'
 alias less 'less -FSRXc'
