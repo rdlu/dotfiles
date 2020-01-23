@@ -51,3 +51,11 @@ function fancy_print_title
   end
 end
 
+
+function github-latest-release --description "Download the latest release from an Github repo"
+  if set -q argv[1]
+    curl -sL https://api.github.com/repos/$argv[1]/releases/latest | jq -r '.assets[].browser_download_url' | xargs -n 1 curl -O -L -C -
+  else
+    fancy_print_line "Format: github-latest-release <USER>/<REPO>. Download the latest release from an Github repo"
+  end
+end
