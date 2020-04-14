@@ -3,7 +3,8 @@ cd
 git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 ln -s ~/.dotfiles/tmux.conf ~/.tmux.conf
 ln -s ~/.dotfiles/fish/config.fish ~/.config/fish/config.fish
-ln -s ~/.dotfiles/fish/fishfile ~/.config/fish/fishfile
+ln -s ~/.dotfiles/fish/omg ~/.config/omf
+curl -L https://get.oh-my.fish | fish
 
 # Defaulting colored output to pacman
 sudo sed -i 's/#Color/Color/g' /etc/pacman.conf
