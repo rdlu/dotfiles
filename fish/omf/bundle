@@ -2,10 +2,10 @@ package await
 package cd
 package grc
 package jump
+package nodenv
 package rbenv
 package sudope
 package thefuck
-package virtualfish
 package z
 theme default
 theme shellder
