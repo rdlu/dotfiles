@@ -10,7 +10,7 @@ curl -L https://get.oh-my.fish | fish
 sudo sed -i 's/#Color/Color/g' /etc/pacman.conf
 
 sudo pacman -Suy
-sudo pacman -Sy --needed tmux fpp fzf thefuck git
+sudo pacman -Sy --needed tmux fpp fzf thefuck git shfmt
 
 switch (lsb_release -is)
 case ManjaroLinux
