@@ -23,12 +23,20 @@ abbr -a lsockT 'sudo /usr/sbin/lsof -nP | grep TCP'   # lsockT:       Display on
 abbr -a openPorts 'sudo lsof -i | grep LISTEN'        # openPorts:    All listening connections
 abbr -a myip 'dig +short myip.opendns.com @resolver1.opendns.com'    
 abbr -a myip2 'dig TXT +short o-o.myaddr.l.google.com @ns1.google.com'
-abbr -a bootlog 'sudo journalctl -b-1'
 
 alias path 'echo -e {$PATH\n}'
 alias less 'less -FSRXc'
 alias nvrun 'set -lx __NV_PRIME_RENDER_OFFLOAD 1; set -lx __GLX_VENDOR_LIBRARY_NAME nvidia;'
 
+# Python and Django
+abbr -a pyman python manage.py 
+
+# System Maintenance
+abbr -a cache-sizes du -sh ~/.cache/* | sort -h
+abbr -a cache-delete-old-files find ~/.cache/ -type f -atime +100 -delete
+abbr -a logs-sizes journalctl --disk-usage
+abbr -a logs-previous-boot 'sudo journalctl -b-1'
+abbr -a logs-delete-old-entries journalctl --vacuum-size=50M; journalctl --vacuum-time=2weeks
 
 
 alias f_echo fancy_print_line
