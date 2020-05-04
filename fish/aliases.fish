@@ -9,6 +9,7 @@ abbr -a cpv 'sudo rsync --info=progress2 -avhW --no-compress'
 abbr -a gst git status
 abbr -a tf tail -f
 abbr -a lsh ls -lah
+abbr -a lsd ls -d */
 
 abbr -a pacman sudo pacman
 abbr -a systart sudo systemctl start
@@ -36,7 +37,7 @@ abbr -a cache-sizes du -sh ~/.cache/* | sort -h
 abbr -a cache-delete-old-files find ~/.cache/ -type f -atime +100 -delete
 abbr -a logs-sizes journalctl --disk-usage
 abbr -a logs-previous-boot 'sudo journalctl -b-1'
-abbr -a logs-delete-old-entries journalctl --vacuum-size=50M; journalctl --vacuum-time=2weeks
+abbr -a logs-delete-old-entries 'sudo journalctl --vacuum-size=50M; sudo journalctl --vacuum-time=2weeks'
 
 
 alias f_echo fancy_print_line
