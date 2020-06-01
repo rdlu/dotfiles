@@ -28,6 +28,7 @@ abbr -a myip2 'dig TXT +short o-o.myaddr.l.google.com @ns1.google.com'
 alias path 'echo -e {$PATH\n}'
 alias less 'less -FSRXc'
 alias nvrun 'set -lx __NV_PRIME_RENDER_OFFLOAD 1; set -lx __GLX_VENDOR_LIBRARY_NAME nvidia;'
+alias ls 'ls --color'
 
 # Python and Django
 abbr -a pyman python manage.py 
