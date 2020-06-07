@@ -14,6 +14,7 @@ abbr -a lsd ls -d */
 abbr -a pacman sudo pacman
 abbr -a systart sudo systemctl start
 abbr -a systatus sudo systemctl status
+abbr -a sysnable sudo systemctl enable --now
 abbr -a systop sudo systemctl stop
 abbr -a mux tmux new -A -s mux0 fish
 abbr -a mkdir mkdir -pv
@@ -39,6 +40,9 @@ abbr -a cache-delete-old-files find ~/.cache/ -type f -atime +100 -delete
 abbr -a logs-sizes journalctl --disk-usage
 abbr -a logs-previous-boot 'sudo journalctl -b-1'
 abbr -a logs-delete-old-entries 'sudo journalctl --vacuum-size=50M; sudo journalctl --vacuum-time=2weeks'
+
+abbr -a nvidia-disable 'sudo mv /etc/X11/xorg.conf.d/20-nvidia-prime.conf ~/.config/20-nvidia-prime.conf; sudo systemctl restart gdm'
+abbr -a nvidia-enable 'sudo cp ~/.config/20-nvidia-prime.conf /etc/X11/xorg.conf.d/20-nvidia-prime.conf; sudo systemctl restart gdm'
 
 
 alias f_echo fancy_print_line
