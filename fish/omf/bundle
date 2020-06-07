@@ -3,6 +3,7 @@ package cd
 package grc
 package jump
 package nodenv
+package pyenv
 package rbenv
 package sudope
 package thefuck
