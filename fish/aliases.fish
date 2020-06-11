@@ -41,8 +41,8 @@ abbr -a logs-sizes journalctl --disk-usage
 abbr -a logs-previous-boot 'sudo journalctl -b-1'
 abbr -a logs-delete-old-entries 'sudo journalctl --vacuum-size=50M; sudo journalctl --vacuum-time=2weeks'
 
-abbr -a nvidia-disable 'sudo mv /etc/X11/xorg.conf.d/20-nvidia-prime.conf ~/.dotfiles/20-nvidia-prime.conf; sudo systemctl restart gdm'
-abbr -a nvidia-enable 'sudo cp ~/.dotfiles/20-nvidia-prime.conf /etc/X11/xorg.conf.d/20-nvidia-prime.conf; sudo systemctl restart gdm'
+abbr -a nvidia-disable 'sudo rm /etc/X11/xorg.conf.d/20-nvidia-primary.conf; sudo cp ~/.dotfiles/nvidia-x11/20-nvidia-prime.conf /etc/X11/xorg.conf.d/20-nvidia-prime.conf;'
+abbr -a nvidia-enable 'sudo rm /etc/X11/xorg.conf.d/20-nvidia-prime.conf; sudo cp ~/.dotfiles/nvidia-x11/20-nvidia-primary.conf /etc/X11/xorg.conf.d/20-nvidia-primary.conf;'
 
 
 alias f_echo fancy_print_line
