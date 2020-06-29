@@ -40,6 +40,9 @@ abbr -a cache-delete-old-files find ~/.cache/ -type f -atime +100 -delete
 abbr -a logs-sizes journalctl --disk-usage
 abbr -a logs-previous-boot 'sudo journalctl -b-1'
 abbr -a logs-delete-old-entries 'sudo journalctl --vacuum-size=50M; sudo journalctl --vacuum-time=2weeks'
+abbr -a pacman-installed-packages 'pacman -Qentq'
+abbr -a pacman-installed-foreign 'pacman -Qemtq'
+abbr -a pacman-installed-opt-packs 'pacman -Qdq'
 
 abbr -a nvidia-disable 'sudo rm /etc/X11/xorg.conf.d/20-nvidia-primary.conf; sudo cp ~/.dotfiles/nvidia-x11/20-nvidia-prime.conf /etc/X11/xorg.conf.d/20-nvidia-prime.conf;'
 abbr -a nvidia-enable 'sudo rm /etc/X11/xorg.conf.d/20-nvidia-prime.conf; sudo cp ~/.dotfiles/nvidia-x11/20-nvidia-primary.conf /etc/X11/xorg.conf.d/20-nvidia-primary.conf;'
