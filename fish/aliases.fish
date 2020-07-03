@@ -1,6 +1,7 @@
 # abbreviations
 abbr -a gf git fetch --all
 abbr -a gps git push
+abbr -a gpsa 'git pushall'
 abbr -a gpl git pull --all
 abbr -a gc git commit -a
 abbr -a gcm git commit -am
