@@ -35,6 +35,7 @@ alias ls 'ls --color'
 
 # Python and Django
 abbr -a pyman python manage.py 
+abbr -a pyenv-shell 'pipenv shell'
 
 # System Maintenance
 abbr -a cache-sizes du -sh ~/.cache/* | sort -h
