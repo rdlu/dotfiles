@@ -18,6 +18,7 @@ abbr -a systatus sudo systemctl status
 abbr -a sysnable sudo systemctl enable --now
 abbr -a systop sudo systemctl stop
 abbr -a mux tmux new -A -s mux0 fish
+abbr -a mux1 tmux new -A -s mux1 fish
 abbr -a mkdir mkdir -pv
 
 abbr -a lsock 'sudo /usr/sbin/lsof -i -P'             # lsock:        Display open sockets
