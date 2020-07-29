@@ -8,6 +8,5 @@ package pyenv
 package rbenv
 package sudope
 package thefuck
-package z
 theme default
 theme shellder
