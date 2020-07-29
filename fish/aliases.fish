@@ -72,15 +72,15 @@ function cd....
   cd ../../../..
 end
 
-function j
+function j --description "Jump to directory using fasd for search"
   cd (fasd -d -e 'printf %s' "$argv")
 end
 
-function mcd
+function mcd --description "Creates a directory (recursively) and imediatelly changes to it"
   mkdir -p $argv && cd $argv
 end
 
-function mans
+function mans --description "Searches in MAN \$arg1 for \$arg2"
   man $argv[1] | grep -iC2 --color=always $argv[2] | less -FSRXc
 end
 
