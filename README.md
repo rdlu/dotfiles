@@ -1,47 +1,62 @@
-# RodrigoDK dotfiles
-my dotfiles for ubuntu+tmux+vim goodness
+# Rodrigo Dlu dotfiles
 
-#Tmux Std
-$  name session
-c           new window
-,           name window
-w           list windows
-f           find window
-&           kill window
-.           move window - prompted for a new number
-:movew<CR>  move window to the next unused number
+My dotfiles for ArchLinux + TMUX + FISH shell
 
-#Tmux Plugins
+# TMUX Basics
 
-##Tmux copycat
-prefix + / - regex search
-n - jumps to the next match
-N - jumps to the previous match
+`CTRL + A` PREFIX to activate tmux commands, then:
+
+- `$` rename session
+- `c` new tab (window)
+- `,` rename tab
+- `w` list windows
+- `f` find window
+- `&` kill window
+- `.` move window - prompted for a new number
+- `:movew + <ENTER>`  move window to the next unused number
+
+# TMUX Plugins
+
+## TMUX copycat
+
+Use PREFIX `CTRL + A`, then:
+
+- `/` regex search +  copy mode
+- `n` jumps to the next match in copy mode
+- `N` jumps to the previous match
+
+- `y` copy entire line
+
 To copy a highlighted match:
 
 Enter - if you're using Tmux vi mode
 ctrl-w or alt-w - if you're using Tmux emacs mode
 
 
-##Tmux Yank
-y - copy selection to system clipboard
-Mouse Support: press y before releasing mouse.
+## TMUX Yank
 
-##Tmux Resurrect
-prefix + Ctrl-s - save
-prefix + Ctrl-r - restore
+- `y` copy selection to system clipboard
 
-##Tmux open
+_Tip with Mouse Support: press y before releasing mouse._
+
+## TMUX Resurrect
+
+Use PREFIX `CTRL + A`, then:
+
+- `Ctrl + s` save all tabs
+- `Ctrl + r` restore all tabs
+
+## TMUX open
 o - "open" a highlighted selection with the system default program. open for OS X or xdg-open for Linux.
 Ctrl-o - open a highlighted selection with the $EDITOR
 
-##Tmux Logging
+## TMUX Logging
 Logging: Key binding: prefix + shift + p (start/stop)
 "Screen capture": Key binding: prefix + alt + p
 Save complete history: Key binding: prefix + alt + shift + p
 
-##Tmux Pain Control
-###Navigation
+## TMUX Pain Control
+### Navigation
 prefix + h and prefix + C-h
 select pane on the left
 prefix + j and prefix + C-j
@@ -50,7 +65,7 @@ prefix + k and prefix + C-k
 select pane above
 prefix + l and prefix + C-l
 select pane on the right
-###Resizing panes
+### Resizing panes
 prefix + shift + h
 resize current pane 5 cells to the left
 prefix + shift + j
@@ -59,15 +74,15 @@ prefix + shift + k
 resize 5 cells in the down direction
 prefix + shift + l
 resize 5 cells to the right
-###Splitting panes
+### Splitting panes
 prefix + |
 split current pane horizontally
 prefix + -
 split current pane vertically
-###Swapping windows
+### Swapping windows
 prefix + < - moves current window one position to the left
 prefix + > - moves current window one position to the right
-##Tmux sessionist
+## Tmux sessionist
 prefix + g - prompts for session name and switches to it. Performs 'kind-of' name completion.
 Faster than the built-in prefix + s prompt for long session lists.
 prefix + C (shift + c) - prompt for creating a new session by name.
@@ -76,10 +91,10 @@ prefix + S (shift + s) - switches to the last session.
 The same as built-in prefix + L that everyone seems to override with some other binding.
 prefix + @ - promote current pane into a new session.
 Analogous to how prefix + ! breaks current pane to a new window.
-##Tmux urlview
+## Tmux urlview
 Dep(Ubuntu): sudo apt-get install urlview
 u - "urlview" for a side-panel listing all urls
-##Tmux fpp
+## Tmux fpp
 Dep(Ubuntu): https://github.com/facebook/PathPicker/releases/download/0.6.1/fpp.deb
 f - "fpp" for a new window with a Facebook PathPicker selection of your tty.
 
