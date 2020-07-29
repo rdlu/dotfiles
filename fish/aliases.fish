@@ -11,6 +11,7 @@ abbr -a gst git status
 abbr -a tf tail -f
 abbr -a lsh ls -lah
 abbr -a lsd ls -d */
+abbr -a git-rename-main 'git branch -m master main; git push -u origin main'
 
 abbr -a pacman sudo pacman
 abbr -a systart sudo systemctl start
