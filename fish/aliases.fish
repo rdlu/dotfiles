@@ -28,6 +28,7 @@ abbr -a openPorts 'sudo lsof -i | grep LISTEN'        # openPorts:    All listen
 abbr -a myip 'dig +short myip.opendns.com @resolver1.opendns.com'    
 abbr -a myip2 'dig TXT +short o-o.myaddr.l.google.com @ns1.google.com'
 abbr -a gateway-ip-address 'ip route list | awk \' /^default/ {print $3}\''
+abbr -a ping-gateway 'ping (ip route list | awk \' /^default/ {print $3}\')'
 
 alias path 'echo -e {$PATH\n}'
 alias less 'less -FSRXc'
