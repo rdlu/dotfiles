@@ -1,5 +1,6 @@
 package await
 package cd
+package fasd
 package grc
 package jump
 package nodenv
