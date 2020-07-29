@@ -22,10 +22,10 @@ abbr -a mux tmux new -A -s mux0 fish
 abbr -a mux1 tmux new -A -s mux1 fish
 abbr -a mkdir mkdir -pv
 
-abbr -a lsock 'sudo /usr/sbin/lsof -i -P'             # lsock:        Display open sockets
-abbr -a lsockU 'sudo /usr/sbin/lsof -nP | grep UDP'   # lsockU:       Display only open UDP sockets
-abbr -a lsockT 'sudo /usr/sbin/lsof -nP | grep TCP'   # lsockT:       Display only open TCP sockets
-abbr -a openPorts 'sudo lsof -i | grep LISTEN'        # openPorts:    All listening connections
+abbr -a sockets-list 'sudo /usr/sbin/lsof -i -P'             # lsock:        Display open sockets
+abbr -a sockets-list-udp 'sudo /usr/sbin/lsof -nP | grep UDP'   # lsockU:       Display only open UDP sockets
+abbr -a sockets-list-tcp 'sudo /usr/sbin/lsof -nP | grep TCP'   # lsockT:       Display only open TCP sockets
+abbr -a sockets-list-listening 'sudo lsof -i | grep LISTEN'        # openPorts:    All listening connections
 abbr -a myip 'dig +short myip.opendns.com @resolver1.opendns.com'    
 abbr -a myip2 'dig TXT +short o-o.myaddr.l.google.com @ns1.google.com'
 abbr -a gateway-ip-address 'ip route list | awk \' /^default/ {print $3}\''
