@@ -41,6 +41,7 @@ abbr -a pyman python manage.py
 abbr -a poshe 'poetry shell'
 abbr -a poadd 'poetry add --dev'
 abbr -a poupd 'poetry update'
+abbr -a poins 'poetry install'
 
 # System Maintenance
 abbr -a cache-sizes du -sh ~/.cache/* | sort -h
