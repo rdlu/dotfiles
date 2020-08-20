@@ -40,6 +40,7 @@ alias ls 'ls --color'
 abbr -a pyman python manage.py 
 abbr -a poshe 'poetry shell'
 abbr -a poadd 'poetry add --dev'
+abbr -a poupd 'poetry update'
 
 # System Maintenance
 abbr -a cache-sizes du -sh ~/.cache/* | sort -h
