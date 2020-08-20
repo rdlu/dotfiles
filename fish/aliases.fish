@@ -36,9 +36,10 @@ alias less 'less -FSRXc'
 alias nvrun 'set -lx __NV_PRIME_RENDER_OFFLOAD 1; set -lx __GLX_VENDOR_LIBRARY_NAME nvidia;'
 alias ls 'ls --color'
 
-# Python and Django
+# Python, Django, Poetry
 abbr -a pyman python manage.py 
-abbr -a pyenv-shell 'pipenv shell'
+abbr -a poshe 'poetry shell'
+abbr -a poadd 'poetry add --dev'
 
 # System Maintenance
 abbr -a cache-sizes du -sh ~/.cache/* | sort -h
