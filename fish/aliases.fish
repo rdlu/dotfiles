@@ -21,6 +21,7 @@ abbr -a systop sudo systemctl stop
 abbr -a mux tmux new -A -s mux0 fish
 abbr -a mux1 tmux new -A -s mux1 fish
 abbr -a mkdir mkdir -pv
+abbr -a npmkill find . -name 'node_modules' -type d -prune -print -exec rm -rf '{}' +
 
 abbr -a sockets-list 'sudo /usr/sbin/lsof -i -P'             # lsock:        Display open sockets
 abbr -a sockets-list-udp 'sudo /usr/sbin/lsof -nP | grep UDP'   # lsockU:       Display only open UDP sockets
