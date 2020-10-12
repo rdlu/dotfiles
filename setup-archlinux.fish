@@ -3,8 +3,7 @@ cd
 git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 ln -s ~/.dotfiles/tmux.conf ~/.tmux.conf
 ln -s ~/.dotfiles/fish/config.fish ~/.config/fish/config.fish
-ln -s ~/.dotfiles/fish/omg ~/.config/omf
-curl -L https://get.oh-my.fish | fish
+ln -s ~/.dotfiles/fish/chips/plugin.yaml ~/.config/chips/plugin.yaml
 
 # Defaulting colored output to pacman
 sudo sed -i 's/#Color/Color/g' /etc/pacman.conf
@@ -26,7 +25,7 @@ case '*'
     end
 end
 
-yay -S --needed tldr nodenv rbenv ruby-build elixir autoconf automake  \
+yay -S --needed tldr rbenv ruby-build elixir autoconf automake  \
     bison bind-tools fasd htop make patch ed fzf gcc mosh ruby tk yarn \
-    php php-fpm python-pip python-pillow python-numpy python-pandas    \
-    nfs-utils lsof strace xsel python-pyusb mosh
+    php php-fpm python-pip \
+    nfs-utils lsof strace python-pyusb mosh
