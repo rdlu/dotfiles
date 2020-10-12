@@ -1,0 +1,16 @@
+[org/gnome/desktop/input-sources]
+show-all-sources=true
+sources=[('xkb', 'us+intl-unicode'), ('xkb', 'us+intl'), ('xkb', 'br')]
+xkb-options=['lv3:ralt_switch']
+
+[org/gnome/settings-daemon/plugins/media-keys]
+calculator=['<Super>equal']
+control-center=['<Super>minus']
+custom-keybindings=['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/']
+home=['<Super>f']
+
+[org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0]
+binding='<Super>c'
+command='guake toggle'
+name='Terminal Quake'
+
