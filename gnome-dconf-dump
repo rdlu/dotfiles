@@ -1,16 +1,21 @@
 [org/gnome/desktop/input-sources]
 show-all-sources=true
-sources=[('xkb', 'us+intl-unicode'), ('xkb', 'us+intl'), ('xkb', 'br')]
+sources=[('xkb', 'us+altgr-intl'), ('xkb', 'us'), ('xkb', 'us+intl'), ('xkb', 'br')]
 xkb-options=['lv3:ralt_switch']
 
 [org/gnome/settings-daemon/plugins/media-keys]
 calculator=['<Super>equal']
 control-center=['<Super>minus']
-custom-keybindings=['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/']
+custom-keybindings=['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/']
 home=['<Super>f']
 
 [org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0]
 binding='<Super>c'
 command='guake toggle'
 name='Terminal Quake'
+
+[org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1]
+binding='<Super>apostrophe'
+command='guake toggle'
+name='Terminal Quake 2'
 
