@@ -38,6 +38,17 @@ alias less 'less -FSRXc'
 alias nvrun 'set -lx __NV_PRIME_RENDER_OFFLOAD 1; set -lx __GLX_VENDOR_LIBRARY_NAME nvidia;'
 alias ls 'ls --color'
 
+# Docker Management
+abbr -a dkc docker-compose
+abbr -a dkc-logs 'docker-compose logs -f'
+abbr -a dkcx 'docker-compose exec'
+function dkcx --description 'Executes $PROGRAM in $MACHINE'
+  docker-compose exec $argv[2] $argv[1]
+end
+for shell in bash sh fish zsh
+  abbr -a dkcx-$shell dkcx $shell
+end
+
 # Python, Django, Poetry
 abbr -a pyman python manage.py 
 abbr -a poshe 'poetry shell'
