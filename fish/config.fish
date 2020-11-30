@@ -10,5 +10,6 @@ test -e {$HOME}/.dotfiles/fish/functions.fish ; and source {$HOME}/.dotfiles/fis
 test -e {$HOME}/.config/fish/config.local ; and source {$HOME}/.config/fish/config.local
 
 # test $TERM != "screen-256color"; and exec tmux new -A -s mux0 fish
+
 # chips
 if [ -e ~/.config/chips/build.fish ] ; source ~/.config/chips/build.fish ; end

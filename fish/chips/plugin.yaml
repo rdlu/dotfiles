@@ -8,3 +8,4 @@ github:
 - simnalamburt/fish-sensible
 - simnalamburt/shellder
 - oh-my-fish/plugin-pyenv
+- rbenv/fish-rbenv
