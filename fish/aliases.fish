@@ -9,6 +9,11 @@ abbr -a gsw 'git switch'
 abbr -a cpv 'sudo rsync --info=progress2 -avhW --no-compress'
 abbr -a gst git status
 abbr -a git-rename-main 'git branch -m master main; git push -u origin main'
+abbr -a gck 'git checkout'
+abbr -a gck-b 'git checkout -b'
+abbr -a gck-clean 'git-checkout-clean'
+abbr -a git-set-upstream 'git push --set-upstream origin (git branch --show-current)'
+
 
 # Filesystem
 abbr -a tf tail -f
@@ -125,4 +130,13 @@ function nvrun2
     set -lx __GLX_VENDOR_LIBRARY_NAME nvidia
     $argv
   end
+end
+
+
+function git-checkout-clean --description 'Checkout a clean branch after deleting the local one'
+  set target $argv[1]
+
+  git branch -D $target
+  gckp master
+  gckp $target
 end
