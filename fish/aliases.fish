@@ -137,6 +137,13 @@ function git-checkout-clean --description 'Checkout a clean branch after deletin
   set target $argv[1]
 
   git branch -D $target
-  gckp master
-  gckp $target
+  git-checkout-pull master
+  git-checkout-pull $target
+end
+
+function git-checkout-pull --description 'Checkout and Pull Branch'
+  set target $argv[1]
+
+  git checkout $target
+  git pull --all
 end
