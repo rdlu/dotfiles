@@ -75,6 +75,9 @@ abbr -a poadd 'poetry add --dev'
 abbr -a poupd 'poetry update'
 abbr -a poins 'poetry install'
 
+# Ruby, Rails
+abbr -a bex 'bundle exec'
+
 # System Maintenance
 abbr -a cache-sizes du -sh ~/.cache/* | sort -h
 abbr -a cache-delete-old-files find ~/.cache/ -type f -atime +100 -delete
