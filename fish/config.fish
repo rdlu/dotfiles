@@ -13,3 +13,6 @@ test -e {$HOME}/.config/fish/config.local ; and source {$HOME}/.config/fish/conf
 
 # chips
 if [ -e ~/.config/chips/build.fish ] ; source ~/.config/chips/build.fish ; end
+
+# starhip.rs
+if type -q starship; starship init fish | source; end 
