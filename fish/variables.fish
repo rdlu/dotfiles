@@ -17,3 +17,5 @@ set -gx PYTHONPATH (python -c "import site, os; print(os.path.join(site.USER_BAS
 set -gx VIRTUAL_ENV_DISABLE_PROMPT 1
 
 set -gx PROJECT_HOME $HOME/Projects
+
+set -gx DOCKER_BUILDKIT 1
