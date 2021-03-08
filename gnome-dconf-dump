@@ -11,7 +11,7 @@ home=['<Super>f']
 
 [org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0]
 binding='<Super>period'
-command='tdrop -a -h 85% -w -2 -y 1081 -s mux0 kitty'
+command='tdrop -a -h 100% -w -2 -y 1081 -s mux0 kitty'
 name='Terminal Quake'
 
 [org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1]
@@ -21,7 +21,7 @@ name='Terminal Drop'
 
 [org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2]
 binding='<Super>c'
-command='tdrop -a -h 85% -w -2 -y 1081 -s mux0 kitty'
+command='tdrop -a -h 100% -w -2 -y 1081 -s mux0 kitty'
 name='Terminal Tdrop'
 
 [org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3]
