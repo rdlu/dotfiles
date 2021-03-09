@@ -14,6 +14,7 @@ abbr -a gck-b 'git checkout -b'
 abbr -a gck-clean 'git-checkout-clean'
 abbr -a gck-m 'git-checkout-pull master'
 abbr -a git-set-upstream 'git push --set-upstream origin (git branch --show-current)'
+abbr -a git-undo-last 'git reset --soft HEAD~1'
 
 
 # Filesystem
