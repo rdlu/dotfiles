@@ -12,7 +12,7 @@ case ManjaroLinux
 case EndeavourOS
     sudo pacman -Sy --needed yay
 case '*'
-    if (which yay)
+    if type -q yay
         echo "Yay already installed"
     else
         cd /tmp/
