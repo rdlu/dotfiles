@@ -5,4 +5,6 @@ ln -s ~/.dotfiles/tmux.conf ~/.tmux.conf
 mkdir -pv ~/.config/fish
 ln -s ~/.dotfiles/fish/config.fish ~/.config/fish/config.fish
 mkdir -pv ~/.config/chips
-ln -s ~/.dotfiles/fish/chips/plugin.yaml ~/.config/chips/plugin.yaml
+curl -sL https://git.io/fisher | source && fisher install jorgebucaran/fisher
+rm ~/.config/fish/fish_plugins
+ln -s ~/.dotfiles/fish/fisher/fish_plugins ~/.config/fish/fish_plugins

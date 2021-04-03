@@ -12,7 +12,14 @@ test -e {$HOME}/.config/fish/config.local ; and source {$HOME}/.config/fish/conf
 # test $TERM != "screen-256color"; and exec tmux new -A -s mux0 fish
 
 # chips
-if [ -e ~/.config/chips/build.fish ] ; source ~/.config/chips/build.fish ; end
+# if [ -e ~/.config/chips/build.fish ] ; source ~/.config/chips/build.fish ; end
+
+# installing fisher
+if not type -q fisher
+    curl -sL https://git.io/fisher | source && fisher install jorgebucaran/fisher
+    rm ~/.config/fish/fish_plugins
+    ln -s ~/.dotfiles/fish/fisher/fish_plugins ~/.config/fish/fish_plugins
+end
 
 # starhip.rs
 if type -q starship; starship init fish | source; end 
