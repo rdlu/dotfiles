@@ -21,7 +21,7 @@ I have an alias to open or continue a new TMUX session: `mux` or `mux1` (for the
 | `:movew + <ENTER>` | Move Window (unused #) |
 | `$`                | Rename Session         |
 
-## TMUX Plugins
+## TMUX Plugins (with TPM)
 
 ### TMUX copycat
 
@@ -41,6 +41,22 @@ Use PREFIX `CTRL + A`, then:
 
 _Tip with Mouse Support: press y before releasing mouse._
 
+### Fuzzy Search With Extrakto
+
+| Key (After Prefix) | Action                               |
+|--------------------|--------------------------------------|
+| `tab`              | Fuzzy search + fzf mode              |
+| `enter`            | copy selection inside fzf mode       |
+
+```
+# Arch
+yay -S fzf
+# MacOS Brew
+brew install fzf
+```
+
+
+
 ### TMUX Resurrect
 
 Use PREFIX `CTRL + A`, then:
@@ -50,16 +66,7 @@ Use PREFIX `CTRL + A`, then:
 | `Ctrl + s`         | save all tabs          |
 | `Ctrl + r`         | restore all tabs       |
 
-### (Advanced TMUX) TMUX Pain Control
-
-#### Navigation
-
-| Key (After Prefix) | Action                               |
-|--------------------|--------------------------------------|
-| `h` `C-h`          | select pane on the **left**          |
-| `j` `C-j`          | select pane **below** the current    |
-| `k` `C-k`          | select pane **above** the current    |
-| `l` `C-l`          | select pane on the **right**         |
+### Navigation with TMUX Pain Control
 
 #### Splitting panes
 
@@ -67,6 +74,15 @@ Use PREFIX `CTRL + A`, then:
 |--------------------|--------------------------------------|
 | `\|`               | split current pane horizontally      |
 | `-`                | split current pane vertically        |
+
+#### Basic Navigation
+
+| Key (After Prefix) | Action                               |
+|--------------------|--------------------------------------|
+| `h` `C-h`          | select pane on the **left**          |
+| `j` `C-j`          | select pane **below** the current    |
+| `k` `C-k`          | select pane **above** the current    |
+| `l` `C-l`          | select pane on the **right**         |
 
 #### Resizing panes
 
