@@ -8,14 +8,16 @@ I have an alias to open or continue a new TMUX session: `mux` or `mux1` (for the
 
 `CTRL + A` PREFIX to activate tmux commands, then:
 
-- `$` rename session
-- `c` new tab (window)
-- `,` rename tab
-- `w` list windows
-- `f` find window
-- `&` kill window
-- `.` move window - prompted for a new number
-- `:movew + <ENTER>`  move window to the next unused number
+| Key (After Prefix) | Action                 |
+|--------------------|------------------------|
+| `$`                | Rename Session         |
+| `c`                | New Tab (Window)       |
+| `,`                | Rename Tab             |
+| `w`                | List Windows           |
+| `f`                | Find Window            |
+| `&`                | Kill Window            |
+| `.`                | Move Window (prompt #) |
+| `:movew + <ENTER>` | Move Window (unused #) |
 
 ## TMUX Plugins
 
