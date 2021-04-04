@@ -16,9 +16,7 @@ test -e {$HOME}/.config/fish/config.local ; and source {$HOME}/.config/fish/conf
 
 # installing fisher
 if not type -q fisher
-    curl -sL https://git.io/fisher | source && fisher install jorgebucaran/fisher
-    rm ~/.config/fish/fish_plugins
-    ln -s ~/.dotfiles/fish/fisher/fish_plugins ~/.config/fish/fish_plugins
+    echo 'Fisher is not installed, package management not available'
 end
 
 # starhip.rs
