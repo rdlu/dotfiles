@@ -143,3 +143,12 @@ _Linux Pre-reqs_: `xdg-open`
 | `Shift + p`        | start/stop logging     |
 | `Alt + p`          | log current screen     |
 | `Alt + Shift + p`  | Save complete history  |
+
+### TPM Plugins
+
+To manage plugins, open `tmux.conf` in your editor, and go to `set -g @tpm_plugin` section.
+
+| Key (After Prefix) | Action                 |
+|--------------------|------------------------|
+| `S-i`              | install new plugin     |
+| `S-u`              | updates all plugins    |
