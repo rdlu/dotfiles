@@ -4,14 +4,14 @@
 sudo sed -i 's/#Color/Color/g' /etc/pacman.conf
 
 sudo pacman -Suy
-sudo pacman -Sy --needed tmux fpp fzf thefuck git shfmt
+sudo pacman -Sy --needed tmux fpp fzf thefuck git shfmt lsb-release
 
 switch (lsb_release -is)
 case ManjaroLinux
     sudo pacman -Sy --needed yay
 case EndeavourOS
     sudo pacman -Sy --needed yay
-case '*'
+case Arch
     if type -q yay
         echo "Yay already installed"
     else
