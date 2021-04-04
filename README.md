@@ -50,23 +50,6 @@ Use PREFIX `CTRL + A`, then:
 | `Ctrl + s`         | save all tabs          |
 | `Ctrl + r`         | restore all tabs       |
 
-### TMUX open
-
-| Key (After Prefix) | Action                                                         |
-|--------------------|----------------------------------------------------------------|
-| `o`                | "open" a highlighted selection with the system default program |
-| `Ctrl + o`         | open a highlighted selection with the $EDITOR                  |
-
-_Linux Pre-reqs_: `xdg-open`
-
-### TMUX Logging
-
-| Key (After Prefix) | Action                 |
-|--------------------|------------------------|
-| `Shift + p`        | start/stop logging     |
-| `Alt + p`          | log current screen     |
-| `Alt + Shift + p`  | Save complete history  |
-
 ### (Advanced TMUX) TMUX Pain Control
 
 #### Navigation
@@ -127,3 +110,20 @@ sudo apt-get install urlview
 # MacOS Brew
 brew install urlview
 ```
+
+### TMUX open
+
+| Key (After Prefix) | Action                                                         |
+|--------------------|----------------------------------------------------------------|
+| `o`                | "open" a highlighted selection with the system default program |
+| `Ctrl + o`         | open a highlighted selection with the $EDITOR                  |
+
+_Linux Pre-reqs_: `xdg-open`
+
+### TMUX Logging
+
+| Key (After Prefix) | Action                 |
+|--------------------|------------------------|
+| `Shift + p`        | start/stop logging     |
+| `Alt + p`          | log current screen     |
+| `Alt + Shift + p`  | Save complete history  |
