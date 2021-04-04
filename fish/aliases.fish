@@ -97,6 +97,9 @@ abbr -a pacman-installed-opt-packs 'pacman -Qdq'
 abbr -a nvidia-disable 'sudo rm /etc/X11/xorg.conf.d/20-nvidia-primary.conf; sudo cp ~/.dotfiles/nvidia-x11/20-nvidia-prime.conf /etc/X11/xorg.conf.d/20-nvidia-prime.conf;'
 abbr -a nvidia-enable 'sudo rm /etc/X11/xorg.conf.d/20-nvidia-prime.conf; sudo cp ~/.dotfiles/nvidia-x11/20-nvidia-primary.conf /etc/X11/xorg.conf.d/20-nvidia-primary.conf;'
 
+# Utils
+abbr -a date-iso 'date -u +"%Y-%m-%dT%H:%M:%S%Z"'
+abbr -a date-timestamp 'date +%s'
 
 alias f_echo fancy_print_line
 
