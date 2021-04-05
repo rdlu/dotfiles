@@ -5,4 +5,7 @@ function fish_user_key_bindings
   bind \cf 'fuck'  # Bind Ctrl+F to thefuck
   # ...
 end
-thefuck --alias | source
+
+if type -q thefuck
+  thefuck --alias | source
+end
