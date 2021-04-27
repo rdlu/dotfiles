@@ -23,9 +23,12 @@ abbr -a cpv 'sudo rsync --info=progress2 -avhW --no-compress'
 abbr -a lsh ls -lah
 abbr -a lsd 'ls -d */'
 abbr -a mkdir mkdir -pv
-alias ls 'ls --color'
 alias path 'echo -e {$PATH\n}'
 alias less 'less -FSRXc'
+
+if test (uname) != Darwin
+  alias ls 'ls --color'
+end
 
 # Terminal management
 abbr -a mux tmux new -A -s mux0 fish
@@ -72,7 +75,7 @@ for shell in bash sh fish zsh
 end
 
 # Python, Django, Poetry
-abbr -a pyman python manage.py 
+abbr -a pyman 'python manage.py'
 abbr -a poshe 'poetry shell'
 abbr -a poadd 'poetry add --dev'
 abbr -a poupd 'poetry update'
@@ -85,9 +88,9 @@ abbr -a rsp 'bundle exec rspec'
 abbr -a rspec 'bundle exec rspec'
 
 # System Maintenance
-abbr -a cache-sizes du -sh ~/.cache/* | sort -h
-abbr -a cache-delete-old-files find ~/.cache/ -type f -atime +100 -delete
-abbr -a logs-sizes journalctl --disk-usage
+abbr -a cache-sizes 'du -sh ~/.cache/* | sort -h'
+abbr -a cache-delete-old-files 'find ~/.cache/ -type f -atime +100 -delete'
+abbr -a logs-sizes 'journalctl --disk-usage'
 abbr -a logs-previous-boot 'sudo journalctl -b-1'
 abbr -a logs-delete-old-entries 'sudo journalctl --vacuum-size=50M; sudo journalctl --vacuum-time=2weeks'
 abbr -a pacman-installed-packages 'pacman -Qentq'
