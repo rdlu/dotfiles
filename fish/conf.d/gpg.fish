@@ -1,6 +1,6 @@
 set isWSL2 (uname -a | grep WSL2)
 
-if type -q gpg
+if type -q gpg && test (uname) != Darwin
     if test -n $isWSL2 && type -q socat && type -q nohup
         pkill gpg-agent
 
@@ -26,6 +26,4 @@ if type -q gpg
         set -U -x SSH_AUTH_SOCK /run/user/(id -u)/gnupg/S.gpg-agent.ssh
         gpg-connect-agent updatestartuptty /bye > /dev/null
     end
-else
-    echo '### GPG is not installed ###'
 end
