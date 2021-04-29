@@ -1,4 +1,8 @@
+# Micro Editor; Linux
 test -e /usr/bin/micro ; and set -Ux EDITOR micro
+# Micro Editor; MacOS
+test -e /usr/local/bin/micro ; and set -Ux EDITOR micro
+
 
 #NPM
 set NPM_PACKAGES $HOME/.npm-packages
