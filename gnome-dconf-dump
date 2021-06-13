@@ -1,4 +1,6 @@
 [org/gnome/desktop/input-sources]
+mru-sources=[('xkb', 'us+altgr-intl'), ('xkb', 'us'), ('xkb', 'us+intl'), ('xkb', 'br')]
+per-window=false
 show-all-sources=true
 sources=[('xkb', 'us+altgr-intl'), ('xkb', 'us'), ('xkb', 'us+intl'), ('xkb', 'br')]
 xkb-options=['lv3:ralt_switch']
@@ -11,26 +13,26 @@ home=['<Super>f']
 
 [org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0]
 binding='<Super>period'
-command='tdrop -a -h 90% -w -2 -y 1081 -s mux0 kitty'
+command='tdrop -a -h 1050 -y 1130 -s mux0 kitty'
 name='Terminal Quake'
 
 [org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1]
 binding='<Super>semicolon'
-command='tdrop -a -h 85% -w -2 -y 1 -s mux0 kitty'
+command='tdrop -a -m -h 99% -y 1 -s mux0 kitty'
 name='Terminal Drop'
 
 [org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2]
 binding='<Super>c'
-command='tdrop -a -h 100% -w -2 -y 1081 -s mux0 kitty'
+command='tdrop -a -h 1050 -y 1130 -s mux0 kitty'
 name='Terminal Tdrop'
 
 [org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3]
 binding='<Super>Print'
-command='gnome-screenshot -a -c'
-name='Area Screenshot (Clipboard)'
+command='flameshot gui'
+name='Flameshot'
 
 [org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4]
 binding='<Primary><Super>Print'
-command='gnome-screenshot -a'
-name='Area Screenshot (File)'
+command='flameshot launcher'
+name='Flameshot Launcher'
 
