@@ -59,16 +59,16 @@ abbr -a ping-gateway 'ping (ip route list | awk \' /^default/ {print $3}\')'
 alias nvrun 'set -lx __NV_PRIME_RENDER_OFFLOAD 1; set -lx __GLX_VENDOR_LIBRARY_NAME nvidia;'
 
 # Docker Management
-abbr -a dkc docker compose
-abbr -a dkc-logs 'docker compose logs -f'
-abbr -a dkcx 'docker compose exec'
-abbr -a dkcs 'docker compose start'
-abbr -a dkc-start 'docker compose start'
-abbr -a dkc-stop 'docker compose stop'
-abbr -a dkcup 'docker compose up -d'
-abbr -a dkcdn 'docker compose down'
+abbr -a dkc docker-compose
+abbr -a dkc-logs 'docker-compose logs -f'
+abbr -a dkcx 'docker-compose exec'
+abbr -a dkcs 'docker-compose start'
+abbr -a dkc-start 'docker-compose start'
+abbr -a dkc-stop 'docker-compose stop'
+abbr -a dkcup 'docker-compose up -d'
+abbr -a dkcdn 'docker-compose down'
 function dkcx --description 'Executes $PROGRAM in $MACHINE'
-  docker compose exec $argv[2] $argv[1]
+  docker-compose exec $argv[2] $argv[1]
 end
 for shell in bash sh fish zsh
   abbr -a dkcx-$shell dkcx $shell
