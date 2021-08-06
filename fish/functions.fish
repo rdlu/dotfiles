@@ -59,3 +59,19 @@ function github-latest-release --description "Download the latest release from a
     fancy_print_line "Format: github-latest-release <USER>/<REPO>. Download the latest release from an Github repo"
   end
 end
+
+function ldenv
+  if set -q argv[1]
+    set FILE argv[1]
+  else
+    set FILE .env
+  end
+
+  for i in (cat $FILE)
+    if test (echo $i | sed -E 's/^[[:space:]]*(.).+$/\\1/g') != "#"
+      echo $i
+      set arr (echo $i |tr = \n)
+      set -gx $arr[1] $arr[2]
+    end
+  end
+end
