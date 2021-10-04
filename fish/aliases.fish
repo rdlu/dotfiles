@@ -60,16 +60,16 @@ abbr -a ping-gateway 'ping (ip route list | awk \' /^default/ {print $3}\')'
 alias nvrun 'set -lx __NV_PRIME_RENDER_OFFLOAD 1; set -lx __GLX_VENDOR_LIBRARY_NAME nvidia;'
 
 # Docker Management
-abbr -a dkc docker-compose
-abbr -a dkc-logs 'docker-compose logs -f'
-abbr -a dkcx 'docker-compose exec'
-abbr -a dkcs 'docker-compose start'
-abbr -a dkc-start 'docker-compose start'
-abbr -a dkc-stop 'docker-compose stop'
-abbr -a dkcup 'docker-compose up -d'
-abbr -a dkcdn 'docker-compose down'
+abbr -a dkc docker compose
+abbr -a dkc-logs 'docker compose logs -f'
+abbr -a dkcx 'docker compose exec'
+abbr -a dkcs 'docker compose start'
+abbr -a dkc-start 'docker compose start'
+abbr -a dkc-stop 'docker compose stop'
+abbr -a dkcup 'docker compose up -d'
+abbr -a dkcdn 'docker compose down'
 function dkcx --description 'Executes $PROGRAM in $MACHINE'
-  docker-compose exec $argv[2] $argv[1]
+  docker compose exec $argv[2] $argv[1]
 end
 for shell in bash sh fish zsh
   abbr -a dkcx-$shell dkcx $shell
@@ -97,6 +97,8 @@ abbr -a logs-delete-old-entries 'sudo journalctl --vacuum-size=50M; sudo journal
 abbr -a pacman-installed-packages 'pacman -Qentq'
 abbr -a pacman-installed-foreign 'pacman -Qemtq'
 abbr -a pacman-installed-opt-packs 'pacman -Qdq'
+abbr -a open-current-dir 'xdg-open .'
+abbr -a open 'xdg-open'
 
 abbr -a nvidia-disable 'sudo rm /etc/X11/xorg.conf.d/20-nvidia-primary.conf; sudo cp ~/.dotfiles/nvidia-x11/20-nvidia-prime.conf /etc/X11/xorg.conf.d/20-nvidia-prime.conf;'
 abbr -a nvidia-enable 'sudo rm /etc/X11/xorg.conf.d/20-nvidia-prime.conf; sudo cp ~/.dotfiles/nvidia-x11/20-nvidia-primary.conf /etc/X11/xorg.conf.d/20-nvidia-primary.conf;'
