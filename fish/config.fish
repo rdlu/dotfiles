@@ -19,3 +19,7 @@ end
 
 # starhip.rs
 if type -q starship; starship init fish | source; end 
+
+if set -q START_TMUX; and not set -q TMUX; and status is-interactive
+    tmux new -A -s mux0 fish
+end
