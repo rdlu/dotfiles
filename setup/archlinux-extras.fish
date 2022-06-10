@@ -4,7 +4,7 @@
 sudo sed -i 's/#Color/Color/g' /etc/pacman.conf
 
 sudo pacman -Suy
-sudo pacman -Sy --needed tmux fpp fzf thefuck git shfmt lsb-release
+sudo pacman -Sy --needed tmux fpp fzf thefuck git shfmt lsb-release bat exa
 
 switch (lsb_release -is)
 case ManjaroLinux
@@ -23,6 +23,6 @@ case Arch
 end
 
 yay -S --needed tldr rbenv ruby-build elixir autoconf automake  \
-    bison bind-tools fasd htop make patch ed fzf gcc mosh ruby tk yarn \
+    bison bind-tools fasd htop make patch ed fzf gcc mosh ruby ruby-rdoc tk yarn \
     php php-fpm python-pip \
     nfs-utils lsof strace python-pyusb mosh

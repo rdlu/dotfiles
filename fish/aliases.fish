@@ -31,6 +31,20 @@ if test (uname) != Darwin
   alias ls 'ls --color'
 end
 
+if type -q exa
+  alias l "exa --time-style long-iso --color=auto -F"
+  alias ll "l -Fahl"
+  alias la "l -a"
+else
+  alias l "ls --color=auto -F"
+  alias ll "l -Ahl"
+  alias la "l -a"
+end
+
+if type -q bat; and status is-interactive
+  alias cat bat
+end
+
 # Terminal management
 abbr -a mux tmux new -A -s mux0 fish
 abbr -a mux1 tmux new -A -s mux1 fish
