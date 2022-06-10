@@ -1,8 +1,8 @@
 function fish_user_key_bindings
   # ...
-  bind \e\e 'fuck'  # Bind EscEsc to thefuck
+  bind \e\e 'thefuck'  # Bind EscEsc to thefuck
   # or
-  bind \cf 'fuck'  # Bind Ctrl+F to thefuck
+  bind \cf 'thefuck'  # Bind Ctrl+F to thefuck
   # ...
 end
 
