@@ -16,6 +16,8 @@ abbr -a gck-m 'git-checkout-pull master'
 abbr -a git-set-upstream 'git push --set-upstream origin (git branch --show-current)'
 abbr -a git-undo-last 'git reset --soft HEAD~1'
 abbr -a gdf 'git diff'
+abbr -a gds 'git diff --staged'
+abbr -a glg 'git log --all --oneline --graph --decorate'
 
 
 # Filesystem
@@ -26,6 +28,9 @@ abbr -a lsd 'ls -d */'
 abbr -a mkdir mkdir -pv
 alias path 'echo -e {$PATH\n}'
 alias less 'less -FSRXc'
+alias mv "mv -i"  # "m" - never forget
+alias cp "cp -i"
+alias b "cd - >/dev/null && l" # b stands for back
 
 if test (uname) != Darwin
   alias ls 'ls --color'
