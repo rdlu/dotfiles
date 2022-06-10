@@ -1,14 +1,16 @@
+format = "$username$hostname$shell$all"
+
 ## FIRST LINE/ROW: Info & Status
 # First param ─┌
 [username]
-format = " [╭─$user]($style)@"
+format = " [╭─$user]($style)"
 style_user = "bold cyan"
 style_root = "bold red"
 show_always = true
 
 # Second param
 [hostname]
-format = "[$hostname]($style) in "
+format = "@[$hostname]($style)"
 style = "bold dimmed blue"
 trim_at = "-"
 ssh_only = false
@@ -16,6 +18,7 @@ disabled = false
 
 # Third param
 [directory]
+format=" in [$path]($style)[$read_only]($read_only_style) " 
 style = "purple"
 truncation_length = 0
 truncate_to_repo = true
@@ -34,6 +37,9 @@ deleted = "x"
 min_time = 1
 format = "took [$duration]($style)"
 disabled = false
+
+[container]
+disabled = true
 
 
 ## SECOND LINE/ROW: Prompt
@@ -74,7 +80,7 @@ error_symbol = " [×](bold red)"
 # SYMBOLS
 [status]
 symbol = "🔴"
-format = '[\[$symbol$status_common_meaning$status_signal_name$status_maybe_int\]]($style)'
+format = '[\[$symbol$status_maybe_int\]]($style)'
 map_symbol = true
 disabled = false
 
@@ -140,3 +146,13 @@ symbol = " "
 
 [swift]
 symbol = "ﯣ "
+
+[shell]
+format="[$indicator]($style)"
+fish_indicator = ""
+powershell_indicator = ".psh"
+zsh_indicator = ".zsh"
+bash_indicator = ".bsh"
+unknown_indicator = "mystery shell"
+style = "bold fg:white bg:blue"
+disabled = false
