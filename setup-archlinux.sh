@@ -1,6 +1,6 @@
 #! /usr/bin/bash
 echo 'Installing Fish Shell and TMUX'
-sudo pacman -S --needed tmux fish
+sudo pacman -S --needed tmux fish starship
 
 echo 'Installing TPM (TMUX Package Manager)'
 cd
@@ -11,11 +11,12 @@ echo 'Linking Fish Shell Files'
 mkdir -pv ~/.config/fish
 ln -s ~/.dotfiles/fish/config.fish ~/.config/fish/config.fish
 
-echo 'Installing Fisher (Fish Package Manager)'
-if type -q yay
-    yay -S --needed fisher
-else
-    curl -sL https://git.io/fisher | source && fisher install jorgebucaran/fisher
-end
-rm ~/.config/fish/fish_plugins
-ln -s ~/.dotfiles/fish/fisher/fish_plugins ~/.config/fish/fish_plugins
+echo 'Changing default shell'
+chsh -s /usr/bin/fish
+
+cp .bashrc .bashrc.bak
+rm .bashrc
+ln -s ~/.dotfiles/bashrc ~/.bashrc
+source .bashrc
+
+fish setup/archlinux-base.fish
