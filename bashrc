@@ -9,3 +9,5 @@ alias ls='ls --color=auto'
 PS1='[\u@\h \W]\$ '
 
 eval "$(starship init bash)"
+. $HOME/.asdf/asdf.sh
+. $HOME/.asdf/completions/asdf.bash
