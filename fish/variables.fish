@@ -10,7 +10,6 @@ set NODE_PATH $NPM_PACKAGES/lib/node_modules $NODE_PATH
 
 set MANPATH $NPM_PACKAGES/share/man $MANPATH
 
-set -gx GOPATH $HOME/Apps/go
 set -gx BD_OPT 'insensitive'
 
 mkdir -p $HOME/.local/bin $NPM_PACKAGES/bin $PATH $HOME/.fzf
@@ -23,3 +22,12 @@ set -gx VIRTUAL_ENV_DISABLE_PROMPT 1
 set -gx PROJECT_HOME $HOME/Projects
 
 set -gx DOCKER_BUILDKIT 1
+
+
+# Go Lang PATH
+if test -d $HOME/.local/go
+    set -gx GOPATH $HOME/.local/go
+    set -gx PATH $PATH $HOME/.local/go/bin
+else
+    mkdir -p $HOME/.local/go
+end
