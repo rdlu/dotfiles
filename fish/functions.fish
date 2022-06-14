@@ -11,14 +11,19 @@ function docker-sh --description "Execute default shell in a running docker cont
   end
 end
 
-function git-mirror-add
-  if set -q argv[1]
-    set GIT_ORG argv[1]
+function git-mirror-add --description "[repo name][org name] Replaces this repo origin with both Github and Gitlab"
+  if set -q argv[2]
+    set GIT_ORG argv[2]
   else
     set GIT_ORG rdlu
   end
 
-  set PROJ_NAME (basename (pwd) | sed "s/\.//" )
+  if set -q argv[2]
+    set PROJ_NAME argv[2]
+  else
+    set PROJ_NAME (basename (pwd) | sed "s/\.//" )
+  end
+
   git remote rm origin 2> /dev/null
   git remote rm github 2> /dev/null
   git remote rm gitlab 2> /dev/null
