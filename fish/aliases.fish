@@ -79,6 +79,7 @@ abbr -a ping-gateway 'ping (ip route list | awk \' /^default/ {print $3}\')'
 alias nvrun 'set -lx __NV_PRIME_RENDER_OFFLOAD 1; set -lx __GLX_VENDOR_LIBRARY_NAME nvidia;'
 
 # Docker Management
+alias docker 'doas docker'
 abbr -a dkc docker compose
 abbr -a dkc-logs 'docker compose logs -f'
 abbr -a dkcx 'docker compose exec'
