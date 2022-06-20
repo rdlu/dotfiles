@@ -11,6 +11,7 @@ if type -q fisher
     echo "Fisher installed, linking config files"
     rm ~/.config/fish/fish_plugins
     ln -s ~/.dotfiles/fish/fisher/fish_plugins ~/.config/fish/fish_plugins
+    fisher update
 else
     echo ">>> Fisher install failed <<<<"
 end
