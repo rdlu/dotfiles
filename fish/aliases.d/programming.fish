@@ -11,6 +11,10 @@ abbr -a poadd 'poetry add --dev'
 abbr -a poupd 'poetry update'
 abbr -a poins 'poetry install'
 
+# Elixir
+abbr -a imix 'iex -S mix'
+abbr -a mxts 'mix test'
+
 # Node.js
 abbr -a npmkill find . -name 'node_modules' -type d -prune -print -exec rm -rf '{}' +
 abbr -a rm-npm-modules find . -name 'node_modules' -type d -prune -print -exec rm -rf '{}' +
