@@ -1,6 +1,6 @@
 #! /usr/bin/bash
 echo 'Installing Fish Shell and TMUX'
-sudo pacman -S --needed tmux fish starship
+sudo pacman -S --needed tmux fish starship jq
 
 echo 'Installing TPM (TMUX Package Manager)'
 cd
