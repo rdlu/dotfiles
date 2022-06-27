@@ -32,13 +32,13 @@ end
 
 function git-mirror-add --description "[repo name][org name] Replaces this repo origin with both Github and Gitlab"
     if set -q argv[2]
-        set GIT_ORG argv[2]
+        set GIT_ORG $argv[2]
     else
         set GIT_ORG rdlu
     end
 
-    if set -q argv[2]
-        set PROJ_NAME argv[2]
+    if set -q argv[1]
+        set PROJ_NAME $argv[1]
     else
         set PROJ_NAME (basename (pwd) | sed "s/\.//" )
     end
