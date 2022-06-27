@@ -1,7 +1,7 @@
 # Micro Editor; Linux
-test -e /usr/bin/micro ; and set -Ux EDITOR micro
+test -e /usr/bin/micro; and set -Ux EDITOR micro
 # Micro Editor; MacOS
-test -e /usr/local/bin/micro ; and set -Ux EDITOR micro
+test -e /usr/local/bin/micro; and set -Ux EDITOR micro
 
 
 #NPM
@@ -10,7 +10,7 @@ set NODE_PATH $NPM_PACKAGES/lib/node_modules $NODE_PATH
 
 set MANPATH $NPM_PACKAGES/share/man $MANPATH
 
-set -gx BD_OPT 'insensitive'
+set -gx BD_OPT insensitive
 
 mkdir -p $HOME/.local/bin $NPM_PACKAGES/bin $PATH $HOME/.fzf
 set -gx PATH $HOME/.local/bin $HOME/.yarn/bin $HOME/.cargo/bin $NPM_PACKAGES/bin $PATH $HOME/.fzf
@@ -31,3 +31,6 @@ if test -d $HOME/.local/go
 else
     mkdir -p $HOME/.local/go
 end
+
+# Elixir / Erl
+set -gx ERL_AFLAGS '-kernel shell_history enabled'
