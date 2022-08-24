@@ -36,3 +36,8 @@ function ldenv --description "<file_path> Set env variables from a .env file"
         end
     end
 end
+
+function isWSL2
+    set isWSL2 (uname -a | grep WSL2)
+    not test -z $isWSL2
+end
