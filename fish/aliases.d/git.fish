@@ -18,6 +18,8 @@ abbr -a git-undo-last 'git reset --soft HEAD~1'
 abbr -a gdf 'git diff'
 abbr -a gds 'git diff --staged'
 abbr -a glg 'git log --all --oneline --graph --decorate'
+abbr -a gpg-tmux-local 'set -lx GPG_TTY $(tty)'
+abbr -a gpg-tmux-global 'set -gx GPG_TTY $(tty)'
 
 function git-checkout-clean --description 'Checkout a clean branch after deleting the local one'
     git branch -D $argv[1]
