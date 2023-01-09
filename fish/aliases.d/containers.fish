@@ -1,5 +1,5 @@
 # Docker Management
-alias docker 'doas docker'
+alias docker 'sudo docker'
 abbr -a dkc docker compose
 abbr -a dkc-logs 'docker compose logs -f'
 abbr -a dkcx 'docker compose exec'
