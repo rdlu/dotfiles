@@ -1,0 +1,36 @@
+FROM registry.fedoraproject.org/fedora:37
+
+ENV NAME=fedora-toolbox VERSION=37
+LABEL com.github.containers.toolbox="true" \
+      com.redhat.component="$NAME" \
+      name="$NAME" \
+      version="$VERSION" \
+      usage="This image is meant to be used with the toolbox command" \
+      summary="Base image for creating Fedora toolbox containers" \
+      maintainer="Debarshi Ray <rishi@fedoraproject.org>"
+
+RUN sudo dnf -y upgrade
+
+# Install RPM package groups
+RUN sudo dnf -y group install \
+      "C Development Tools and Libraries"
+
+# Enable third-party repositories
+RUN sudo dnf -y copr enable atim/nushell
+RUN sudo dnf -y copr enable varlad/helix
+RUN sudo dnf -y copr enable atim/starship
+
+RUN sed -i '/tsflags=nodocs/d' /etc/dnf/dnf.conf
+RUN dnf -y swap coreutils-single coreutils-full
+RUN dnf -y swap glibc-minimal-langpack glibc-all-langpacks
+# RUN rm /etc/rpm/macros.image-language.conf
+
+COPY missing-docs /
+RUN dnf -y reinstall $(<missing-docs)
+RUN rm /missing-docs
+
+COPY extra-packages /
+RUN dnf -y install $(<extra-packages)
+RUN rm /extra-packages
+
+RUN dnf clean all
