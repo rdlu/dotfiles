@@ -16,5 +16,10 @@ abbr -a imix 'iex -S mix'
 abbr -a mxts 'mix test'
 
 # Node.js
-abbr -a npmkill find . -name 'node_modules' -type d -prune -print -exec rm -rf '{}' +
-abbr -a rm-npm-modules find . -name 'node_modules' -type d -prune -print -exec rm -rf '{}' +
+abbr -a npmkill find . -name node_modules -type d -prune -print -exec rm -rf '{}' +
+abbr -a rm-npm-modules find . -name node_modules -type d -prune -print -exec rm -rf '{}' +
+
+
+# Rust
+abbr -a cgrn 'cargo run'
+abbr -a cgcp 'cargo clippy'
