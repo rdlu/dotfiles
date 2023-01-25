@@ -8,6 +8,7 @@ abbr -a systart sudo systemctl start
 abbr -a systatus sudo systemctl status
 abbr -a sysnable sudo systemctl enable --now
 abbr -a systop sudo systemctl stop
+abbr -a restart-key-gpg 'sudo systemctl restart pcscd.service; gpg --card-status'
 
 # System Maintenance
 abbr -a cache-sizes 'du -sh ~/.cache/* | sort -h'
