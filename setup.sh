@@ -22,6 +22,9 @@ ln -s ~/.dotfiles/fish/config.fish ~/.config/fish/config.fish
 echo 'Updating startship conf'
 ln -s ~/.dotfiles/config/starship.toml ~/.config/starship.toml
 
+echo 'Updating Neovim conf'
+ln -s ~/.dotfiles/nvim ~/.config/nvim
+
 echo 'Updating bash_profile...'
 if [ -f ~/.bash_profile ]; then
     echo ". ~/.dotfiles/bashrc" >> ~/.bash_profile
