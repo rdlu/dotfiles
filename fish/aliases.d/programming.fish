@@ -23,3 +23,7 @@ abbr -a rm-npm-modules find . -name node_modules -type d -prune -print -exec rm 
 # Rust
 abbr -a cgrn 'cargo run'
 abbr -a cgcp 'cargo clippy'
+
+if type -q rtx
+    abbr -a asdf rtx
+end
