@@ -5,6 +5,5 @@ alias ls='ls --color=auto'
 
 
 eval "$(starship init bash)"
-. $HOME/.asdf/asdf.sh
-. $HOME/.asdf/completions/asdf.bash
 . "$HOME/.cargo/env"
+eval "$(rtx activate bash)"
