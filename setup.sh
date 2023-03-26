@@ -25,10 +25,13 @@ ln -s ~/.dotfiles/config/starship.toml ~/.config/starship.toml
 echo 'Updating Neovim conf'
 ln -s ~/.dotfiles/nvim ~/.config/nvim
 
+echo 'Updating WezTerm conf'
+ln -s ~/.dotfiles/wezterm ~/.config/wezterm
+
 echo 'Updating bash_profile...'
 if [ -f ~/.bash_profile ]; then
     echo ". ~/.dotfiles/bashrc" >> ~/.bash_profile
     echo "...bash_profile ok"
 fi
 
-fish setup/fish-extras.sh
+fish ./setup/fish-extras.sh
