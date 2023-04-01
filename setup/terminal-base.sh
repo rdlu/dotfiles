@@ -14,6 +14,7 @@ if hash dnf 2>/dev/null;then
     sudo dnf -y install tmux fish starship jq tldr git curl
     echo 'Changing default shell [/usr/bin/fish]'
     sudo lchsh -i $(whoami)
+    fish ./fedora-base.fish
 fi
 
 echo "Installing rustup"
