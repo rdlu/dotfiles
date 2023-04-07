@@ -3,10 +3,11 @@
 echo "Downloading my dotfiles"
 
 git clone https://github.com/rdlu/dotfiles.git ~/.dotfiles
-git config --global user.name "Rodrigo Dlugokenski"
-git config --global user.email "git@dlu.one"
 
 ./setup/terminal-base.sh
+
+echo 'Link gitconfig'
+ln -s ~/.dotfiles/.gitconfig ~/.gitconfig
 
 echo "Creating dotfiles file links"
 
@@ -22,11 +23,15 @@ ln -s ~/.dotfiles/fish/config.fish ~/.config/fish/config.fish
 echo 'Updating startship conf'
 ln -s ~/.dotfiles/config/starship.toml ~/.config/starship.toml
 
-echo 'Updating Neovim conf'
-ln -s ~/.dotfiles/nvim ~/.config/nvim
+echo 'Updating Neovim conf with AstroNvim'
+git clone https://github.com/AstroNvim/AstroNvim ~/.config/nvim
+ln -s ~/.dotfiles/config/nvim/lua/user ~/.config/nvim/lua/user
 
 echo 'Updating WezTerm conf'
 ln -s ~/.dotfiles/wezterm ~/.config/wezterm
+
+echo 'Updating Alacritty conf'
+ln -s ~/.dotfiles/config/alacritty ~/.config/alacritty
 
 echo 'Updating bash_profile...'
 if [ -f ~/.bash_profile ]; then
