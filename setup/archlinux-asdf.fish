@@ -8,7 +8,7 @@ if type -q rtx
     rtx plugin add erlang https://github.com/asdf-vm/asdf-erlang.git
 
     yay -S --needed unzip
-    rtx plugin-add elixir https://github.com/asdf-vm/asdf-elixir.git
+    rtx plugin add elixir https://github.com/asdf-vm/asdf-elixir.git
 
     # ruby
     yay -S --needed base-devel libffi libyaml openssl zlib ruby-build
