@@ -25,3 +25,4 @@ end
 if set -q START_TMUX; and not set -q TMUX; and status is-interactive; and not set -q INSIDE_EDITOR
     tmux new -A -s mux0 fish
 end
+
