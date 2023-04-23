@@ -1,3 +1,19 @@
+local m = require('mapx').setup {
+  whichkey = true,
+  enableCountArg = false,
+  debug = vim.g.mapxDebug or false,
+}
+
+-- stylua: ignore start
+-- Disable C-z suspend
+m.map([[<C-z>]], [[<Nop>]])
+m.mapbang([[<C-z>]], [[<Nop>]])
+
+m.noremap([[J]], [[5j]], "Jump down")
+m.noremap([[K]], [[5k]], "Jump up")
+m.xnoremap([[J]], [[5j]], "Jump down")
+m.xnoremap([[K]], [[5k]], "Jump up")
+
 -- Mapping data with "desc" stored directly by vim.keymap.set().
 --
 -- Please use this mappings table to set keyboard mapping since this is the
@@ -19,10 +35,12 @@ return {
     -- this is useful for naming menus
     ["<leader>b"] = { name = "Buffers" },
     -- quick save
-    -- ["<C-s>"] = { ":w!<cr>", desc = "Save File" },  -- change description but the same command
+    ["<C-s>"] = { ":w!<cr>", desc = "Save File" },  -- change description but the same command
   },
   t = {
     -- setting a mapping to false will disable it
     -- ["<esc>"] = false,
   },
 }
+
+
