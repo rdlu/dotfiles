@@ -1,20 +1,20 @@
 #! /usr/bin/bash
 
 if hash pacman 2>/dev/null; then
-    echo '(PACMAN) Installing Fish Shell and TMUX'
-    sudo pacman -S --needed tmux fish starship jq tldr curl
-    echo 'Changing default shell'
-    chsh -s /usr/bin/fish
+	echo '(PACMAN) Installing Fish Shell and TMUX'
+	sudo pacman -S --needed tmux fish starship jq tldr curl
+	echo 'Changing default shell'
+	chsh -s /usr/bin/fish
 fi
 
-if hash dnf 2>/dev/null;then
-    echo '(DNF) Installing Fish Shell and TMUX'
-    sudo dnf -y copr enable atim/starship
-    sudo dnf -y upgrade
-    sudo dnf -y install tmux fish starship jq tldr git curl
-    echo 'Changing default shell [/usr/bin/fish]'
-    sudo lchsh -i $(whoami)
-    fish ./fedora-base.fish
+if hash dnf 2>/dev/null; then
+	echo '(DNF) Installing Fish Shell and TMUX'
+	sudo dnf -y copr enable atim/starship
+	sudo dnf -y upgrade
+	sudo dnf -y install tmux fish starship jq tldr git curl urlview
+	echo 'Changing default shell [/usr/bin/fish]'
+	sudo lchsh -i $(whoami)
+	fish ./fedora-base.fish
 fi
 
 echo "Installing rustup"
