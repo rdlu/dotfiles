@@ -81,19 +81,16 @@ window:
   # Values for `startup_mode` (macOS only):
   #   - SimpleFullscreen
   #startup_mode: Windowed
-# Window title
-#title: Alacritty
-
-# Allow terminal applications to change Alacritty's window title.
-#dynamic_title: true
-
-# Window class (Linux/BSD only):
-#class:
-# Application instance name
-#instance: Alacritty
-# General application class
-#general: Alacritty
-
+  # Window title
+  #title: Alacritty
+  # Allow terminal applications to change Alacritty's window title.
+  #dynamic_title: true
+  # Window class (Linux/BSD only):
+  #class:
+  # Application instance name
+  #instance: Alacritty
+  # General application class
+  #general: Alacritty
 # Decorations theme variant
 #
 # Override the variant of the System theme/GTK theme/Wayland client side
@@ -133,28 +130,26 @@ font:
     #   - (Linux/BSD) monospace
     #   - (Windows) Consolas
     # family: VictorMono Nerd Font
-    family: FantasqueSansMono Nerd Font
+    # family: FantasqueSansMono Nerd Font
+    family: JetBrainsMono Nerd Font
     # The `style` can be specified to pick a specific face.
     #style: Regular
-  # Bold font face
-  #bold:
-  # Font family
-  #
-  # If the bold family is not specified, it will fall back to the
-  # value specified for the normal font.
-  #family: monospace
-
-  # The `style` can be specified to pick a specific face.
-  #style: Bold
-
-  # Italic font face
-  #italic:
-  # Font family
-  #
-  # If the italic family is not specified, it will fall back to the
-  # value specified for the normal font.
-  #family: monospace
-
+    # Bold font face
+    #bold:
+    # Font family
+    #
+    # If the bold family is not specified, it will fall back to the
+    # value specified for the normal font.
+    #family: monospace
+    # The `style` can be specified to pick a specific face.
+    #style: Bold
+    # Italic font face
+    #italic:
+    # Font family
+    #
+    # If the italic family is not specified, it will fall back to the
+    # value specified for the normal font.
+    #family: monospace
   # The `style` can be specified to pick a specific face.
   #style: Italic
 
@@ -169,32 +164,28 @@ font:
     family: JetBrainsMono Nerd Font
     # The `style` can be specified to pick a specific face.
     #style: Bold Italic
-  # Point size
-
-  size: 12.0
+    # Point size
+  size: 11.0
   # Offset is the extra space around each character. `offset.y` can be thought
   # of as modifying the line spacing, and `offset.x` as modifying the letter
   # spacing.
   #offset:
   #  x: 0
   #  y: 0
-# Glyph offset determines the locations of the glyphs within their cells with
-# the default being at the bottom. Increasing `x` moves the glyph to the
-# right, increasing `y` moves the glyph upward.
-#glyph_offset:
-#  x: 0
-#  y: 0
-
-# Use built-in font for box drawing characters.
-#
-# If `true`, Alacritty will use a custom built-in font for box drawing
-# characters (Unicode points 2500 - 259f).
-#
-#builtin_box_drawing: true
-
-# If `true`, bold text is drawn using the bright color variants.
-#draw_bold_text_with_bright_colors: false
-
+  # Glyph offset determines the locations of the glyphs within their cells with
+  # the default being at the bottom. Increasing `x` moves the glyph to the
+  # right, increasing `y` moves the glyph upward.
+  #glyph_offset:
+  #  x: 0
+  #  y: 0
+  # Use built-in font for box drawing characters.
+  #
+  # If `true`, Alacritty will use a custom built-in font for box drawing
+  # characters (Unicode points 2500 - 259f).
+  #
+  #builtin_box_drawing: true
+  # If `true`, bold text is drawn using the bright color variants.
+  #draw_bold_text_with_bright_colors: false
 # Colors (Tomorrow Night)
 #colors:
 # Default colors
@@ -463,19 +454,16 @@ shell:
   # Directory the shell is started in. If this is unset, or `None`, the working
   # directory of the parent process will be used.
   #working_directory: None
-
-# Offer IPC using `alacritty msg` (unix only)
-#ipc_socket: true
-
-#mouse:
-# Click settings
-#
-# The `double_click` and `triple_click` settings control the time
-# alacritty should wait for accepting multiple clicks as one double
-# or triple click.
-#double_click: { threshold: 300 }
-#triple_click: { threshold: 300 }
-
+  # Offer IPC using `alacritty msg` (unix only)
+  #ipc_socket: true
+  #mouse:
+  # Click settings
+  #
+  # The `double_click` and `triple_click` settings control the time
+  # alacritty should wait for accepting multiple clicks as one double
+  # or triple click.
+  #double_click: { threshold: 300 }
+  #triple_click: { threshold: 300 }
 # If this is `true`, the cursor is temporarily hidden when typing.
 #hide_when_typing: false
 
