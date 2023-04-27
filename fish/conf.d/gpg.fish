@@ -11,10 +11,14 @@ if type -q gpg && test (uname) != Darwin
             setsid ~/.dotfiles/gnupg/win-gpg-agent-relay.sh foreground 2>/tmp/win-gpg-agent-error.log >/tmp/win-gpg-agent-start.log </dev/null &
         end
     else
-        set -e GPG_TTY
-        set -U -x GPG_TTY (tty)
         set -e SSH_AUTH_SOCK
         set -U -x SSH_AUTH_SOCK /run/user/(id -u)/gnupg/S.gpg-agent.ssh
+        set -e GPG_TTY
+        set -gx GPG_TTY (tty)
         gpg-connect-agent updatestartuptty /bye >/dev/null
     end
 end
+
+# Ensure correct tty for tmux if using pinentry-curses
+alias ssh "GPG_TTY=(tty) gpg-connect-agent updatestartuptty /bye > /dev/null && env ssh"
+
