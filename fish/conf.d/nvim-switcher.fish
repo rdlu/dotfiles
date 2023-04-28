@@ -1,5 +1,5 @@
 function nvim-lazy
-    env NVIM_APPNAME=nvim-lazy nvim
+    env NVIM_APPNAME=nvim-lazy nvim $argv
 end
 
 function nvims
@@ -15,4 +15,7 @@ function nvims
     env NVIM_APPNAME=$config nvim $argv
 end
 
-bind \ca nvims
+bind \ca "nvims ."
+bind \ce "nvim-lazy ."
+
+abbr -a lvi "nvim-lazy ."
