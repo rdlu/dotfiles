@@ -38,3 +38,4 @@ function myps
 end
 
 abbr -a is-running-ps "ps ax | grep -q '[w]in-gpg-agent'"
+alias bell "echo -e '\a'"
