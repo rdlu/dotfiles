@@ -1,6 +1,7 @@
 [user]
 	name = Rodrigo Dlugokenski
   email = git@dlu.one
+	signingKey = E96B451F2737BAC3
 
 [core]
     pager = delta

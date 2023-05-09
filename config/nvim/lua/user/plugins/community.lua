@@ -11,6 +11,7 @@ return {
   { import = "astrocommunity.pack.typescript" },
   { import = "astrocommunity.indent.indent-blankline-nvim" },
   { import = "astrocommunity.indent.mini-indentscope" },
-  -- { import = "astrocommunity.colorscheme.catppuccin" },
-  -- { import = "astrocommunity.completion.copilot-lua-cmp" },
+  { import = "astrocommunity.colorscheme.nightfox" },
+  { import = "astrocommunity.colorscheme.dracula" },
+  { import = "astrocommunity.completion.copilot-lua-cmp" },
 }
