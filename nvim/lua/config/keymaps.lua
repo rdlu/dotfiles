@@ -22,3 +22,29 @@ vim.keymap.set({ "n", "v" }, "J", "5j", { noremap = true, desc = "Down faster" }
 -- Remap K and J
 vim.keymap.set({ "n", "v" }, "<leader>k", "K", { noremap = true, desc = "Keyword" })
 vim.keymap.set({ "n", "v" }, "<leader>j", "J", { noremap = true, desc = "Join lines" })
+
+local function map(mode, lhs, rhs, opts)
+  local keys = require("lazy.core.handler").handlers.keys
+  ---@cast keys LazyKeysHandler
+  -- do not create the keymap if a lazy keys handler exists
+  if not keys.active[keys.parse({ lhs, mode = mode }).id] then
+    opts = opts or {}
+    opts.silent = opts.silent ~= false
+    vim.keymap.set(mode, lhs, rhs, opts)
+  end
+end
+
+local buf_utils = require("utils.buffer")
+-- buffer management
+map("n", "<leader>bc", function()
+  buf_utils.close()
+end, { desc = "Close buffer" })
+map("n", "<leader>bC", function()
+  buf_utils.close(0, true)
+end, { desc = "Force close buffer" })
+map("n", "<leader>bl", function()
+  buf_utils.move(vim.v.count > 0 and vim.v.count or 1)
+end, { desc = "Move buffer tab right" })
+map("n", "<leader>bj", function()
+  buf_utils.move(-(vim.v.count > 0 and vim.v.count or 1))
+end, { desc = "Move buffer tab left" })
