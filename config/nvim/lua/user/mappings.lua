@@ -9,10 +9,19 @@ local m = require('mapx').setup {
 m.map([[<C-z>]], [[<Nop>]])
 m.mapbang([[<C-z>]], [[<Nop>]])
 
-m.noremap([[J]], [[5j]], "Jump down")
-m.noremap([[K]], [[5k]], "Jump up")
-m.xnoremap([[J]], [[5j]], "Jump down")
-m.xnoremap([[K]], [[5k]], "Jump up")
+
+-- Default keymaps that are always set: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/keymaps.lua
+-- Perusing code faster with K and J
+vim.keymap.set({ "n", "v" }, "K", "5k", { noremap = true, desc = "Up faster" })
+vim.keymap.set({ "n", "v" }, "J", "5j", { noremap = true, desc = "Down faster" })
+vim.keymap.set({ "n", "v" }, "H", "0", { noremap = true, desc = "Line start" })
+vim.keymap.set({ "n", "v" }, "L", "$", { noremap = true, desc = "Line end" })
+
+
+-- Remap K and J
+vim.keymap.set({ "n", "v" }, "<leader>k", "K", { noremap = true, desc = "Keyword" })
+vim.keymap.set({ "n", "v" }, "<leader>j", "J", { noremap = true, desc = "Join lines" })
+
 
 -- Mapping data with "desc" stored directly by vim.keymap.set().
 --

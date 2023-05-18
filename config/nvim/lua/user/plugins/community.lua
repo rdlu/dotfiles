@@ -13,5 +13,7 @@ return {
   { import = "astrocommunity.indent.mini-indentscope" },
   { import = "astrocommunity.colorscheme.nightfox" },
   { import = "astrocommunity.colorscheme.dracula" },
-  { import = "astrocommunity.completion.copilot-lua-cmp" },
+  { import = "astrocommunity.motion.leap-nvim" },
+  { import = "astrocommunity.motion.mini-surround" },
+  { import = "astrocommunity.utility.transparent-nvim" },
 }
