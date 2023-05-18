@@ -1,32 +1,53 @@
 return {
   {
-    "neovim/nvim-lspconfig",
+    "nvim-treesitter/nvim-treesitter",
     opts = {
-      servers = {
-        tailwindcss = {},
+      ensure_installed = {
+        "css",
       },
     },
   },
   {
-    "NvChad/nvim-colorizer.lua",
+    "williamboman/mason-lspconfig.nvim",
     opts = {
-      user_default_options = {
-        tailwind = true,
+      ensure_installed = {
+        "tailwindcss",
+        "cssls",
+      },
+    },
+  },
+  {
+    "jay-babu/mason-null-ls.nvim",
+    opts = {
+      ensure_installed = {
+        "prettierd",
+        "rustywind",
       },
     },
   },
   {
     "hrsh7th/nvim-cmp",
     dependencies = {
-      { "roobert/tailwindcss-colorizer-cmp.nvim", config = true },
+      { "js-everts/cmp-tailwind-colors", config = true },
     },
     opts = function(_, opts)
-      -- original LazyVim kind icon formatter
       local format_kinds = opts.formatting.format
       opts.formatting.format = function(entry, item)
-        format_kinds(entry, item) -- add icons
-        return require("tailwindcss-colorizer-cmp").formatter(entry, item)
+        if item.kind == "Color" then
+          item = require("cmp-tailwind-colors").format(entry, item)
+          return item
+        end
+        return format_kinds(entry, item)
       end
     end,
+  },
+  {
+    "NvChad/nvim-colorizer.lua",
+    opts = {
+      user_default_options = {
+        names = true,
+        tailwind = true,
+      },
+    },
   },
 }
