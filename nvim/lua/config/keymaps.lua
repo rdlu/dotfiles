@@ -48,3 +48,9 @@ end, { desc = "Move buffer tab right" })
 map("n", "<leader>bj", function()
   buf_utils.move(-(vim.v.count > 0 and vim.v.count or 1))
 end, { desc = "Move buffer tab left" })
+
+map("n", "<leader>fw", "<cmd>w<cr>", { desc = "Write / Save Buffer" })
+map("n", "<leader>fW", "<cmd>w!<cr>", { desc = "Force Write Buffer" })
+
+map("n", "<leader>bw", "<cmd>w<cr>", { desc = "Write / Save Buffer" })
+map("n", "<leader>bW", "<cmd>w!<cr>", { desc = "Force Write Buffer" })
