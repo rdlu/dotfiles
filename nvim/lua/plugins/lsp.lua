@@ -11,5 +11,33 @@ return {
       -- add a keymap
       -- keys[#keys + 1] = { "H", "<cmd>echo 'hello'<cr>" }
     end,
-  }
+    opts = {
+      servers = {
+        emmet_ls = {
+          filetypes = {
+            "html",
+            "typescriptreact",
+            "javascriptreact",
+            "css",
+            "sass",
+            "scss",
+            "less",
+            "javascript",
+            "typescript",
+            "markdown",
+            "heex",
+            "elixir",
+          },
+          init_options = {
+            html = {
+              options = {
+                -- For possible options, see: https://github.com/emmetio/emmet/blob/master/src/config.ts#L79-L26
+                ["bem.enabled"] = true,
+              },
+            },
+          },
+        },
+      },
+    },
+  },
 }
