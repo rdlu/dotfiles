@@ -22,7 +22,13 @@ return {
         ["<C-n>"] = cmp.mapping.select_next_item(),
         ["<C-d>"] = cmp.mapping.scroll_docs(-4),
         ["<C-f>"] = cmp.mapping.scroll_docs(4),
-        ["<C-Space>"] = cmp.mapping.complete(),
+        ["<C-Space>"] = cmp.mapping(function()
+          if cmp.visible() then
+            cmp.close()
+          else
+            cmp.complete()
+          end
+        end, { "i", "s" }),
         ["<C-e>"] = cmp.mapping.close(),
         ["<CR>"] = cmp.mapping.confirm({
           behavior = cmp.ConfirmBehavior.Replace,
@@ -54,16 +60,16 @@ return {
 
       opts.sources = vim.tbl_extend("force", opts.sources, {
         -- Copilot Source
-        { name = "copilot",    group_index = 2 },
+        { name = "copilot", group_index = 2 },
         -- Other Sources
-        { name = "nvim_lsp",   group_index = 2 },
-        { name = "otter",      group_index = 2 },
+        { name = "nvim_lsp", group_index = 2 },
+        { name = "otter", group_index = 2 },
         { name = "async_path", group_index = 2 },
-        { name = "luasnip",    group_index = 2, max_item_count = 5 },
-        { name = "buffer",     group_index = 2, keyword_length = 3, max_item_count = 3 },
+        { name = "luasnip", group_index = 2, max_item_count = 5 },
+        { name = "buffer", group_index = 2, keyword_length = 3, max_item_count = 3 },
         { name = "treesitter", group_index = 3, keyword_length = 5, max_item_count = 3 },
-        { name = "emoji",      group_index = 3, keyword_length = 3, max_item_count = 3 },
-        { name = "path",       enabled = false },
+        { name = "emoji", group_index = 3, keyword_length = 3, max_item_count = 3 },
+        { name = "path", enabled = false },
       })
     end,
   },
