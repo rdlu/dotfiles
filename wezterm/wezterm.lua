@@ -37,7 +37,7 @@ config.window_background_opacity = 0.9
 config.hide_tab_bar_if_only_one_tab = true
 
 config.default_cursor_style = "BlinkingBlock"
-config.window_decorations = "RESIZE"
+config.window_decorations = "INTEGRATED_BUTTONS|RESIZE"
 config.window_padding = {
 	left = 4,
 	right = 0,
