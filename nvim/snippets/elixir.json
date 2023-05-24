@@ -130,9 +130,9 @@
     ],
     "description": "LiveView handle_params function"
   },
-	"lv_heex": {
-		"prefix": "h",
-		"body": ["~H\"\"\"", "${0}", "\"\"\""],
+  "lv_heex": {
+    "prefix": "h",
+    "body": ["~H\"\"\"", "${0}", "\"\"\""],
     "description": "LiveView HEEx template"
   },
   "lv_assign": {
@@ -149,5 +149,10 @@
     "prefix": "m",
     "body": "%{\"${1}\" => ${2}}",
     "description": "Elixir map"
+  },
+  "hxp": {
+    "prefix": "hxp",
+    "body": "<%= ${1} %>",
+    "description": "HEEx print"
   }
 }
