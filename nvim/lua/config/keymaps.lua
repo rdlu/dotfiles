@@ -14,6 +14,9 @@ vim.keymap.set("n", "<C-l>", "<cmd>TmuxNavigateRight<cr>")
 
 -- exit insert mode with jk
 vim.keymap.set("i", "jk", "<ESC>", { noremap = true, silent = true, desc = "<ESC>" })
+vim.keymap.set({ "n", "v" }, "d", '"xd', { noremap = true, silent = true, desc = "Delete" })
+vim.keymap.set({ "n", "v" }, "D", '"xD', { noremap = true, silent = true, desc = "Delete" })
+vim.keymap.set({ "n", "v" }, "x", '"xx', { noremap = true, silent = true, desc = "Delete" })
 
 -- Perusing code faster with K and J
 vim.keymap.set({ "n", "v" }, "K", "5k", { noremap = true, desc = "Up faster" })
