@@ -27,6 +27,7 @@ return {
             "markdown",
             "heex",
             "elixir",
+            "eelixir",
           },
           init_options = {
             html = {
