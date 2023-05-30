@@ -1,8 +1,4 @@
 {
-  "name": "rdlu-snips",
-  "engines": {
-    "vscode": "^1.11.0"
-  },
   "contributes": {
     "snippets": [
       {
@@ -13,6 +9,13 @@
           "phoenix"
         ],
         "path": "./elixir.json"
+      },
+      {
+        "language": [
+          "html",
+          "all"
+        ],
+        "path": "./html.json"
       }
     ]
   }

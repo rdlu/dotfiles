@@ -52,3 +52,40 @@ require("lazy").setup({
 require("notify").setup({
   background_colour = "#000000",
 })
+
+local lspconfig = require("lspconfig")
+-- LSP settings.
+--  This function gets run when an LSP connects to a particular buffer.
+local on_attach = function(_, bufnr) end
+
+-- nvim-cmp supports additional completion capabilities, so broadcast that to servers
+local capabilities = vim.lsp.protocol.make_client_capabilities()
+
+-- Enable the following language servers
+capabilities = require("cmp_nvim_lsp").default_capabilities(capabilities)
+
+local lsp_options = {
+  capabilities = capabilities,
+  on_attach = on_attach,
+  single_file_support = true,
+}
+
+lspconfig.tailwindcss.setup(vim.tbl_extend("force", lsp_options, {
+  filetypes = { "html", "elixir", "eelixir", "heex" },
+  init_options = {
+    userLanguages = {
+      elixir = "html-eex",
+      eelixir = "html-eex",
+      heex = "html-eex",
+    },
+  },
+  settings = {
+    tailwindCSS = {
+      experimental = {
+        classRegex = {
+          'class[:]\\s*"([^"]*)"',
+        },
+      },
+    },
+  },
+}))

@@ -26,6 +26,21 @@ vim.keymap.set({ "n", "v" }, "J", "5j", { noremap = true, desc = "Down faster" }
 vim.keymap.set({ "n", "v" }, "<leader>k", "K", { noremap = true, desc = "Keyword" })
 vim.keymap.set({ "n", "v" }, "<leader>j", "J", { noremap = true, desc = "Join lines" })
 
+vim.keymap.set({ "n", "v" }, "<leader>cc", "<cmd>Copilot toggle<cr>", { noremap = true, desc = "Copilot Toggle" })
+
+vim.keymap.set(
+  { "n", "v" },
+  "<leader>Sw",
+  ":MoveWord(1)<CR>'",
+  { noremap = true, silent = true, desc = "Swap word forward" }
+)
+vim.keymap.set(
+  { "n", "v" },
+  "<leader>Sb",
+  ":MoveWord(-1)<CR>'",
+  { noremap = true, silent = true, desc = "Swap word back" }
+)
+
 local function map(mode, lhs, rhs, opts)
   local keys = require("lazy.core.handler").handlers.keys
   ---@cast keys LazyKeysHandler
@@ -57,3 +72,7 @@ map("n", "<leader>fW", "<cmd>w!<cr>", { desc = "Force Write Buffer" })
 
 map("n", "<leader>bw", "<cmd>w<cr>", { desc = "Write / Save Buffer" })
 map("n", "<leader>bW", "<cmd>w!<cr>", { desc = "Force Write Buffer" })
+
+map("n", "<leader>cS", function()
+  require("luasnip.loaders").edit_snippet_files(nil)
+end, { desc = "Edit Snippets" })
