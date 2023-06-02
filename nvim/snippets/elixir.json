@@ -151,8 +151,8 @@
     "description": "Elixir map"
   },
   "hxp": {
-    "prefix": "hxp",
-    "body": "<%= ${1} %>",
+    "prefix": "px",
+    "body": "<%= @${0:variable} %>",
     "description": "HEEx print"
   }
 }
