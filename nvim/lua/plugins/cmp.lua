@@ -43,8 +43,13 @@ return {
           c = cmp.mapping.confirm({ behavior = cmp.ConfirmBehavior.Replace, select = true }),
         }),
         ["<Tab>"] = cmp.mapping(function(fallback)
-          if cmp.visible() then
-            cmp.select_next_item()
+          if cmp.visible() and has_words_before() then
+            local entry = cmp.get_active_entry()
+            if not entry then
+              cmp.select_next_item({ count = 1 - cmp.core.view:get_offset() })
+            else
+              cmp.select_next_item()
+            end
             -- You could replace the expand_or_jumpable() calls with expand_or_locally_jumpable()
             -- this way you will only jump inside the snippet region
           elseif luasnip.expand_or_jumpable() then
@@ -56,7 +61,7 @@ return {
           end
         end, { "i", "s" }),
         ["<S-Tab>"] = cmp.mapping(function(fallback)
-          if cmp.visible() then
+          if cmp.visible() and has_words_before() then
             cmp.select_prev_item()
           elseif luasnip.jumpable(-1) then
             luasnip.jump(-1)
@@ -67,18 +72,22 @@ return {
       })
 
       opts.sources = vim.tbl_extend("force", opts.sources, {
-        { name = "luasnip", group_index = 1, max_item_count = 10 },
-        { name = "treesitter", group_index = 1, keyword_length = 5, max_item_count = 3 },
-        { name = "nvim_lsp", group_index = 1, max_item_count = 5 },
-        { name = "async_path", group_index = 2 },
-        { name = "buffer", group_index = 2, keyword_length = 3, max_item_count = 3 },
-        { name = "copilot", group_index = 3 },
-        { name = "spell", keyword_length = 3, priority = 5, keyword_pattern = [[\w\+]], max_item_count = 3 },
+        { name = "treesitter", keyword_length = 5, max_item_count = 3 },
+        { name = "nvim_lsp", max_item_count = 5 },
+        { name = "luasnip", max_item_count = 5 },
+        { name = "async_path" },
+        { name = "buffer", keyword_length = 3, max_item_count = 3 },
+        { name = "copilot" },
+        { name = "spell", keyword_length = 4, priority = 5, keyword_pattern = [[\w\+]], max_item_count = 3 },
         { name = "path", enabled = false },
       })
 
+      opts.preselect = cmp.PreselectMode.None
       opts.sorting = {
+        priority_weight = 2,
         comparators = {
+          cmp.config.compare.offset,
+          cmp.config.compare.exact,
           cmp.config.compare.locality,
           cmp.config.compare.recently_used,
           cmp.config.compare.score,
@@ -107,16 +116,16 @@ return {
       opts.formatting = {
         fields = { "kind", "abbr", "menu" },
         format = function(entry, vim_item)
-          local kind_icons = {
-            copilot = "🤖",
-          }
-
-          local kind = require("lspkind").cmp_format({ mode = "symbol_text", maxwidth = 50 })(entry, vim_item)
+          local kind = require("lspkind").cmp_format({
+            mode = "symbol_text",
+            maxwidth = 50,
+            symbol_map = { Copilot = "" },
+          })(entry, vim_item)
           local strings = vim.split(kind.kind, "%s", { trimempty = true })
           if entry.source.name == "nvim_lsp" and strings[2] == "Snippet" then
             strings[2] = "LSP Snippet"
           end
-          kind.kind = " " .. (kind_icons[entry.source.name] or strings[1] or "") .. " "
+          kind.kind = " " .. (strings[1] or "") .. " "
           kind.menu = "    " .. (strings[2] or strings[1] or "")
           return kind
         end,
