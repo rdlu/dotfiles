@@ -5,6 +5,7 @@ return {
       { "hrsh7th/cmp-emoji" },
       { "jmbuhr/otter.nvim" },
       { "FelipeLema/cmp-async-path" },
+      { "onsails/lspkind.nvim" },
     },
     ---@param opts cmp.ConfigSchema
     opts = function(_, opts)
@@ -30,9 +31,16 @@ return {
           end
         end, { "i", "s" }),
         ["<C-e>"] = cmp.mapping.close(),
-        ["<CR>"] = cmp.mapping.confirm({
-          behavior = cmp.ConfirmBehavior.Replace,
-          select = true,
+        ["<CR>"] = cmp.mapping({
+          i = function(fallback)
+            if cmp.visible() and cmp.get_active_entry() then
+              cmp.confirm({ behavior = cmp.ConfirmBehavior.Replace, select = false })
+            else
+              fallback()
+            end
+          end,
+          s = cmp.mapping.confirm({ select = true }),
+          c = cmp.mapping.confirm({ behavior = cmp.ConfirmBehavior.Replace, select = true }),
         }),
         ["<Tab>"] = cmp.mapping(function(fallback)
           if cmp.visible() then
@@ -59,20 +67,20 @@ return {
       })
 
       opts.sources = vim.tbl_extend("force", opts.sources, {
-        { name = "nvim_lsp" },
-        { name = "otter" },
-        { name = "async_path" },
-        { name = "luasnip", max_item_count = 5 },
-        { name = "buffer", keyword_length = 3, max_item_count = 3 },
-        { name = "treesitter", keyword_length = 5, max_item_count = 3 },
-        { name = "copilot" },
+        { name = "luasnip", group_index = 1, max_item_count = 10 },
+        { name = "treesitter", group_index = 1, keyword_length = 5, max_item_count = 3 },
+        { name = "nvim_lsp", group_index = 1, max_item_count = 5 },
+        { name = "async_path", group_index = 2 },
+        { name = "buffer", group_index = 2, keyword_length = 3, max_item_count = 3 },
+        { name = "copilot", group_index = 3 },
+        { name = "spell", keyword_length = 3, priority = 5, keyword_pattern = [[\w\+]], max_item_count = 3 },
         { name = "path", enabled = false },
       })
 
       opts.sorting = {
         comparators = {
-          cmp.config.compare.offset,
-          cmp.config.compare.exact,
+          cmp.config.compare.locality,
+          cmp.config.compare.recently_used,
           cmp.config.compare.score,
 
           -- copied from cmp-under, but I don't think I need the plugin for this.
@@ -93,6 +101,32 @@ return {
           cmp.config.compare.sort_text,
           cmp.config.compare.length,
           cmp.config.compare.order,
+        },
+      }
+
+      opts.formatting = {
+        fields = { "kind", "abbr", "menu" },
+        format = function(entry, vim_item)
+          local kind_icons = {
+            copilot = "🤖",
+          }
+
+          local kind = require("lspkind").cmp_format({ mode = "symbol_text", maxwidth = 50 })(entry, vim_item)
+          local strings = vim.split(kind.kind, "%s", { trimempty = true })
+          if entry.source.name == "nvim_lsp" and strings[2] == "Snippet" then
+            strings[2] = "LSP Snippet"
+          end
+          kind.kind = " " .. (kind_icons[entry.source.name] or strings[1] or "") .. " "
+          kind.menu = "    " .. (strings[2] or strings[1] or "")
+          return kind
+        end,
+      }
+
+      opts.window = {
+        completion = {
+          winhighlight = "Normal:Pmenu,FloatBorder:Pmenu,Search:None",
+          col_offset = 0,
+          side_padding = 0,
         },
       }
     end,
