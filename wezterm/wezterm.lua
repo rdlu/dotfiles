@@ -29,6 +29,7 @@ config.colors = {
 
 config.font_size = 12
 config.font = wezterm.font_with_fallback({
+	"IntelOne Mono",
 	"Mononoki Nerd Font",
 	"FantasqueSansMono Nerd Font",
 })
