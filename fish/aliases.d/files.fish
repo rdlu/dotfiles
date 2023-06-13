@@ -3,6 +3,7 @@ abbr -a tf tail -f
 abbr -a cpv 'sudo rsync --info=progress2 -avhW --no-compress'
 abbr -a lsh ls -lah
 abbr -a lsd 'ls -d */'
+abbr -a lsw 'ls -lah -d'
 abbr -a mkdir mkdir -pv
 alias path 'echo -e {$PATH\n}'
 alias less 'less -FSRXc'
@@ -18,6 +19,8 @@ if type -q exa; and status is-interactive
     alias l "exa --time-style long-iso --color=auto -F"
     alias ll "l -Fahl"
     alias la "l -a"
+    abbr lw "l -lah -d"
+    abbr ld "l -d */"
 else
     alias l "ls --color=auto -F"
     alias ll "l -Ahl"

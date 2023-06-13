@@ -34,7 +34,8 @@ end
 
 # Elixir / Erl
 set -gx ERL_AFLAGS '-kernel shell_history enabled'
-set -gx KERL_CONFIGURE_OPTIONS "--enable-wx --with-wx --enable-webview --with-wx-config=/usr/sbin/wx-config-gtk2-3.1"
+set -gx KERL_CONFIGURE_OPTIONS "--enable-wx --with-wx --enable-webview --with-wx-config=/usr/bin/wx-config-3.2"
+set -gx KERL_BUILD_DOCS yes
 
 # GPG TTY for TMUX
-set -lx GPG_TTY $(tty)
+set -lx GPG_TTY (tty)
