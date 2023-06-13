@@ -30,6 +30,9 @@ end
 if type -q bat; and status is-interactive
     alias cat bat
 end
+if type -q batcat; and status is-interactive
+    alias cat batcat
+end
 
 # cd aliases
 function ..
