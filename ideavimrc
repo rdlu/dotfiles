@@ -1,0 +1,141 @@
+Plug 'easymotion/vim-easymotion'
+Plug 'tpope/vim-commentary'
+Plug 'terryma/vim-multiple-cursors'
+
+set scrolloff=10
+set number relativenumber
+set showmode
+set showcmd
+set visualbell
+set clipboard+=unnamed
+set ignorecase
+set smartcase
+set incsearch
+set hlsearch
+let mapleader = " "
+set surround
+set highlightedyank
+set sneak
+set nerdtree
+set easymotion
+set which-key
+set notimeout
+set ideajoin
+
+" Normal mode with jk
+inoremap jk <Esc>
+
+" Jump between methods
+nnoremap [[ :action MethodUp<CR>
+nnoremap ]] :action MethodDown<CR>
+
+" Easy visual indentation
+vnoremap < <gv
+vnoremap > >gv
+
+" Popup navigation
+inoremap <C-j> :action PopupMenu-selectNext<CR>
+inoremap <C-k> :action PopupMenu-selectPrev<CR>
+noremap <A-j> :action MoveLineDown<CR>
+noremap <A-k> :action MoveLineUp<CR>
+
+
+" Comment lines
+map <leader>c <action>(CommentByLineComment)
+" Jump around with easymotion
+map <leader>j <Plug>(easymotion-s)
+" Open NERDTree (use q to exit)
+map <leader>x :NERDTreeToggle<CR>
+" Folding
+map <leader>zc :action CollapseAllRegions<CR>
+map <leader>zo :action ExpandAllRegions<CR>
+" Window splits
+map <leader>w| <Action>(SplitVertically)
+map <leader>w- <Action>(SplitHorizontally)
+map <leader>wu <Action>(Unsplit)
+map <leader>wm <Action>(MoveEditorToOppositeTabGroup)
+" Display options
+map <leader>dd <action>(ToggleDistractionFreeMode)
+map <leader>dz <action>(ToggleZenMode)
+map <leader>df <action>(ToggleFullScreen)
+" Actions
+map <leader>am <action>(ShowIntentionActions)
+map <leader>as <action>(SearchEverywhere)
+" File navigation
+map <leader>ff <action>(GotoFile)
+map <leader>fr <action>(RecentFiles)
+map <leader>fc <action>(FindInPath)
+map <leader><leader> <Action>(RecentFiles)
+map <leader>fl <action>(RecentLocations)
+map <leader>fs <action>(NewScratchFile)
+" Close active tab
+map <leader>q <action>(CloseContent)
+map <leader>Q <action>(ReopenClosedTab)
+" Refactoring
+map <leader>rn <Action>(RenameElement)
+map <leader>rm <Action>(ExtractMethod)
+map <leader>rv <Action>(IntroduceVariable)
+map <leader>rf <Action>(IntroduceField)
+map <leader>rs <Action>(ChangeSignature)
+map <leader>rr <Action>(Refactorings.QuickListPopupAction)
+" Go to code
+nmap <leader>gd <Action>(GotoDeclaration)
+nmap <leader>gy <Action>(GotoTypeDeclaration)
+nmap <leader>gi <Action>(GotoImplementation)
+nmap <leader>gu <Action>(ShowUsages)
+nmap <leader>gt <Action>(GotoTest)
+nmap <leader>gf <Action>(Back)
+nmap <leader>gb <Action>(Forward)
+" Git windows
+map <leader>gc <Action>(CheckinProject)
+map <leader>gs <Action>(ActivateVersionControlToolWindow)
+map <leader>gb <Action>(Git.Branches)
+
+let g:WhichKeyDesc_display = "<leader>d Display options"
+
+let g:WhichKeyDesc_zen_mode = "<leader>dz Toggle Zen mode"
+let g:WhichKeyDesc_df_mode = "<leader>dd Toggle Distraction-Free mode"
+let g:WhichKeyDesc_fullscreen = "<leader>df Toggle full screen"
+let g:WhichKey_ShowVimActions = "true"
+let g:WhichKey_ShowTypedSequence = "false"
+
+map <leader>e <Action>(SearchEverywhere)
+map <leader>E <Action>(Switcher)
+" built-in navigation to navigated items works better
+nnoremap <c-o> :action Back<cr>
+nnoremap <c-i> :action Forward<cr>
+" but preserve ideavim defaults
+nnoremap g<c-o> <c-o>
+nnoremap g<c-i> <c-i>
+" built in search looks better
+map <leader>/ <Action>(Find)
+
+" built-in navigation to navigated items works better
+nnoremap <c-o> :action Back<cr>
+nnoremap <c-i> :action Forward<cr>
+" but preserve ideavim defaults
+nnoremap g<c-o> <c-o>
+nnoremap g<c-i> <c-i>
+" unimpaired mappings
+nnoremap [<space> O<esc>j
+nnoremap ]<space> o<esc>k
+nnoremap [q :action PreviousOccurence<cr>
+nnoremap ]q :action NextOccurence<cr>
+nnoremap [m :action MethodUp<cr>
+nnoremap ]m :action MethodDown<cr>
+nnoremap [c :action VcsShowPrevChangeMarker<cr>
+nnoremap ]c :action VcsShowNextChangeMarker<cr>
+
+
+nnoremap <leader>t :action FileStructurePopup<cr>
+nnoremap <leader>T :action GotoSymbol<cr>
+nnoremap <leader>a :action GotoAction<cr>
+nnoremap <leader>b :action ToggleLineBreakpoint<cr>
+
+" easy window navigation
+nnoremap <c-l> <c-w>l
+nnoremap <c-j> <c-w>j
+nnoremap <c-h> <c-w>h
+nnoremap <c-k> <c-w>k
+nnoremap <a-h> gT
+nnoremap <a-l> gt
