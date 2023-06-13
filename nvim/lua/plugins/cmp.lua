@@ -44,15 +44,16 @@ return {
         }),
         ["<Tab>"] = cmp.mapping(function(fallback)
           if cmp.visible() and has_words_before() then
-            local entry = cmp.get_active_entry()
-            if not entry then
-              cmp.select_next_item({ count = 1 - cmp.core.view:get_offset() })
+            if cmp.get_active_entry() then
+              cmp.select_next_item()
             else
+              -- trying to get the real first item after async events
+              cmp.select_prev_item({ count = cmp.core.view:get_offset() })
               cmp.select_next_item()
             end
             -- You could replace the expand_or_jumpable() calls with expand_or_locally_jumpable()
             -- this way you will only jump inside the snippet region
-          elseif luasnip.expand_or_jumpable() then
+          elseif luasnip.expand_or_locally_jumpable() then
             luasnip.expand_or_jump()
           elseif has_words_before() then
             cmp.complete()
@@ -63,7 +64,7 @@ return {
         ["<S-Tab>"] = cmp.mapping(function(fallback)
           if cmp.visible() and has_words_before() then
             cmp.select_prev_item()
-          elseif luasnip.jumpable(-1) then
+          elseif luasnip.locally_jumpable(-1) then
             luasnip.jump(-1)
           else
             fallback()
@@ -77,12 +78,13 @@ return {
         { name = "luasnip", max_item_count = 5 },
         { name = "async_path" },
         { name = "buffer", keyword_length = 3, max_item_count = 3 },
-        { name = "copilot" },
+        { name = "copilot", keyword_length = 4 },
         { name = "spell", keyword_length = 4, priority = 5, keyword_pattern = [[\w\+]], max_item_count = 3 },
         { name = "path", enabled = false },
       })
 
-      opts.preselect = cmp.PreselectMode.None
+      opts.preselect = "None"
+
       opts.sorting = {
         priority_weight = 2,
         comparators = {
