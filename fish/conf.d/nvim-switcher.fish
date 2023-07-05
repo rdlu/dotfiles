@@ -2,8 +2,12 @@ function nvim-lazy
     env NVIM_APPNAME=nvim-lazy nvim $argv
 end
 
+function nvim-astro
+    env NVIM_APPNAME=nvim-astro nvim $argv
+end
+
 function nvims
-    set items default nvim-lazy
+    set items default nvim-lazy nvim-astro
     set config (printf "%s\n" $items | fzf --prompt=" Neovim Config = " --height=~50% --layout=reverse --border --exit-0)
     if [ -z $config ]
         echo "Nothing selected"
@@ -19,3 +23,4 @@ bind \ca "nvims ."
 bind \ce "nvim-lazy ."
 
 abbr -a lvi "nvim-lazy ."
+abbr -a nva "nvim-astro ."
