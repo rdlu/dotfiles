@@ -27,7 +27,7 @@ config.colors = {
 	selection_bg = "rgba(50% 50% 50% 50%)",
 }
 
-config.font_size = 12
+config.font_size = 11
 config.font = wezterm.font_with_fallback({
 	"Mononoki Nerd Font",
 	"FantasqueSansMono Nerd Font",
@@ -69,10 +69,10 @@ config.launch_menu = {
 	},
 }
 
-wezterm.on("gui-startup", function(cmd)
-	local tab, pane, window = mux.spawn_window(cmd or {})
-	window:gui_window():maximize()
-end)
+-- wezterm.on("gui-startup", function(cmd)
+--	local tab, pane, window = mux.spawn_window(cmd or {})
+--	window:gui_window():maximize()
+-- end)
 
 -- Spawn a fish shell in login mode
 config.default_prog = { "/usr/bin/tmux", "new", "-A", "-s", "mux0", "fish" }
