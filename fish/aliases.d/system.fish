@@ -8,6 +8,7 @@ abbr -a systart sudo systemctl start
 abbr -a systatus sudo systemctl status
 abbr -a sysnable sudo systemctl enable --now
 abbr -a systop sudo systemctl stop
+abbr -a syspid systemctl show --property MainPID --value
 abbr -a yu-gpg-restart 'sudo systemctl restart pcscd.service; gpg --card-status'
 
 # System Maintenance
