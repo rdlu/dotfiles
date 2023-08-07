@@ -19,8 +19,7 @@ if type -q exa; and status is-interactive
     alias l "exa --time-style long-iso --color=auto -F"
     alias ll "l -Fhl"
     alias la "l -a"
-    abbr lw "l -lah -d"
-    abbr ld "l -d */"
+    alias ls l
 else
     alias l "ls --color=auto -F"
     alias ll "l -Ahl"
