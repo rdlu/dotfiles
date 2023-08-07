@@ -29,11 +29,13 @@ config.colors = {
 
 config.font_size = 11
 config.font = wezterm.font_with_fallback({
+	-- "CommitMono",
+	"JetBrainsMono Nerd Font",
 	"Mononoki Nerd Font",
 	"FantasqueSansMono Nerd Font",
 })
 
-config.window_background_opacity = 0.9
+config.window_background_opacity = 0.7
 config.hide_tab_bar_if_only_one_tab = true
 
 config.default_cursor_style = "BlinkingBlock"

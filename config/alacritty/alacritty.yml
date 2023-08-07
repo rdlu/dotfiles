@@ -127,7 +127,10 @@ font:
     #   - (Windows) Consolas
     # family: VictorMono Nerd Font
     # family: FantasqueSansMono Nerd Font
-    family: JetBrainsMono Nerd Font
+    # family: JetBrainsMono Nerd Font
+    # family: CommitMono
+    family: Mononoki Nerd Font
+    # family: M Plus Code Latin
     # The `style` can be specified to pick a specific face.
     # style: Regular
     # Bold font face
@@ -159,7 +162,7 @@ font:
     # The `style` can be specified to pick a specific face.
     # style: Bold Italic
     # Point size
-  size: 11.0
+  size: 12.0
   # Offset is the extra space around each character. `offset.y` can be thought
   # of as modifying the line spacing, and `offset.x` as modifying the letter
   # spacing.
@@ -440,7 +443,7 @@ shell:
     - new
     - -A
     - -s
-    - mux0
+    - mux1
     - fish
   # Startup directory
   #
