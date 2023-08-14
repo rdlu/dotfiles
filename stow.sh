@@ -1,5 +1,5 @@
 
 #! /usr/bin/bash
 
-stow -d ~/.dotfiles -t ~/ idea git scripts
+stow -d ~/.dotfiles -t ~/ idea git scripts hypr terminal
 
