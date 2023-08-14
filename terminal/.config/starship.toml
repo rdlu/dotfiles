@@ -18,7 +18,7 @@ disabled = false
 
 # Third param
 [directory]
-format=" in [$path]($style)[$read_only]($read_only_style) " 
+format = " in [$path]($style)[$read_only]($read_only_style) "
 style = "purple"
 truncation_length = 0
 truncate_to_repo = true
@@ -50,17 +50,17 @@ charging_symbol = " "
 discharging_symbol = " "
 disabled = true
 
-[[battery.display]]  # "bold red" style when capacity is between 0% and 10%
+[[battery.display]] # "bold red" style when capacity is between 0% and 10%
 threshold = 15
 style = "bold red"
 disabled = true
 
-[[battery.display]]  # "bold yellow" style when capacity is between 10% and 30%
+[[battery.display]] # "bold yellow" style when capacity is between 10% and 30%
 threshold = 50
 style = "bold yellow"
 disabled = true
 
-[[battery.display]]  # "bold green" style when capacity is between 10% and 30%
+[[battery.display]] # "bold green" style when capacity is between 10% and 30%
 threshold = 80
 style = "bold green"
 disabled = true
@@ -92,63 +92,161 @@ symbol = " "
 
 [dart]
 symbol = " "
+format = "via [$symbol]($style)"
 
 [docker_context]
 symbol = " "
 
 [elixir]
 symbol = " "
+format = 'via [$symbol]($style)'
 
 [elm]
 symbol = " "
+format = 'via [$symbol]($style)'
 
 [git_branch]
 symbol = " "
 
 [golang]
 symbol = " "
+format = 'via [$symbol]($style)'
 
 [hg_branch]
 symbol = " "
 
 [java]
 symbol = " "
+format = 'via [$symbol]($style)'
 
 [julia]
 symbol = " "
+format = 'via [$symbol]($style)'
 
 [nim]
 symbol = " "
+format = 'via [$symbol]($style)'
 
 [nix_shell]
 symbol = " "
 
 [nodejs]
 symbol = " "
+format = 'via [$symbol]($style)'
 
 [package]
 symbol = " "
+disabled = true
 
 [perl]
 symbol = " "
+format = 'via [$symbol]($style)'
 
 [php]
 symbol = " "
+format = 'via [$symbol]($style)'
 
 [python]
 symbol = " "
+format = 'via [$symbol]($style)'
 
 [ruby]
 symbol = " "
+format = 'via [$symbol]($style)'
 
 [rust]
 symbol = " "
+format = 'via [$symbol]($style)'
 
 [swift]
 symbol = "ﯣ "
+format = 'via [$symbol]($style)'
+
+[bun]
+format = "via [$symbol]($style)"
+
+[buf]
+format = "via [$symbol]($style)"
+
+[cmake]
+format = "via [$symbol]($style)"
+
+[cobol]
+format = "via [$symbol]($style)"
+
+[crystal]
+format = "via [$symbol]($style)"
+
+[daml]
+format = "via [$symbol]($style)"
+
+[deno]
+format = "via [$symbol]($style)"
+
+[dotnet]
+format = "[$symbol(🎯 $tfm )]($style)"
+
+[erlang]
+format = 'via [$symbol]($style)'
+
+[fennel]
+format = 'via [$symbol]($style)'
+
+[gradle]
+format = 'via [$symbol]($style)'
+
+[haxe]
+format = 'via [$symbol]($style)'
+
+[helm]
+format = 'via [$symbol]($style)'
+
+[kotlin]
+format = 'via [$symbol]($style)'
+
+[lua]
+format = 'via [$symbol]($style)'
+
+[meson]
+format = 'via [$symbol]($style)'
+
+
+[ocaml]
+format = 'via [$symbol(\($switch_indicator$switch_name\) )]($style)'
+
+[opa]
+format = 'via [$symbol]($style)'
+
+[pulumi]
+format = 'via [$symbol$stack]($style)'
+
+[purescript]
+format = 'via [$symbol]($style)'
+
+[raku]
+format = 'via [$symbol]($style)'
+
+[red]
+format = 'via [$symbol]($style)'
+
+[rlang]
+format = 'via [$symbol]($style)'
+
+[solidity]
+format = 'via [$symbol]($style)'
+
+[vagrant]
+format = 'via [$symbol]($style)'
+
+[vlang]
+format = 'via [$symbol]($style)'
+
+[zig]
+format = 'via [$symbol]($style)'
+
 
 [shell]
-format="[$indicator]($style)"
+format = "[$indicator]($style)"
 fish_indicator = ""
 powershell_indicator = ".psh"
 zsh_indicator = ".zsh"
