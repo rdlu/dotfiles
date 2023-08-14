@@ -9,9 +9,6 @@ test -e {$HOME}/.config/fish/config.local; and source {$HOME}/.config/fish/confi
 
 # test $TERM != "screen-256color"; and exec tmux new -A -s mux0 fish
 
-# chips
-# if [ -e ~/.config/chips/build.fish ] ; source ~/.config/chips/build.fish ; end
-
 # installing fisher
 if not type -q fisher
     echo 'Fisher is not installed, package management not available'
@@ -25,6 +22,3 @@ end
 if set -q START_TMUX; and not set -q TMUX; and status is-interactive; and not set -q INSIDE_EDITOR
     tmux new -A -s mux0 fish
 end
-
-# Generated for envman. Do not edit.
-test -s "$HOME/.config/envman/load.fish"; and source "$HOME/.config/envman/load.fish"
