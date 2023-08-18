@@ -19,8 +19,7 @@ function nvims
     env NVIM_APPNAME=$config nvim $argv
 end
 
-bind \ca "nvims ."
-bind \ce "nvim-lazy ."
+bind \ce "nvims ."
 
 abbr -a lvi "nvim-lazy ."
 abbr -a nva "nvim-astro ."
