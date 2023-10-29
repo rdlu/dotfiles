@@ -21,6 +21,7 @@ set easymotion
 set which-key
 set notimeout
 set ideajoin
+set quickscope
 
 " Normal mode with jk
 inoremap jk <Esc>
