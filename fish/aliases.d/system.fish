@@ -32,6 +32,24 @@ abbr -a myip 'dig +short myip.opendns.com @resolver1.opendns.com'
 abbr -a myip2 'dig TXT +short o-o.myaddr.l.google.com @ns1.google.com'
 abbr -a gateway-ip-address 'ip route list | awk \' /^default/ {print $3}\''
 abbr -a ping-gateway 'ping (ip route list | awk \' /^default/ {print $3}\')'
+abbr -a nmap-dig-web 'dig +short github.io @8.8.8.8 > ips.txt; nmap -iL ips.txt -p 80,443 -sV -Pn -n -oG -'
+
+function nmap-dig --description "Scan Filtered sites [target-site=github.io] [target-dns=8.8.8.8]"
+    if set -q argv[1]
+        set TGT_SITE $argv[1]
+    else
+        set TGT_SITE 'github.io'
+    end
+    if set -q argv[2]
+        set TGT_DNS $argv[2]
+    else
+        set TGT_DNS '8.8.8.8'
+    end
+    dig +short $TGT_SITE @$TGT_DNS >/tmp/ips.txt
+    nmap -iL /tmp/ips.txt -p 80,443 -sV -Pn -n -oG -
+    rm /tmp/ips.txt
+end
+
 
 
 function myps
