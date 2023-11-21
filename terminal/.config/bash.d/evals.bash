@@ -12,4 +12,8 @@ if [ -f "$HOME/.cargo/env" ]; then
   source "$HOME/.cargo/env"
 fi
 
+if command -v direnv &> /dev/null; then
+  eval "$(direnv hook bash)"
+fi
+
 [ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
