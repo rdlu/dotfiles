@@ -2,6 +2,10 @@
 abbr -a date-iso 'date -u +"%Y-%m-%dT%H:%M:%S%Z"'
 abbr -a date-timestamp 'date +%s'
 
+# Terminal management
+abbr -a mux tmux new -A -s mux0 fish
+abbr -a mux1 tmux new -A -s mux1 fish
+
 # System management
 abbr -a pacman sudo pacman
 abbr -a systart sudo systemctl start

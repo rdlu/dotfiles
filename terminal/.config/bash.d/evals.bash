@@ -17,3 +17,7 @@ if command -v direnv &> /dev/null; then
 fi
 
 [ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
+
+if [[ "$START_TMUX" && ! "$TMUX" && -t 0 && ! "$INSIDE_EDITOR" ]]; then
+    tmux new -A -s mux0 fish
+fi
