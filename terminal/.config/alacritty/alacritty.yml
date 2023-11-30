@@ -438,13 +438,18 @@ cursor:
 #   - (Linux/BSD/macOS) `$SHELL` or the user's login shell, if `$SHELL` is unset
 #   - (Windows) powershell
 shell:
-  program: /usr/bin/tmux
+  # program: /usr/bin/fish
+  #  program: /usr/bin/tmux
+  #  args:
+  #    - new
+  #    - -A
+  #    - -s
+  #    - mux1
+  #    - fish
+  program: zellij
   args:
-    - new
-    - -A
-    - -s
-    - mux1
-    - fish
+    - a
+    - mux0
   # Startup directory
   #
   # Directory the shell is started in. If this is unset, or `None`, the working
