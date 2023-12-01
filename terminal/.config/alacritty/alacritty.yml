@@ -382,7 +382,9 @@ custom_cursor_colors: true
 cursor:
   style:
     blinking: Always
-  vi_mode_style: Block
+    shape: Beam
+  vi_mode_style:
+    shape: Block
   blink_interval: 500
 # cursor:
 # Cursor style
