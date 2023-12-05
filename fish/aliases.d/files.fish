@@ -33,6 +33,10 @@ if type -q batcat; and status is-interactive
     alias cat batcat
 end
 
+if type -q zoxide; and status is-interactive
+    zoxide init fish | source
+end
+
 # cd aliases
 function ..
     cd ..
@@ -48,10 +52,6 @@ function cd...
 end
 function cd....
     cd ../../../..
-end
-
-function j --description "Jump to directory using fasd for search"
-    cd (fasd -d -e 'printf %s' "$argv")
 end
 
 function mcd --description "Creates a directory (recursively) and imediatelly changes to it"

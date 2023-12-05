@@ -4,7 +4,7 @@
 sudo sed -i 's/#Color/Color/g' /etc/pacman.conf
 
 sudo pacman -Suy
-sudo pacman -Sy --needed base-devel tmux fpp thefuck git shfmt lsb-release bat exa rsync
+sudo pacman -Sy --needed base-devel tmux fpp thefuck git shfmt lsb-release bat exa rsync zoxide
 
 switch (lsb_release -is)
     case ManjaroLinux
