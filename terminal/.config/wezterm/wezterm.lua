@@ -3,8 +3,6 @@ local wezterm = require("wezterm")
 
 -- This table will hold the configuration.
 local config = {}
-local mux = wezterm.mux
-
 -- In newer versions of wezterm, use the config_builder which will
 -- help provide clearer error messages
 if wezterm.config_builder then
@@ -28,8 +26,7 @@ config.colors = {
 }
 
 config.font_size = 11
-config.font = wezterm.font_with_fallback({
-	-- "CommitMono",
+config.font = wezterm.font_with_fallback({ -- "CommitMono",
 	"JetBrainsMono Nerd Font",
 	"Mononoki Nerd Font",
 	"FantasqueSansMono Nerd Font",
@@ -47,24 +44,25 @@ config.window_padding = {
 	bottom = 0,
 }
 
-config.mouse_bindings = {
-	{
-		event = { Down = { streak = 3, button = "Left" } },
-		action = wezterm.action.SelectTextAtMouseCursor("SemanticZone"),
-		mods = "NONE",
-	},
-}
-
-config.keys = {
-	{ key = "/", mods = "CTRL | ALT", action = wezterm.action.ShowLauncher },
-}
+config.keys = { {
+	key = "/",
+	mods = "CTRL | ALT",
+	action = wezterm.action.ShowLauncher,
+} }
 
 config.launch_menu = {
+	{
+		label = "ZelliJ plus fish-shell",
+		args = { "zellij", "a", "mux0" },
+	},
+	{
+		label = "TMUX plus fish-shell",
+		args = { "/usr/bin/tmux", "new", "-A", "-s", "mux0", "fish" },
+	},
 	{
 		label = "Bash",
 		args = { "bash", "-l" },
 	},
-
 	{
 		label = "Only fish",
 		args = { "fish", "-l" },
@@ -77,7 +75,7 @@ config.launch_menu = {
 -- end)
 
 -- Spawn a fish shell in login mode
-config.default_prog = { "/usr/bin/tmux", "new", "-A", "-s", "mux0", "fish" }
+config.default_prog = { "zellij", "a", "mux0" }
 
 -- and finally, return the configuration to wezterm
 return config
