@@ -54,6 +54,8 @@ vim.keymap.set("n", "<leader>fW", "<cmd>w!<cr>", { desc = "Force Write Buffer" }
 vim.keymap.set("n", "<leader>bw", "<cmd>w<cr>", { desc = "Write / Save Buffer" })
 vim.keymap.set("n", "<leader>bW", "<cmd>w!<cr>", { desc = "Force Write Buffer" })
 
+vim.keymap.set("n", "<leader>fs", "<cmd>Telescope aerial<cr>", { desc = "Symbols with Aerial/Telescope" })
+
 local c = {
   c = { "<cmd>ChatGPT<CR>", "ChatGPT", mode = { "n" } },
   e = { "<cmd>ChatGPTEditWithInstruction<CR>", "Edit with instruction", mode = { "n", "v" } },
@@ -63,7 +65,7 @@ local c = {
   u = { "<cmd>ChatGPTRun docstring<CR>", "Docstring", mode = { "n", "v" } },
   T = { "<cmd>ChatGPTRun add_tests<CR>", "Add Tests", mode = { "n", "v" } },
   o = { "<cmd>ChatGPTRun optimize_code<CR>", "Optimize Code", mode = { "n", "v" } },
-  s = { "<cmd>ChatGPTRun summarize<CR>", "Summarize", mode = { "n", "v" } },
+  S = { "<cmd>ChatGPTRun summarize<CR>", "Summarize", mode = { "n", "v" } },
   b = { "<cmd>ChatGPTRun fix_bugs<CR>", "Fix Bugs", mode = { "n", "v" } },
   x = { "<cmd>ChatGPTRun explain_code<CR>", "Explain Code", mode = { "n", "v" } },
   r = { "<cmd>ChatGPTRun roxygen_edit<CR>", "Roxygen Edit", mode = { "n", "v" } },
