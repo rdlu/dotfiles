@@ -26,7 +26,7 @@ abbr -a rm-npm-modules find . -name node_modules -type d -prune -print -exec rm 
 abbr -a cgrn 'cargo run'
 abbr -a cgcp 'cargo clippy'
 abbr -a cgr 'cargo run'
-abbr -a cgt 'cargo test'
+abbr -a cgt 'cargo nextest r'
 abbr -a cgb 'cargo build'
 
 if type -q rtx
