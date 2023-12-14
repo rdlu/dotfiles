@@ -30,6 +30,10 @@ config.font = wezterm.font_with_fallback({ -- "CommitMono",
 	"JetBrainsMono Nerd Font",
 	"Mononoki Nerd Font",
 	"FantasqueSansMono Nerd Font",
+	{
+		family = "JetBrains Mono",
+		harfbuzz_features = { "calt=0", "clig=0", "liga=0" },
+	},
 })
 
 config.window_background_opacity = 0.7
