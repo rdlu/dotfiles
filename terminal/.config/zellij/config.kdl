@@ -71,14 +71,14 @@ keybinds clear-defaults=true {
 		bind "t" { ToggleTab; SwitchToMode "Normal"; }
 	}
 	scroll {
-		bind "Ctrl s" { SwitchToMode "Normal"; }
+		bind "Ctrl f" { SwitchToMode "Normal"; }
 		bind "e" { EditScrollback; SwitchToMode "Normal"; }
 		bind "s" { SwitchToMode "EnterSearch"; SearchInput 0; }
 		bind "G" { ScrollToBottom; SwitchToMode "Normal"; }
 		bind "j" "Down" { ScrollDown; }
 		bind "k" "Up" { ScrollUp; }
-		bind "Ctrl f" "PageDown" "Right" "l" { PageScrollDown; }
-		bind "Ctrl b" "PageUp" "Left" "h" { PageScrollUp; }
+		bind "Ctrl d" "PageDown" "Right" "l" { PageScrollDown; }
+		bind "Ctrl u" "PageUp" "Left" "h" { PageScrollUp; }
 		bind "d" { HalfPageScrollDown; }
 		bind "u" { HalfPageScrollUp; }
 		// uncomment this and adjust key if using copy_on_select=false
@@ -99,7 +99,7 @@ keybinds clear-defaults=true {
 		bind "o" { SearchToggleOption "WholeWord"; }
 	}
 	entersearch {
-		bind "Ctrl s" "Esc" { SwitchToMode "Scroll"; }
+		bind "Ctrl f" "Esc" { SwitchToMode "Scroll"; }
 		bind "Enter" { SwitchToMode "Search"; }
 	}
 	renametab {
@@ -169,7 +169,7 @@ keybinds clear-defaults=true {
 		bind "Ctrl n" { SwitchToMode "Resize"; }
 	}
 	shared_except "scroll" "locked" {
-		bind "Ctrl s" { SwitchToMode "Scroll"; }
+		bind "Ctrl f" { SwitchToMode "Scroll"; }
 	}
 	shared_except "session" "locked" {
 		bind "Ctrl w" { SwitchToMode "Session"; }
