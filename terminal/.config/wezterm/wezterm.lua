@@ -75,7 +75,8 @@ config.launch_menu = {
 -- end)
 
 -- Spawn a fish shell in login mode
-config.default_prog = { "zellij", "a", "mux0" }
+-- config.default_prog = { "zellij", "a", "mux0" }
+config.default_prog = { "/usr/bin/tmux", "new", "-A", "-s", "mux0", "fish" }
 
 -- and finally, return the configuration to wezterm
 return config
