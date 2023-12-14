@@ -70,6 +70,7 @@ local c = {
   x = { "<cmd>ChatGPTRun explain_code<CR>", "Explain Code", mode = { "n", "v" } },
   r = { "<cmd>ChatGPTRun roxygen_edit<CR>", "Roxygen Edit", mode = { "n", "v" } },
   y = { "<cmd>ChatGPTRun code_readability_analysis<CR>", "Code Readability Analysis", mode = { "n", "v" } },
+  v = { "<cmd>ChatGPTActAs<CR>", "ChatGPT Act As", mode = { "n", "v" } },
 }
 
 for key, value in pairs(c) do
