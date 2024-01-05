@@ -33,8 +33,8 @@ return {
 
     daily_notes = {
       folder = "01. Journal",
-      date_format = "%Y.%m.%d",
-      alias_format = "%Y.%m.%d - %A::%V",
+      date_format = "%Y.%m.%d {%V %A}",
+      alias_format = "%Y.%m.%d {%V %A}",
       template = "Daily.md",
     },
     templates = {
