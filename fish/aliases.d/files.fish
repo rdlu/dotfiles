@@ -15,8 +15,8 @@ if test (uname) != Darwin
     alias ls 'ls --color'
 end
 
-if type -q exa; and status is-interactive
-    alias l "exa --time-style long-iso --color=auto -F"
+if type -q eza; and status is-interactive
+    alias l "eza --time-style long-iso --color=auto -F"
     alias ll "l -Fhl"
     alias la "l -a"
     alias ls l
