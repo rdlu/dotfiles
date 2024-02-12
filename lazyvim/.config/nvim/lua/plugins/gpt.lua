@@ -34,7 +34,7 @@ return {
         r = { "<cmd>ChatGPTRun roxygen_edit<CR>", "Roxygen Edit" },
         y = { "<cmd>ChatGPTRun code_readability_analysis<CR>", "Code Readability Analysis" },
       },
-    }, { prefix = "<leader>" })
+    }, { prefix = "<leader>", mode = { "n", "v" } })
   end,
   dependencies = { "MunifTanjim/nui.nvim", "nvim-lua/plenary.nvim", "nvim-telescope/telescope.nvim" },
 }
