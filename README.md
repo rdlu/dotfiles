@@ -63,7 +63,7 @@ _Tip with Mouse Support: press y before releasing mouse._
 | `tab`              | Fuzzy search + fzf mode        |
 | `enter`            | copy selection inside fzf mode |
 
-```
+```sh
 # Arch
 yay -S fzf
 # MacOS Brew
@@ -131,7 +131,7 @@ Use PREFIX `CTRL + A`, then:
 
 #### Dependencies
 
-```
+```sh
 # Arch
 yay -S urlview
 # Ubuntu
