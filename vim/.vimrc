@@ -14,3 +14,13 @@ xnoremap gr. :s/<c-r>.//g<left><left>
 " Change word under cursor
 nnoremap c* *``cgn
 nnoremap c# #``cgN
+
+" Changes go to A register, leave my unnamed alone    
+nnoremap c "ac
+vnoremap c "ac
+nnoremap C "aC
+vnoremap C "aC
+" Prevent x from overriding what's in the clipboard.    
+noremap x "_x
+noremap X "_x    
+
