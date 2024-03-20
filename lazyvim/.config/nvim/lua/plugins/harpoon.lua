@@ -33,7 +33,7 @@ return {
         function()
           _G.toggle_telescope(require("harpoon"):list())
         end,
-        desc = "Harpoon file",
+        desc = "Telescope Harpoon",
       },
     },
   },
