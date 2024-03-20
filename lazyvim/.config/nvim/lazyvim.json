@@ -1,9 +1,9 @@
 {
   "extras": [
     "lazyvim.plugins.extras.editor.aerial",
+    "lazyvim.plugins.extras.editor.harpoon2",
     "lazyvim.plugins.extras.editor.navic",
-    "lazyvim.plugins.extras.editor.symbols-outline",
-    "lazyvim.plugins.extras.lang.elixir",
+    "lazyvim.plugins.extras.editor.outline",
     "lazyvim.plugins.extras.lang.markdown",
     "lazyvim.plugins.extras.lang.python",
     "lazyvim.plugins.extras.lang.ruby",
@@ -17,5 +17,5 @@
   "news": {
     "NEWS.md": "2123"
   },
-  "version": 2
+  "version": 3
 }
