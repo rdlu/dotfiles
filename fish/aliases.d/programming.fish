@@ -13,7 +13,7 @@ abbr -a poins 'poetry install'
 
 # Elixir
 abbr -a imix 'iex -S mix'
-abbr -a mxts 'mix test'
+abbr -a mxt 'MIX_ENV=test mix test'
 abbr -a phxs 'mix phx.server'
 abbr -a phxis 'iex -S mix phx.server'
 
