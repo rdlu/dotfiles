@@ -1,5 +1,0 @@
-return {
-  {
-    "jmbuhr/otter.nvim",
-  },
-}

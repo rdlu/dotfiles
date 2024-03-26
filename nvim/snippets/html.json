@@ -1,7 +1,0 @@
-{
-  "hxp": {
-    "prefix": "hxp",
-    "body": "<%= ${1:variable} %>",
-    "description": "HEEx print"
-  }
-}
