@@ -82,5 +82,58 @@ config.launch_menu = {
 -- config.default_prog = { "zellij", "a", "mux0" }
 config.default_prog = { "/usr/bin/tmux", "new", "-A", "-s", "mux0", "fish" }
 
+config.disable_default_key_bindings = true
+config.enable_kitty_keyboard = true
+local act = wezterm.action
+
+config.keys = {
+	{ key = ")", mods = "CTRL", action = act.ResetFontSize },
+	{ key = "-", mods = "CTRL", action = act.DecreaseFontSize },
+	{ key = "=", mods = "CTRL", action = act.IncreaseFontSize },
+	{ key = "N", mods = "CTRL", action = act.SpawnWindow },
+	{ key = "P", mods = "CTRL", action = act.ActivateCommandPalette },
+	{ key = "Copy", mods = "NONE", action = act.CopyTo("Clipboard") },
+	{ key = "Paste", mods = "NONE", action = act.PasteFrom("Clipboard") },
+	{ key = "F11", mods = "NONE", action = act.ToggleFullScreen },
+	{ key = "c", mods = "SHIFT|CTRL", action = act.CopyTo("Clipboard") },
+	{ key = "c", mods = "SUPER", action = act.CopyTo("Clipboard") },
+	{
+		key = "u",
+		mods = "SHIFT|CTRL",
+		action = act.CharSelect({ copy_on_select = true, copy_to = "ClipboardAndPrimarySelection" }),
+	},
+	{
+		key = "U",
+		mods = "CTRL",
+		action = act.CharSelect({ copy_on_select = true, copy_to = "ClipboardAndPrimarySelection" }),
+	},
+	{
+		key = "U",
+		mods = "SHIFT|CTRL",
+		action = act.CharSelect({ copy_on_select = true, copy_to = "ClipboardAndPrimarySelection" }),
+	},
+	{ key = "P", mods = "CTRL", action = act.ActivateCommandPalette },
+	{ key = "P", mods = "SHIFT|CTRL", action = act.ActivateCommandPalette },
+
+	{ key = "v", mods = "SUPER", action = act.PasteFrom("Clipboard") },
+	{ key = "V", mods = "CTRL", action = act.PasteFrom("Clipboard") },
+	{ key = "v", mods = "CTRL", action = act.PasteFrom("Clipboard") },
+	{
+		key = "v",
+		mods = "SHIFT|CTRL",
+		action = wezterm.action_callback(function(window, pane)
+			window:perform_action(wezterm.action.SendKey({ key = "v", mods = "CTRL" }), pane)
+		end),
+	},
+	{
+		key = "V",
+		mods = "SHIFT|CTRL",
+		action = wezterm.action_callback(function(window, pane)
+			window:perform_action(wezterm.action.SendKey({ key = "v", mods = "CTRL" }), pane)
+		end),
+	},
+	{ key = "Backspace", mods = "CTRL", action = act.SendKey({ key = "Backspace", mods = "ALT" }) },
+}
+
 -- and finally, return the configuration to wezterm
 return config
