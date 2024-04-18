@@ -1,5 +1,20 @@
 format = "$username$hostname$shell$all"
 
+palette = 'tokyonight'
+
+# Define custom colors
+[palettes.tokyonight]
+purple = '#9d7cd8'
+foreground = "#c0caf5"
+selection = "#c283457"
+comment = "#565f89"
+red = "#f7768e"
+orange = "#ff9e64"
+yellow = "#e0af68"
+green = "#9ece6a"
+cyan = "#7dcfff"
+pink = "#bb9af7"
+
 ## FIRST LINE/ROW: Info & Status
 # First param ─┌
 [username]
@@ -41,29 +56,6 @@ disabled = false
 [container]
 disabled = true
 
-
-## SECOND LINE/ROW: Prompt
-# Somethere at the beginning
-[battery]
-full_symbol = " "
-charging_symbol = " "
-discharging_symbol = " "
-disabled = true
-
-[[battery.display]] # "bold red" style when capacity is between 0% and 10%
-threshold = 15
-style = "bold red"
-disabled = true
-
-[[battery.display]] # "bold yellow" style when capacity is between 10% and 30%
-threshold = 50
-style = "bold yellow"
-disabled = true
-
-[[battery.display]] # "bold green" style when capacity is between 10% and 30%
-threshold = 80
-style = "bold green"
-disabled = true
 
 # Prompt: optional param 1
 [time]
