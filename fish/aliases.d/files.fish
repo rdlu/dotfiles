@@ -17,7 +17,7 @@ end
 
 if type -q eza; and status is-interactive
     alias l "eza --time-style long-iso --color=auto -F"
-    alias ll "l -Fhl"
+    alias ll "l -hl"
     alias la "l -a"
     alias ls l
 else
