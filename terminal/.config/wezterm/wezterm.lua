@@ -80,7 +80,7 @@ config.launch_menu = {
 
 -- Spawn a fish shell in login mode
 -- config.default_prog = { "zellij", "a", "mux0" }
-config.default_prog = { "/usr/bin/tmux", "new", "-A", "-s", "mux0", "fish" }
+-- config.default_prog = { "/usr/bin/tmux", "new", "-A", "-s", "mux0", "fish" }
 
 config.disable_default_key_bindings = true
 config.enable_kitty_keyboard = true
