@@ -1,6 +1,9 @@
 -- Keymaps are automatically loaded on the VeryLazy event
 -- Default keymaps that are always set: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/keymaps.lua
 -- Add any additional keymaps here
+vim.g.copilot_no_tab_map = true
+vim.g.copilot_assume_mapped = true
+
 vim.keymap.set("n", "<leader>rw", "*ciw", { desc = "Replace inner word under cursor" })
 vim.keymap.set("n", "<leader>rn", "*cgn", { desc = "Replace next word under cursor and jump" })
 vim.keymap.set("n", "<leader>ri", ":%s/<c-r><c-w>/<c-r><c-w>/gc<c-f>$F/i", { desc = "Replace test" })
