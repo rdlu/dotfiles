@@ -9,9 +9,11 @@ return {
       elixir.setup({
         nextls = {
           enable = true,
-          experimental = {
-            completions = {
-              enable = true,
+          init_options = {
+            experimental = {
+              completions = {
+                enable = true, -- control if completions are enabled. defaults to false
+              },
             },
           },
         },
@@ -72,6 +74,13 @@ return {
       opts.linters_by_ft = {
         elixir = { "credo" },
       }
+    end,
+  },
+  {
+    "mhanberg/output-panel.nvim",
+    event = "VeryLazy",
+    config = function()
+      require("output_panel").setup()
     end,
   },
 }

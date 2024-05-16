@@ -68,6 +68,7 @@
   "nvim-web-devicons": { "branch": "master", "commit": "e37bb1feee9e7320c76050a55443fa843b4b6f83" },
   "obsidian.nvim": { "branch": "main", "commit": "db41b1f20459293436fab510bec58c82a73bd1f7" },
   "outline.nvim": { "branch": "main", "commit": "dbd836893fb99cfc33119d7c4abbdb700210f54b" },
+  "output-panel.nvim": { "branch": "main", "commit": "65bb44a5d5dbd40f3793a8c591b65a0c5f260bd9" },
   "persistence.nvim": { "branch": "main", "commit": "4982499c1636eac254b72923ab826ee7827b3084" },
   "plenary.nvim": { "branch": "master", "commit": "08e301982b9a057110ede7a735dd1b5285eb341f" },
   "project.nvim": { "branch": "main", "commit": "8c6bad7d22eef1b71144b401c9f74ed01526a4fb" },
