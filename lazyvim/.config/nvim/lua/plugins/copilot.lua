@@ -12,5 +12,11 @@ return {
       replace_keycodes = false,
       silent = true,
     })
+
+    vim.keymap.set("i", "<C-_>", "copilot#AcceptLine()", {
+      expr = true,
+      replace_keycodes = false,
+      silent = true,
+    })
   end,
 }
