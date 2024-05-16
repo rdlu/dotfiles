@@ -81,6 +81,12 @@ return {
     event = "VeryLazy",
     config = function()
       require("output_panel").setup()
+      require("which-key").register({
+        c = {
+          name = "Code",
+          o = { "<cmd>OutputPanel<cr>", "Open Output Panel" },
+        },
+      }, { prefix = "<leader>" })
     end,
   },
 }
