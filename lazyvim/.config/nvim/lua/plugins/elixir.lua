@@ -18,7 +18,7 @@ return {
           },
         },
         credo = {
-          enable = true,
+          enable = false,
         },
         elixirls = {
           enable = false,
