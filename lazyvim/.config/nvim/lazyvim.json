@@ -1,10 +1,9 @@
 {
   "extras": [
+    "lazyvim.plugins.extras.test.core",
     "lazyvim.plugins.extras.coding.mini-surround",
-    "lazyvim.plugins.extras.editor.aerial",
     "lazyvim.plugins.extras.editor.harpoon2",
     "lazyvim.plugins.extras.editor.navic",
-    "lazyvim.plugins.extras.editor.outline",
     "lazyvim.plugins.extras.lang.markdown",
     "lazyvim.plugins.extras.lang.python",
     "lazyvim.plugins.extras.lang.ruby",
@@ -12,11 +11,12 @@
     "lazyvim.plugins.extras.lang.typescript",
     "lazyvim.plugins.extras.linting.eslint",
     "lazyvim.plugins.extras.lsp.none-ls",
-    "lazyvim.plugins.extras.test.core",
-    "lazyvim.plugins.extras.util.project"
+    "lazyvim.plugins.extras.util.project",
+    "lazyvim.plugins.extras.editor.aerial",
+    "lazyvim.plugins.extras.editor.outline"
   ],
   "news": {
-    "NEWS.md": "4578"
+    "NEWS.md": "4828"
   },
   "version": 3
 }
