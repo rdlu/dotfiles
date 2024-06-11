@@ -6,7 +6,7 @@ set -gx EXQLITE_USE_SYSTEM 1
 set -gx EXQLITE_SYSTEM_CFLAGS -I/usr/include
 
 # tell exqlite which sqlite implementation to use
-set -gx EXQLITE_SYSTEM_LDFLAGS '-L/lib -lsqlite3'
+set -gx EXQLITE_SYSTEM_LDFLAGS '-L/usr/lib64 -lsqlite3'
 
 # Erlang compile flags for fedora & wx-config
 set -gx ERL_AFLAGS '-kernel shell_history enabled'
