@@ -8,8 +8,13 @@ return {
 
       elixir.setup({
         nextls = {
-          enable = true,
+          enable = false,
           init_options = {
+            extensions = {
+              credo = {
+                enable = false,
+              },
+            },
             experimental = {
               completions = {
                 enable = true, -- control if completions are enabled. defaults to false
@@ -21,7 +26,12 @@ return {
           enable = false,
         },
         elixirls = {
-          enable = false,
+          enable = true,
+          settings = require("elixir.elixirls").settings({
+            dialyzerEnabled = false,
+            enableTestLenses = false,
+            suggestSpecs = false,
+          }),
         },
       })
     end,
@@ -82,8 +92,7 @@ return {
     config = function()
       require("output_panel").setup()
       require("which-key").register({
-        c = {
-          name = "Code",
+        x = {
           o = { "<cmd>OutputPanel<cr>", "Open Output Panel" },
         },
       }, { prefix = "<leader>" })
