@@ -64,3 +64,21 @@ function github-latest-release --description "Download the latest release from a
         fancy_print_line "Format: github-latest-release <USER>/<REPO>. Download the latest release from an Github repo"
     end
 end
+
+
+function git-delete-merged-ups --description "Delete all branches that are merged to master on upstream"
+    for branch in (git for-each-ref --format '%(refname:short)' refs/heads/)
+        if test "$branch" != master -a "$branch" != main
+            if not git rev-parse --verify origin/$branch >/dev/null 2>&1
+                read -l -P "Delete branch $branch? [y/N] " confirm
+                switch $confirm
+                    case Y y
+                        git branch -D $branch
+                        echo "Deleted branch $branch"
+                    case '' N n
+                        echo "Skipped branch $branch"
+                end
+            end
+        end
+    end
+end
