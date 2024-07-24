@@ -8,7 +8,7 @@ return {
 
       elixir.setup({
         nextls = {
-          enable = false,
+          enable = true,
           init_options = {
             extensions = {
               credo = {
@@ -26,7 +26,7 @@ return {
           enable = false,
         },
         elixirls = {
-          enable = true,
+          enable = false,
           settings = require("elixir.elixirls").settings({
             dialyzerEnabled = false,
             enableTestLenses = false,
