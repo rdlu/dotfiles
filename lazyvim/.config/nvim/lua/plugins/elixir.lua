@@ -27,11 +27,6 @@ return {
         },
         elixirls = {
           enable = false,
-          settings = require("elixir.elixirls").settings({
-            dialyzerEnabled = false,
-            enableTestLenses = false,
-            suggestSpecs = false,
-          }),
         },
       })
     end,
@@ -91,11 +86,9 @@ return {
     event = "VeryLazy",
     config = function()
       require("output_panel").setup()
-      require("which-key").register({
-        x = {
-          o = { "<cmd>OutputPanel<cr>", "Open Output Panel" },
-        },
-      }, { prefix = "<leader>" })
+      require("which-key").add({
+        { "<leader>xo", "<cmd>OutputPanel<cr>", desc = "Open Output Panel" },
+      })
     end,
   },
 }
