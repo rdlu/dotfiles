@@ -38,12 +38,6 @@ vim.keymap.set(
 
 local buf_utils = require("utils.buffer")
 -- buffer management
-vim.keymap.set("n", "<leader>bc", function()
-  buf_utils.close()
-end, { desc = "Close buffer" })
-vim.keymap.set("n", "<leader>bC", function()
-  buf_utils.close(0, true)
-end, { desc = "Force close buffer" })
 vim.keymap.set("n", "<leader>bl", function()
   buf_utils.move(vim.v.count > 0 and vim.v.count or 1)
 end, { desc = "Move buffer tab right" })
@@ -53,8 +47,5 @@ end, { desc = "Move buffer tab left" })
 
 vim.keymap.set("n", "<leader>fw", "<cmd>w<cr>", { desc = "Write / Save Buffer" })
 vim.keymap.set("n", "<leader>fW", "<cmd>w!<cr>", { desc = "Force Write Buffer" })
-
-vim.keymap.set("n", "<leader>bw", "<cmd>w<cr>", { desc = "Write / Save Buffer" })
-vim.keymap.set("n", "<leader>bW", "<cmd>w!<cr>", { desc = "Force Write Buffer" })
 
 vim.keymap.set("n", "<leader>fs", "<cmd>Telescope aerial<cr>", { desc = "Symbols with Aerial/Telescope" })
