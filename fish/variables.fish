@@ -14,3 +14,6 @@ set -gx DOCKER_BUILDKIT 1
 
 # GPG TTY for TMUX
 set -lx GPG_TTY (tty)
+
+set -gx SSH_ASKPASS_REQUIRE prefer
+set -gx SSH_ASKPASS /usr/bin/systemd-ask-password
