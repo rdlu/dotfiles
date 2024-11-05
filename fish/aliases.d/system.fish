@@ -38,6 +38,7 @@ abbr -a gateway-ip-address 'ip route list | awk \' /^default/ {print $3}\''
 abbr -a ping-gateway 'ping (ip route list | awk \' /^default/ {print $3}\')'
 abbr -a nmap-dig-web 'dig +short github.io @8.8.8.8 > ips.txt; nmap -iL ips.txt -p 80,443 -sV -Pn -n -oG -'
 abbr -a ssh-id2 'ssh -o IdentityAgent=none -o IdentitiesOnly=yes -i ~/.ssh/id_ed25519_sk2'
+abbr -a pub-keys 'curl https://github.com/rdlu.keys'
 
 function nmap-dig --description "Scan Filtered sites [target-site=github.io] [target-dns=8.8.8.8]"
     if set -q argv[1]
