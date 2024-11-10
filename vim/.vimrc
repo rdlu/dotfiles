@@ -24,3 +24,6 @@ vnoremap C "aC
 noremap x "_x
 noremap X "_x    
 
+set sessionoptions-=blank,buffers
+set sessionoptions-=curdir
+set sessionoptions+=globals

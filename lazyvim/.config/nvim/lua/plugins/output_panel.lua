@@ -1,0 +1,12 @@
+-- return {
+--   {
+--     "mhanberg/output-panel.nvim",
+--     event = "VeryLazy",
+--     config = function()
+--       require("output_panel").setup()
+--       require("which-key").add({
+--         { "<leader>xo", "<cmd>OutputPanel<cr>", desc = "Open Output Panel" },
+--       })
+--     end,
+--   },
+-- }
