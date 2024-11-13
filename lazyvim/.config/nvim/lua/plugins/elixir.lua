@@ -42,18 +42,22 @@ return {
     },
   },
   {
-    "nvimtools/none-ls.nvim",
+    "stevearc/conform.nvim",
     optional = true,
-    opts = function(_, opts)
-      local nls = require("null-ls")
-      opts.sources = vim.list_extend(opts.sources or {}, {
-        nls.builtins.diagnostics.credo.with({
-          condition = function(utils)
-            return utils.root_has_file(".credo.exs")
-          end,
-        }),
-      })
-    end,
+    opts = {
+      formatters_by_ft = {
+        elixir = { "mix" },
+        heex = { "mix" },
+        eex = { "mix" },
+      },
+      formatters = {
+        mix = {
+          command = "mix",
+          args = { "format", "-" },
+          stdin = true,
+        },
+      },
+    },
   },
   {
     "mfussenegger/nvim-lint",
