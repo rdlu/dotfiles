@@ -7,12 +7,7 @@ return {
           -- Lexical doesn't support pipe manipulation commands like elixirls did
           -- but it provides better performance and more modern features
           mason = true,
-          settings = {
-            elixirLS = {
-              dialyzerEnabled = true,
-              enableTestLenses = true,
-            },
-          },
+          settings = {},
         },
       },
     },
