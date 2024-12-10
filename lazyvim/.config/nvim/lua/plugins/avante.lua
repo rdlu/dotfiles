@@ -4,6 +4,8 @@ return {
     event = "VeryLazy",
     opts = {
       hints = { enabled = false },
+      auto_suggestions_provider = "copilot",
+      -- provider = "copilot",
     },
     build = LazyVim.is_win() and "powershell -ExecutionPolicy Bypass -File Build.ps1 -BuildFromSource false" or "make",
   },
