@@ -1,3 +1,7 @@
+if not status --is-interactive
+    exit
+end
+
 for snippet in {$HOME}/.dotfiles/fish/conf.d/*
     source $snippet
 end
