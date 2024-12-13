@@ -6,6 +6,9 @@ experimental = true
 [settings.pipx]
 uvx = true
 
+[settings.npm]
+bun = true
+
 [tools]
 "pipx:llm" = "latest"
 "pipx:xxh-xxh" = "latest"
@@ -24,3 +27,5 @@ node = "23"
 python = "3.12"
 uv = "latest"
 "ubi:duckdb/duckdb" = "latest"
+bun = "latest"
+"ubi:oxc-project/oxc" = "latest"
