@@ -1,4 +1,10 @@
 return {
+  recommended = function()
+    return LazyVim.extras.wants({
+      ft = { "elixir", "eelixir", "heex", "surface", "livebook" },
+      root = "mix.exs",
+    })
+  end,
   {
     "neovim/nvim-lspconfig",
     opts = {
@@ -28,13 +34,23 @@ return {
     },
     opts = {
       adapters = {
-        ["neotest-elixir"] = {
-          post_process_command = function(cmd)
-            return { "env", "MIX_ENV=test", unpack(cmd) }
-          end,
-        },
+        ["neotest-elixir"] = {},
       },
     },
+  },
+  {
+    "nvimtools/none-ls.nvim",
+    optional = true,
+    opts = function(_, opts)
+      local nls = require("null-ls")
+      opts.sources = vim.list_extend(opts.sources or {}, {
+        nls.builtins.diagnostics.credo.with({
+          condition = function(utils)
+            return utils.root_has_file(".credo.exs")
+          end,
+        }),
+      })
+    end,
   },
   {
     "stevearc/conform.nvim",
@@ -48,8 +64,11 @@ return {
       formatters = {
         mix = {
           command = "mix",
-          args = { "format", "-" },
+          args = { "format", "--stdin-filename", "$FILENAME", "-" },
           stdin = true,
+          cwd = require("conform.util").root_file({
+            "mix.exs",
+          }),
         },
       },
     },
