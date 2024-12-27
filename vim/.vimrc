@@ -27,3 +27,4 @@ noremap X "_x
 set sessionoptions-=blank,buffers
 set sessionoptions-=curdir
 set sessionoptions+=globals
+set clipboard^=unnamed,unnamedplus
