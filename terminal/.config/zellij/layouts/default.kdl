@@ -15,7 +15,7 @@ layout {
         color_white "#E5E9F0"
         color_orange "#D08770"
 
-        format_left   "{mode}#[bg=$bg] {tabs}"
+        format_left   "{mode}#[bg=$bg]{tabs}"
         format_center "#[bg=$bg,fg=$fg] Zellij: #[bg=$bg,fg=$fg]{session}"
         format_right  "{datetime}"
         format_space  "#[bg=$bg]"
@@ -55,7 +55,7 @@ layout {
         tab_active_sync         "#[bg=$bg,fg=$yellow]█#[bg=$yellow,fg=$bg,bold]{index} #[bg=$bg,fg=$yellow,bold] {name}{sync_indicator}#[bg=$bg,fg=$bg,bold]█"
 
         // separator between the tabs
-        tab_separator           "#[bg=$bg] "
+        // tab_separator           "#[bg=$bg]|"
 
         // indicators
         tab_sync_indicator       " "
