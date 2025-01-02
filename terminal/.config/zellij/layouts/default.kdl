@@ -2,7 +2,7 @@ layout {
   default_tab_template {
     children
     pane size=1 borderless=true {
-      plugin location="file:~/.local/share/zellij/plugins/zjstatus.wasm" {
+      plugin location="zjstatus" {
         color_fg "#616e88" //= Brightest + 10% - "#4C566A" = Brightest - "#434C5E" = Bright
         color_bg "#2E3440"
         color_black "#3B4252"
