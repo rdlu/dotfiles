@@ -54,7 +54,10 @@ keybinds clear-defaults=true {
         bind "L" { Resize "Increase Right"; }
         bind "K" { Resize "Increase Up"; }
         bind "J" { Resize "Increase Down"; }
-
+        // Focus panes
+        bind "e" { TogglePaneEmbedOrFloating; SwitchToMode "locked"; }
+        bind "f" { ToggleFocusFullscreen; SwitchToMode "locked"; }
+        bind "w" { ToggleFloatingPanes; SwitchToMode "locked"; }
         // bind "o" { FocusNextPane; }
 
         bind "d" { Detach; }
