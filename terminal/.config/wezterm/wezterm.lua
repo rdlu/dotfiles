@@ -25,10 +25,10 @@ config.colors = {
 	selection_bg = "rgba(50% 50% 50% 50%)",
 }
 
-config.font_size = 11
+config.font_size = 10
 config.font = wezterm.font_with_fallback({
 	-- "CommitMono",
-	"RecMonoLinear Nerd Font Mono",
+	-- "RecMonoLinear Nerd Font Mono",
 	"JetBrainsMono Nerd Font",
 	"Mononoki Nerd Font",
 	"FantasqueSansMono Nerd Font",
