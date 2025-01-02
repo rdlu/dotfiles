@@ -26,7 +26,9 @@ config.colors = {
 }
 
 config.font_size = 11
-config.font = wezterm.font_with_fallback({ -- "CommitMono",
+config.font = wezterm.font_with_fallback({
+	-- "CommitMono",
+	"RecMonoLinear Nerd Font Mono",
 	"JetBrainsMono Nerd Font",
 	"Mononoki Nerd Font",
 	"FantasqueSansMono Nerd Font",
@@ -36,7 +38,7 @@ config.font = wezterm.font_with_fallback({ -- "CommitMono",
 	},
 })
 
-config.window_background_opacity = 0.7
+config.window_background_opacity = 0.8
 config.hide_tab_bar_if_only_one_tab = true
 
 config.default_cursor_style = "BlinkingBlock"
@@ -57,7 +59,7 @@ config.keys = { {
 config.launch_menu = {
 	{
 		label = "ZelliJ plus fish-shell",
-		args = { "zellij", "a", "mux0" },
+		args = { "zellij", "a", "-c", "mux0" },
 	},
 	{
 		label = "TMUX plus fish-shell",
@@ -79,7 +81,7 @@ config.launch_menu = {
 -- end)
 
 -- Spawn a fish shell in login mode
--- config.default_prog = { "zellij", "a", "mux0" }
+config.default_prog = { "zellij", "a", "-c", "mux0" }
 -- config.default_prog = { "/usr/bin/tmux", "new", "-A", "-s", "mux0", "fish" }
 
 config.disable_default_key_bindings = true
@@ -90,8 +92,7 @@ config.keys = {
 	{ key = ")", mods = "CTRL", action = act.ResetFontSize },
 	{ key = "-", mods = "CTRL", action = act.DecreaseFontSize },
 	{ key = "=", mods = "CTRL", action = act.IncreaseFontSize },
-	{ key = "N", mods = "CTRL", action = act.SpawnWindow },
-	{ key = "P", mods = "CTRL", action = act.ActivateCommandPalette },
+	{ key = "n", mods = "CTRL", action = act.SpawnWindow },
 	{ key = "Copy", mods = "NONE", action = act.CopyTo("Clipboard") },
 	{ key = "Paste", mods = "NONE", action = act.PasteFrom("Clipboard") },
 	{ key = "F11", mods = "NONE", action = act.ToggleFullScreen },
@@ -102,21 +103,8 @@ config.keys = {
 		mods = "SHIFT|CTRL",
 		action = act.CharSelect({ copy_on_select = true, copy_to = "ClipboardAndPrimarySelection" }),
 	},
-	{
-		key = "U",
-		mods = "CTRL",
-		action = act.CharSelect({ copy_on_select = true, copy_to = "ClipboardAndPrimarySelection" }),
-	},
-	{
-		key = "U",
-		mods = "SHIFT|CTRL",
-		action = act.CharSelect({ copy_on_select = true, copy_to = "ClipboardAndPrimarySelection" }),
-	},
-	{ key = "P", mods = "CTRL", action = act.ActivateCommandPalette },
-	{ key = "P", mods = "SHIFT|CTRL", action = act.ActivateCommandPalette },
-
+	{ key = "p", mods = "SHIFT|CTRL", action = act.ActivateCommandPalette },
 	{ key = "v", mods = "SUPER", action = act.PasteFrom("Clipboard") },
-	{ key = "V", mods = "CTRL", action = act.PasteFrom("Clipboard") },
 	{ key = "v", mods = "CTRL", action = act.PasteFrom("Clipboard") },
 	{
 		key = "v",
@@ -125,14 +113,12 @@ config.keys = {
 			window:perform_action(wezterm.action.SendKey({ key = "v", mods = "CTRL" }), pane)
 		end),
 	},
-	{
-		key = "V",
-		mods = "SHIFT|CTRL",
-		action = wezterm.action_callback(function(window, pane)
-			window:perform_action(wezterm.action.SendKey({ key = "v", mods = "CTRL" }), pane)
-		end),
-	},
-	{ key = "Backspace", mods = "CTRL", action = act.SendKey({ key = "Backspace", mods = "ALT" }) },
+	-- { key = "Backspace", mods = "CTRL", action = act.SendKey({ key = "Backspace", mods = "ALT" }) },
+}
+
+config.set_environment_variables = {
+	-- prepend the path to your utility and include the rest of the PATH
+	PATH = wezterm.home_dir .. "/.cargo/bin:" .. wezterm.home_dir .. "/.local/share/mise/shims:" .. os.getenv("PATH"),
 }
 
 -- and finally, return the configuration to wezterm
