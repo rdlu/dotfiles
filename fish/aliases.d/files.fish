@@ -2,7 +2,7 @@
 abbr -a tf tail -f
 abbr -a cpv 'sudo rsync --info=progress2 -avhW --no-compress'
 abbr -a lsh ls -lah
-abbr -a lsd 'ls -d */'
+abbr -a lsdir 'ls -d */'
 abbr -a lsw 'ls -lah -d'
 abbr -a mkdir mkdir -pv
 alias path 'echo -e {$PATH\n}'
