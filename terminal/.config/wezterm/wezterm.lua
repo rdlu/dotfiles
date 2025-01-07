@@ -25,18 +25,18 @@ config.colors = {
 	selection_bg = "rgba(50% 50% 50% 50%)",
 }
 
-config.font_size = 10
-config.font = wezterm.font_with_fallback({
-	-- "CommitMono",
-	-- "RecMonoLinear Nerd Font Mono",
-	"JetBrainsMono Nerd Font",
-	"Mononoki Nerd Font",
-	"FantasqueSansMono Nerd Font",
-	{
-		family = "JetBrains Mono",
-		harfbuzz_features = { "calt=0", "clig=0", "liga=0" },
-	},
-})
+config.font_size = 11
+-- config.font = wezterm.font_with_fallback({
+-- 	-- "CommitMono",
+-- 	-- "RecMonoLinear Nerd Font Mono",
+-- 	"JetBrainsMono Nerd Font",
+-- 	"Mononoki Nerd Font",
+-- 	"FantasqueSansMono Nerd Font",
+-- 	{
+-- 		family = "JetBrains Mono",
+-- 		harfbuzz_features = { "calt=0", "clig=0", "liga=0" },
+-- 	},
+-- })
 
 config.window_background_opacity = 0.8
 config.hide_tab_bar_if_only_one_tab = true
@@ -81,8 +81,8 @@ config.launch_menu = {
 -- end)
 
 -- Spawn a fish shell in login mode
-config.default_prog = { "zellij", "a", "-c", "mux0" }
--- config.default_prog = { "/usr/bin/tmux", "new", "-A", "-s", "mux0", "fish" }
+-- config.default_prog = { "zellij", "a", "-c", "mux0" }
+config.default_prog = { "/usr/bin/tmux", "new", "-A", "-s", "mux0", "fish" }
 
 config.disable_default_key_bindings = true
 config.enable_kitty_keyboard = true
