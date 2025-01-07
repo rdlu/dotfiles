@@ -48,4 +48,7 @@ end, { desc = "Move buffer tab left" })
 vim.keymap.set("n", "<leader>fw", "<cmd>w<cr>", { desc = "Write / Save Buffer" })
 vim.keymap.set("n", "<leader>fW", "<cmd>w!<cr>", { desc = "Force Write Buffer" })
 
-vim.keymap.set("n", "<leader>fs", "<cmd>Telescope aerial<cr>", { desc = "Symbols with Aerial/Telescope" })
+vim.keymap.set("i", "<C-BS>", "<C-w>")
+vim.keymap.set("c", "<C-BS>", "<C-w>")
+vim.keymap.set("i", "<C-H>", "<C-w>")
+vim.keymap.set("c", "<C-H>", "<C-w>")
