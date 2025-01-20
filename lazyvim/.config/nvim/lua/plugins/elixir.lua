@@ -17,6 +17,7 @@ return {
         -- },
         nextls = {
           enable = true,
+          mason = true,
           init_options = {
             extensions = {
               credo = {
