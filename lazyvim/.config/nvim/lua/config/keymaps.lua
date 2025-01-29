@@ -52,3 +52,10 @@ vim.keymap.set("i", "<C-BS>", "<C-w>")
 vim.keymap.set("c", "<C-BS>", "<C-w>")
 vim.keymap.set("i", "<C-H>", "<C-w>")
 vim.keymap.set("c", "<C-H>", "<C-w>")
+
+vim.keymap.set(
+  "n",
+  "<leader>by",
+  [[:let @+=expand('%:p')<CR>]],
+  { noremap = true, silent = true, desc = "Copy file path to clipboard" }
+)
