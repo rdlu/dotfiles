@@ -16,7 +16,7 @@ bun = true
 "pipx:ipython" = "latest"
 "pipx:yewtube" = "latest"
 "pipx:epy-reader" = "latest"
-"pipx:aider-chat[browser,playright]" = "latest"
+"pipx:aider-chat[browser,playwright,fzf]" = "latest"
 erlang = "27"
 elixir = "1.18.1-otp-27"
 ruby = "3.2"
@@ -43,3 +43,6 @@ fwup = "latest"
 "cargo:rainfrog" = "latest"
 "ubi:sxyazi/yazi" = "latest"
 "ubi:jesseduffield/lazydocker" = "latest"
+"pipx:aider-chat" = { version = "latest", browser = "", fzf = "", playwright = "" }
+"pipx:ramalama" = "latest"
+"pipx:huggingface_hub" = { version = "latest", cli = "" }
