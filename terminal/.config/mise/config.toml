@@ -2,6 +2,7 @@
 
 [settings]
 experimental = true
+vfox = false
 
 [settings.pipx]
 uvx = true
