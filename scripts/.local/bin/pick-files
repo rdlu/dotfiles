@@ -1,0 +1,34 @@
+#!/usr/bin/env fish
+
+set pane_dir (tmux display-message -p '#{pane_current_path}')
+set pane_id (tmux display-message -p '#{pane_id}')
+cd "$pane_dir" || exit
+set git_root (git rev-parse --show-toplevel)
+
+# gnu coreutils realpath is needed to make the paths relative to the currently active
+# tmux pane relative to the git repo root, because aider always wants paths relative
+# to the repo root, even if you are in a subdirectory
+if string match -q 'darwin*' "$OSTYPE"
+    if not command -v grealpath >/dev/null 2>&1
+        echo "grealpath not found. Install with: brew install coreutils" >&2
+        exit 1
+    end
+    set realpath_cmd grealpath
+else
+    set realpath_cmd realpath
+end
+
+set selected_files (
+    fd --type f |
+        fzf --multi \
+            --reverse \
+            --preview 'bat --style=numbers --color=always {}' |
+        while read -l file
+            "$realpath_cmd" --relative-to="$git_root" "$pane_dir/$file"
+        end
+)
+
+if test -n "$selected_files"
+    set files_oneline (string join ' ' $selected_files)
+    tmux send-keys -t "$pane_id" "$files_oneline"
+end
