@@ -5,9 +5,27 @@ return {
     lazy = false,
     version = false,
     opts = {
-      hints = { enabled = false },
-      -- auto_suggestions_provider = "copilot",
-      -- provider = "copilot",
+      hints = { enabled = true },
+      auto_suggestions_provider = "haiku",
+      provider = "claude",
+      behaviour = {
+        auto_suggestions = false,
+      },
+      vendors = {
+        haiku = {
+          __inherited_from = "claude",
+          model = "claude-3-5-haiku-20241022",
+          temperature = 0,
+          max_tokens = 4096,
+        },
+        o3 = {
+          __inherited_from = "openai",
+          model = "o3-mini",
+        },
+      },
+      suggestion = {
+        debounce = 1000,
+      },
     },
     build = LazyVim.is_win() and "powershell -ExecutionPolicy Bypass -File Build.ps1 -BuildFromSource false" or "make",
     dependencies = {
