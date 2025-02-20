@@ -12,8 +12,8 @@ return {
         lexical = {
           -- Lexical doesn't support pipe manipulation commands like elixirls did
           -- but it provides better performance and more modern features
-          mason = false,
-          cmd = { os.getenv("HOME") .. "/.local/lexical/bin/start_lexical.sh" },
+          mason = true,
+          -- cmd = { os.getenv("HOME") .. "/.local/lexical/bin/start_lexical.sh" },
           settings = {},
         },
         -- nextls = {
