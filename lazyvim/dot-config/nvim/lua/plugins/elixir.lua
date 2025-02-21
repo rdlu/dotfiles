@@ -1,3 +1,5 @@
+---@module "lazy"
+---@type LazySpec
 return {
   recommended = function()
     return LazyVim.extras.wants({

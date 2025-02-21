@@ -1,3 +1,5 @@
+---@module "lazy"
+---@type LazySpec
 return {
   {
     "yetone/avante.nvim",
