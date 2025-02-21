@@ -19,9 +19,18 @@ if not type -q fisher
     echo 'Fisher is not installed, package management not available'
 end
 
+if type -q mise
+    mise activate fish | source
+end
+
 # starhip.rs
 if type -q starship
     starship init fish | source
+end
+
+# Initialize atuin
+if type -q atuin
+    atuin init fish --disable-up-arrow | source
 end
 
 if set -q START_TMUX; and not set -q TMUX; and status is-interactive; and not set -q INSIDE_EDITOR
