@@ -8,6 +8,10 @@ if command -v mise &>/dev/null; then
 	eval "$(mise activate bash)"
 fi
 
+if command -v atuin &>/dev/null; then
+	eval "$(atuin init bash --disable-up-arrow)"
+fi
+
 if [ -f "$HOME/.cargo/env" ]; then
 	source "$HOME/.cargo/env"
 fi
