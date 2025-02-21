@@ -1,3 +1,5 @@
+---@module "lazy"
+---@type LazySpec
 -- LSP keymaps
 return {
   "neovim/nvim-lspconfig",
