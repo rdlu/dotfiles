@@ -2,3 +2,8 @@ git:
   paging:
     colorArg: always
     pager: delta --dark --paging=never
+  autoFetch: false
+gui:
+  # Format used when displaying time if the time is less than 24 hours ago.
+  # Uses Go's time format syntax: https://pkg.go.dev/time#Time.Format
+  shortTimeFormat: 14:00
