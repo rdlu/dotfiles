@@ -49,3 +49,4 @@ fwup = "latest"
 "pipx:huggingface_hub" = { version = "latest", cli = "" }
 "npm:eslint" = "latest"
 "cargo:atuin" = "latest"
+"cargo:monolith" = "latest"
