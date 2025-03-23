@@ -8,30 +8,20 @@ vim.keymap.set("n", "<leader>rw", "*ciw", { desc = "Replace inner word under cur
 vim.keymap.set("n", "<leader>rn", "*cgn", { desc = "Replace next word under cursor and jump" })
 vim.keymap.set("n", "<leader>ri", ":%s/<c-r><c-w>/<c-r><c-w>/gc<c-f>$F/i", { desc = "Replace test" })
 
--- exit insert mode with jk
-vim.keymap.set("i", "jk", "<ESC>", { noremap = true, silent = true, desc = "<ESC>" })
 -- delete to null register
 vim.keymap.set({ "n", "v" }, "d", '"xd', { noremap = true, silent = true, desc = "Delete" })
 vim.keymap.set({ "n", "v" }, "D", '"xD', { noremap = true, silent = true, desc = "Delete" })
 vim.keymap.set({ "n", "v" }, "x", '"xx', { noremap = true, silent = true, desc = "Delete" })
 
--- Remap K and J
-vim.keymap.set({ "n", "v" }, "<leader>k", "K", { noremap = true, desc = "Keyword" })
-vim.keymap.set({ "n", "v" }, "<leader>j", "J", { noremap = true, desc = "Join lines" })
-
--- Perusing code faster with K and J
-vim.keymap.set({ "n", "v" }, "K", "5k", { noremap = true, desc = "Up faster" })
-vim.keymap.set({ "n", "v" }, "J", "5j", { noremap = true, desc = "Down faster" })
-
 vim.keymap.set(
   { "n", "v" },
-  "<leader>Sw",
+  "<leader>rw",
   ":MoveWord(1)<CR>'",
   { noremap = true, silent = true, desc = "Swap word forward" }
 )
 vim.keymap.set(
   { "n", "v" },
-  "<leader>Sb",
+  "<leader>rb",
   ":MoveWord(-1)<CR>'",
   { noremap = true, silent = true, desc = "Swap word back" }
 )
