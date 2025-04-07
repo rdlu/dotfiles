@@ -21,10 +21,12 @@ vnoremap c "ac
 nnoremap C "aC
 vnoremap C "aC
 " Prevent x from overriding what's in the clipboard.    
-noremap x "_x
-noremap X "_x    
+noremap x "dx
+noremap X "dx    
 
 set sessionoptions-=blank,buffers
 set sessionoptions-=curdir
 set sessionoptions+=globals
 set clipboard^=unnamed,unnamedplus
+
+let g:wiki_root = '~/Documents/Suika Box'
