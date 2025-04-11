@@ -29,4 +29,13 @@ set sessionoptions-=curdir
 set sessionoptions+=globals
 set clipboard^=unnamed,unnamedplus
 
-let g:wiki_root = '~/Documents/Suika Box'
+function! WikiRoot()
+  let l:local = finddir('wiki', ';./')
+  return !empty(l:local) ? l:local : '~/Documents/Suika Box'
+endfunction
+
+let g:wiki_root = 'WikiRoot'
+
+let g:wiki_mappings_prefix = '<leader>W'
+
+
