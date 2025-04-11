@@ -3,14 +3,14 @@
 "   [/] last search pattern
 "   ["] from default register
 "   [.] last inserted text
-nnoremap grw :%s/\<<c-r><c-w>\>//g<left><left>
-nnoremap gr/ :%s/<c-r>///g<left><left>
-nnoremap gr" :%s/<c-r>"//g<left><left>
-nnoremap gr. :%s/<c-r>.//g<left><left>
-xnoremap grw y:<c-u>%s/<c-r>"//g<left><left>
-xnoremap gr/ :s/<c-r>///g<left><left>
-xnoremap gr" :s/<c-r>"//g<left><left>
-xnoremap gr. :s/<c-r>.//g<left><left>
+nnoremap gRw :%s/\<<c-r><c-w>\>//g<left><left>
+nnoremap gR/ :%s/<c-r>///g<left><left>
+nnoremap gR" :%s/<c-r>"//g<left><left>
+nnoremap gR. :%s/<c-r>.//g<left><left>
+xnoremap gRw y:<c-u>%s/<c-r>"//g<left><left>
+xnoremap gR/ :s/<c-r>///g<left><left>
+xnoremap gR" :s/<c-r>"//g<left><left>
+xnoremap gR. :s/<c-r>.//g<left><left>
 " Change word under cursor
 nnoremap c* *``cgn
 nnoremap c# #``cgN

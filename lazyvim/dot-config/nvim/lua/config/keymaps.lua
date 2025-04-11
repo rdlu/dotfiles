@@ -41,6 +41,8 @@ vim.keymap.set(
   { noremap = true, silent = true, desc = "Copy file path to clipboard" }
 )
 
+vim.keymap.set({ "n", "v" }, "gR", "", { silent = true, desc = "+search/replace" })
+
 vim.keymap.set({ "n", "v" }, "<leader>a", "", { silent = true, desc = "+ AI" })
 vim.keymap.set(
   { "n", "v" },
