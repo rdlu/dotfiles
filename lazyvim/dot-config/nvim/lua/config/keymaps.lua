@@ -4,10 +4,6 @@
 vim.g.copilot_no_tab_map = true
 vim.g.copilot_assume_mapped = true
 
-vim.keymap.set("n", "<leader>rw", "*ciw", { desc = "Replace inner word under cursor" })
-vim.keymap.set("n", "<leader>rn", "*cgn", { desc = "Replace next word under cursor and jump" })
-vim.keymap.set("n", "<leader>ri", ":%s/<c-r><c-w>/<c-r><c-w>/gc<c-f>$F/i", { desc = "Replace test" })
-
 vim.keymap.set(
   { "n", "v" },
   "<leader>rw",
@@ -45,6 +41,7 @@ vim.keymap.set(
   { noremap = true, silent = true, desc = "Copy file path to clipboard" }
 )
 
+vim.keymap.set({ "n", "v" }, "<leader>a", "", { silent = true, desc = "+ AI" })
 vim.keymap.set(
   { "n", "v" },
   "<leader>af",
@@ -59,7 +56,7 @@ vim.keymap.set(
 )
 vim.keymap.set("n", "<leader>ad", function()
   require("codecompanion").prompt("docs")
-end, { noremap = true, silent = true })
+end, { noremap = true, silent = true, desc = "CodeCompanion docs prompt" })
 vim.keymap.set(
   "v",
   "ga",
