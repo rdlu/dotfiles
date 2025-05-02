@@ -11,13 +11,13 @@ return {
     "neovim/nvim-lspconfig",
     opts = {
       servers = {
-        -- lexical = {
-        --   -- Lexical doesn't support pipe manipulation commands like elixirls did
-        --   -- but it provides better performance and more modern features
-        --   mason = true,
-        --   -- cmd = { os.getenv("HOME") .. "/.local/lexical/bin/start_lexical.sh" },
-        --   settings = {},
-        -- },
+        lexical = {
+          -- Lexical doesn't support pipe manipulation commands like elixirls did
+          -- but it provides better performance and more modern features
+          mason = true,
+          -- cmd = { os.getenv("HOME") .. "/.local/lexical/bin/start_lexical.sh" },
+          settings = {},
+        },
         nextls = {
           enable = true,
           mason = true,
