@@ -1,11 +1,12 @@
 function fish_user_key_bindings
-  # ...
-  bind \e\e 'thefuck'  # Bind EscEsc to thefuck
-  # or
-  bind \cf 'thefuck'  # Bind Ctrl+F to thefuck
-  # ...
+    # ...
+    bind \e\e fuck # Bind EscEsc to thefuck
+    # or
+    bind \cf fuck # Bind Ctrl+F to thefuck
+    # ...
 end
 
 if type -q thefuck
-  thefuck --alias | source
+    # it will generate a 'fuck' function for fish shell
+    thefuck --alias | source
 end
