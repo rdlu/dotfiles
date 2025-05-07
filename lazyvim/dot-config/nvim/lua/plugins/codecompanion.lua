@@ -4,11 +4,6 @@ return {
   dependencies = {
     "nvim-lua/plenary.nvim",
     "nvim-treesitter/nvim-treesitter",
-    {
-      "Davidyz/VectorCode",
-      version = "*",
-      dependencies = { "nvim-lua/plenary.nvim" },
-    },
   },
   opts = {
     strategies = {
