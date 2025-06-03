@@ -50,3 +50,5 @@ fwup = "latest"
 "cargo:jj-cli" = "latest"
 "cargo:lazyjj" = "latest"
 "npm:mcp-hub" = "latest"
+"ubi:tidewave-ai/mcp_proxy_rust" = { version = "latest", exe = "mcp-proxy" }
+"cargo:scooter" = "latest"

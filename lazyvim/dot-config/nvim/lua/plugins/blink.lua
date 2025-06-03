@@ -2,6 +2,10 @@
 ---@type LazySpec
 return {
   "saghen/blink.cmp",
+  dependencies = {
+    "Kaiser-Yang/blink-cmp-avante",
+    -- ... Other dependencies
+  },
   opts = {
     keymap = { preset = "super-tab", ["<CR>"] = { "accept", "fallback" } },
     sources = {
@@ -9,8 +13,15 @@ return {
         lsp = {
           async = true,
         },
+        avante = {
+          module = "blink-cmp-avante",
+          name = "Avante",
+          opts = {
+            -- options for blink-cmp-avante
+          },
+        },
       },
-      default = { "snippets", "lsp", "buffer", "path" },
+      default = { "avante", "snippets", "lsp", "buffer", "path" },
     },
     fuzzy = {
       -- Allows for a number of typos relative to the length of the query
