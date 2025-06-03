@@ -18,22 +18,22 @@ return {
           -- cmd = { os.getenv("HOME") .. "/.local/lexical/bin/start_lexical.sh" },
           settings = {},
         },
-        nextls = {
-          enable = true,
-          mason = true,
-          init_options = {
-            extensions = {
-              credo = {
-                enable = false,
-              },
-            },
-            experimental = {
-              completions = {
-                enable = true,
-              },
-            },
-          },
-        },
+        -- nextls = {
+        --   enable = true,
+        --   mason = true,
+        --   init_options = {
+        --     extensions = {
+        --       credo = {
+        --         enable = false,
+        --       },
+        --     },
+        --     experimental = {
+        --       completions = {
+        --         enable = true,
+        --       },
+        --     },
+        --   },
+        -- },
       },
     },
   },

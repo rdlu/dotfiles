@@ -44,26 +44,3 @@ vim.keymap.set(
 vim.keymap.set({ "n", "v" }, "gR", "", { silent = true, desc = "+search/replace" })
 
 vim.keymap.set({ "n", "v" }, "<leader>a", "", { silent = true, desc = "+ AI" })
-vim.keymap.set(
-  { "n", "v" },
-  "<leader>af",
-  "<cmd>CodeCompanionActions<cr>",
-  { noremap = true, silent = true, desc = "CodeCompanionActions" }
-)
-vim.keymap.set(
-  { "n", "v" },
-  "<leader>aa",
-  "<cmd>CodeCompanionChat Toggle<cr>",
-  { noremap = true, silent = true, desc = "CodeCompanionChat" }
-)
-vim.keymap.set("n", "<leader>ad", function()
-  require("codecompanion").prompt("docs")
-end, { noremap = true, silent = true, desc = "CodeCompanion docs prompt" })
-vim.keymap.set(
-  "v",
-  "ga",
-  "<cmd>CodeCompanionChat Add<cr>",
-  { noremap = true, silent = true, desc = "Add to CodeCompanionChat" }
-)
-
-vim.cmd([[cab cc CodeCompanion]])
