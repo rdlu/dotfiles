@@ -4,15 +4,33 @@ return {
   "yetone/avante.nvim",
   event = "VeryLazy",
   version = false, -- Never set this value to "*"! Never!
-  opts = {},
+  -- Remove opts = {} since we'll use config instead
   -- if you want to build from source then do `make BUILD_FROM_SOURCE=true`
   build = "make",
   -- build = "powershell -ExecutionPolicy Bypass -File Build.ps1 -BuildFromSource false" -- for windows
+  config = function()
+    local avante = require("avante")
+    -- Get the default options
+    local opts = {}
+    -- Add MCP Hub integration without overriding defaults
+    opts.system_prompt = function()
+      local hub = require("mcphub").get_hub_instance()
+      return hub and hub:get_active_servers_prompt() or ""
+    end
+    opts.custom_tools = function()
+      return {
+        require("mcphub.extensions.avante").mcp_tool(),
+      }
+    end
+    -- Setup with our options (will merge with defaults)
+    avante.setup(opts)
+  end,
   dependencies = {
     "nvim-treesitter/nvim-treesitter",
     "stevearc/dressing.nvim",
     "nvim-lua/plenary.nvim",
     "MunifTanjim/nui.nvim",
+    "ravitemer/mcphub.nvim", -- Required for MCP Hub integration
     --- The below dependencies are optional,
     "nvim-tree/nvim-web-devicons", -- or echasnovski/mini.icons
     {
