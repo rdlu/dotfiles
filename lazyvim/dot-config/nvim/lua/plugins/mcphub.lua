@@ -51,6 +51,11 @@ return {
         file_path = nil,
         prefix = "MCPHub",
       },
+      -- log = {
+      --   level = vim.log.levels.DEBUG,
+      --   to_file = true,
+      --   file_path = vim.fn.expand("~/mcphub.log"),
+      -- },
     })
   end,
 }
