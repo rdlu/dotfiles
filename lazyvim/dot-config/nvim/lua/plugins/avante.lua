@@ -7,11 +7,23 @@ return {
   -- Remove opts = {} since we'll use config instead
   -- if you want to build from source then do `make BUILD_FROM_SOURCE=true`
   build = "make",
-  -- build = "powershell -ExecutionPolicy Bypass -File Build.ps1 -BuildFromSource false" -- for windows
   config = function()
     local avante = require("avante")
     -- Get the default options
-    local opts = {}
+    local opts = {
+      providers = {
+        gemini25e = {
+          __inherited_from = "gemini",
+          model = "gemini-2.5-pro-exp-06-05",
+          timeout = 60000, -- Timeout in milliseconds
+        },
+        gemini25p = {
+          __inherited_from = "gemini",
+          model = "gemini-2.5-pro-preview-06-05",
+          timeout = 60000, -- Timeout in milliseconds
+        },
+      },
+    }
     -- Add MCP Hub integration without overriding defaults
     opts.system_prompt = function()
       local hub = require("mcphub").get_hub_instance()
