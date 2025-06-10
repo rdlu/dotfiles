@@ -37,6 +37,10 @@ if type -q zoxide; and status is-interactive
     zoxide init fish | source
 end
 
+if type -q scooter
+    abbr -a find-tui scooter
+end
+
 # cd aliases
 function ..
     cd ..
