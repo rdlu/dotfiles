@@ -6,6 +6,10 @@ function nvim-astro
     env NVIM_APPNAME=nvim-astro nvim $argv
 end
 
+function nv
+    env NVIM_APPNAME=nvim-light nvim $argv
+end
+
 function nvims
     set items default nvim-lazy nvim-astro
     set config (printf "%s\n" $items | fzf --prompt=" Neovim Config = " --height=~50% --layout=reverse --border --exit-0)
