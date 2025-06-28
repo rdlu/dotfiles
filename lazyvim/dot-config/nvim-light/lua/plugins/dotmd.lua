@@ -74,14 +74,26 @@ return {
       desc = "[DotMd] Open",
     },
     {
-      "<leader>zoa",
+      "<leader>sz",
+      function()
+        require("dotmd").pick()
+      end,
+      desc = "[DotMd] notes",
+    },
+    {
+      "<leader>zs",
+      function() end,
+      desc = "+search",
+    },
+    {
+      "<leader>zsa",
       function()
         require("dotmd").pick()
       end,
       desc = "[DotMd] Everything",
     },
     {
-      "<leader>zoA",
+      "<leader>zsA",
       function()
         require("dotmd").pick({
           grep = true,
@@ -90,7 +102,7 @@ return {
       desc = "[DotMd] Search everything grep",
     },
     {
-      "<leader>zon",
+      "<leader>zsn",
       function()
         require("dotmd").pick({
           type = "notes",
@@ -99,7 +111,7 @@ return {
       desc = "[DotMd] Search notes",
     },
     {
-      "<leader>zoN",
+      "<leader>zsN",
       function()
         require("dotmd").pick({
           type = "notes",
@@ -109,7 +121,7 @@ return {
       desc = "[DotMd] Search notes grep",
     },
     {
-      "<leader>zot",
+      "<leader>zst",
       function()
         require("dotmd").pick({
           type = "todos",
@@ -118,7 +130,7 @@ return {
       desc = "[DotMd] Search todos",
     },
     {
-      "<leader>zoT",
+      "<leader>zsT",
       function()
         require("dotmd").pick({
           type = "todos",
@@ -128,7 +140,7 @@ return {
       desc = "[DotMd] Search todos grep",
     },
     {
-      "<leader>zoj",
+      "<leader>zsj",
       function()
         require("dotmd").pick({
           type = "journals",
@@ -137,7 +149,7 @@ return {
       desc = "[DotMd] Search journal",
     },
     {
-      "<leader>zoJ",
+      "<leader>zsJ",
       function()
         require("dotmd").pick({
           type = "journals",
