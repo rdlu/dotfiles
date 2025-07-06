@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Electron 34
+Icon=electron34
+Exec=electron34 %u
+Categories=Development;GTK;
+StartupNotify=true
+Name[en]=Electron 34
+Name[en_US]=Electron 34
+Name[en_US.UTF-8]=Electron 34
+NoDisplay=true
+Terminal=false
+
