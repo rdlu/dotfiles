@@ -2,7 +2,7 @@
 Name=Neovim
 GenericName=Text Editor
 Comment=Edit text files
-Exec=wezterm -e nvim -- %F
+Exec=kitty --name "Neovim" --app-id nvim --title "Neovim" nvim -- %F
 Terminal=false
 Type=Application
 Keywords=Text;editor;

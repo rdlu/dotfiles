@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Name=Suika Box
+Comment=Vault
+# Exec=kitty --name "Suika Box" --app-id SuikaBox --title "Suika Box" nvim 'Documents/Suika Box/inbox.md'
+Exec=ghostty --title="Suika Box" --class=SuikaBox -e "nvim 'Documents/Suika Box/inbox.md'"
+Terminal=false
+Type=Application
+Keywords=Text;editor;
+Icon=SuikaBox
+Categories=Utility;TextEditor;
+StartupNotify=false
+
