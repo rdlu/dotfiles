@@ -1,0 +1,23 @@
+#!/usr/bin/fish
+
+function show_power_menu
+    set -l menu_options " Lock" \
+        "󰤄 Suspend" \
+        "󰜉 Restart" \
+        "󰐥 Shutdown"
+
+    set -l selection (printf '%s\n' $menu_options | walker --dmenu)
+
+    switch "$selection"
+        case "*Lock*"
+            hyprlock
+        case "*Suspend*"
+            systemctl suspend
+        case "*Restart*"
+            systemctl reboot
+        case "*Shutdown*"
+            systemctl poweroff
+    end
+end
+
+show_power_menu
