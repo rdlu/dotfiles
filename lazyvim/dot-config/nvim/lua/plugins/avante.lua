@@ -12,28 +12,23 @@ return {
     -- Get the default options
     local opts = {
       providers = {
-        gemini25e = {
+        gemini25 = {
           __inherited_from = "gemini",
-          model = "gemini-2.5-pro-exp-06-05",
-          timeout = 60000, -- Timeout in milliseconds
-        },
-        gemini25p = {
-          __inherited_from = "gemini",
-          model = "gemini-2.5-pro-preview-06-05",
-          timeout = 60000, -- Timeout in milliseconds
+          model = "gemini-2.5-pro",
+          timeout = 120000, -- Timeout in milliseconds
         },
       },
     }
     -- Add MCP Hub integration without overriding defaults
-    opts.system_prompt = function()
-      local hub = require("mcphub").get_hub_instance()
-      return hub and hub:get_active_servers_prompt() or ""
-    end
-    opts.custom_tools = function()
-      return {
-        require("mcphub.extensions.avante").mcp_tool(),
-      }
-    end
+    -- opts.system_prompt = function()
+    --   local hub = require("mcphub").get_hub_instance()
+    --   return hub and hub:get_active_servers_prompt() or ""
+    -- end
+    -- opts.custom_tools = function()
+    --   return {
+    --     require("mcphub.extensions.avante").mcp_tool(),
+    --   }
+    -- end
     -- Setup with our options (will merge with defaults)
     avante.setup(opts)
   end,
