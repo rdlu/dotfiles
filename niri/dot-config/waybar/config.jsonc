@@ -14,6 +14,7 @@
   "modules-right": [
     "group/tray-expander",
     "niri/language",
+    "power-profiles-daemon",
     "bluetooth",
     "network",
     "pulseaudio",
@@ -142,5 +143,23 @@
   "tray": {
     "icon-size": 12,
     "spacing": 12
+  },
+  "niri/window": {
+    "format": "{app_id}@{title}",
+    "icon": true
+  },
+  "niri/language": {
+    "format": "{short}-{variant}"
+  },
+  "power-profiles-daemon": {
+    "format": "{icon}",
+    "tooltip-format": "Power profile: {profile}\nDriver: {driver}",
+    "tooltip": true,
+    "format-icons": {
+      "default": "",
+      "performance": "",
+      "balanced": "",
+      "power-saver": ""
+    }
   }
 }
