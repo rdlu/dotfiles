@@ -1,28 +1,15 @@
-// This config is in the KDL format: https://kdl.dev
-// "/-" comments out the following node.
 // Check the wiki for a full description of the configuration:
 // https://github.com/YaLTeR/niri/wiki/Configuration:-Introduction
 
-// Input device configuration.
-// Find the full list of options on the wiki:
 // https://github.com/YaLTeR/niri/wiki/Configuration:-Input
 input {
     keyboard {
         xkb {
-            // You can set rules, model, layout, variant and options.
-            // For more information, see xkeyboard-config(7).
-
-            // For example:
-            // layout "us,ru"
             // options "grp:win_space_toggle,compose:ralt,ctrl:nocaps"
-            //
-            // layout "br"; variant "thinkpad";
-            layout "us"; variant "altgr-intl";
-
+            layout "us,br"; variant "altgr-intl,thinkpad";
+            options "grp:win_space_toggle"
         }
         track-layout "global"
-
-        // Enable numlock on startup, omitting this setting disables it.
         numlock
     }
 
@@ -53,7 +40,7 @@ input {
     trackpoint {
         // off
         // natural-scroll
-        // accel-speed 0.2
+        accel-speed 0.2
         // accel-profile "flat"
         // scroll-method "on-button-down"
         // scroll-button 273
@@ -65,7 +52,7 @@ input {
 
     // Focus windows and outputs automatically when moving the mouse into them.
     // Setting max-scroll-amount="0%" makes it work only on windows already fully on screen.
-    // focus-follows-mouse max-scroll-amount="0%"
+    focus-follows-mouse max-scroll-amount="50%"
 }
 cursor {
     xcursor-size 24
@@ -133,7 +120,7 @@ layout {
         proportion 0.33333
         proportion 0.5
         proportion 0.66667
-        proportion 0.87
+        proportion 0.92
 
         // Fixed sets the width in logical pixels exactly.
         // fixed 1920
@@ -143,7 +130,7 @@ layout {
     // preset-window-heights { }
 
     // You can change the default width of the new windows.
-    default-column-width { proportion 0.5; }
+    default-column-width { proportion 0.66667; }
     // If you leave the brackets empty, the windows themselves will decide their initial width.
     // default-column-width {}
 
