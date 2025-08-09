@@ -40,13 +40,14 @@
 #clock,
 #power-profiles-daemon,
 #language,
+#mpris,
 #custom-power-menu {
   padding-left: 0.5em;
   padding-right: 0.5em;
 }
 
 #custom-expand-icon {
-  padding: 0 0.5em;
+  padding: 0 0.1em;
 }
 
 tooltip {
@@ -83,4 +84,8 @@ window#waybar.empty #window {
 
 #power-profiles-daemon.performance {
   color: #dd0;
+}
+
+#mpris.paused {
+  color: #995;
 }

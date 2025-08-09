@@ -1,7 +1,7 @@
 {
   "reload_style_on_change": true,
   "layer": "top",
-  "position": "top",
+  "position": "bottom",
   "spacing": 0,
   "height": 26,
   "modules-left": [
@@ -12,6 +12,7 @@
     "clock"
   ],
   "modules-right": [
+    "mpris",
     "group/tray-expander",
     "niri/language",
     "power-profiles-daemon",
@@ -145,11 +146,13 @@
     "spacing": 12
   },
   "niri/window": {
-    "format": "{app_id}@{title}",
+    // "format": "{app_id}@{title}",
+    "format": "{title}",
     "icon": true
   },
   "niri/language": {
-    "format": "{short}-{variant}"
+    // "format": "{short}-{variant}"
+    "format": "{short}"
   },
   "power-profiles-daemon": {
     "format": "{icon}",
@@ -161,5 +164,18 @@
       "balanced": "",
       "power-saver": ""
     }
+  },
+  "mpris": {
+    "format": "{player_icon} {dynamic}",
+    "format-paused": "{status_icon} {dynamic}",
+    "player-icons": {
+      "default": "▶",
+      "mpv": "🎵"
+    },
+    "status-icons": {
+      "paused": "⏸"
+    },
+    "dynamic-len": 40
+    // "ignored-players": ["firefox"]
   }
 }
