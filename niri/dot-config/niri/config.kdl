@@ -254,6 +254,17 @@ layout {
 
 // This line starts waybar, a commonly used bar for Wayland compositors.
 spawn-at-startup "waybar"
+spawn-at-startup "xwayland-satellite"
+environment {
+    DISPLAY ":0"
+    GDK_BACKEND "wayland,x11,*"
+    QT_QPA_PLATFORM "wayland;xcb"
+    QT_STYLE_OVERRIDE "kvantum"
+    SDL_VIDEODRIVER "wayland"
+    MOZ_ENABLE_WAYLAND "1"
+    ELECTRON_OZONE_PLATFORM_HINT "wayland"
+    OZONE_PLATFORM "wayland"
+}
 
 // Uncomment this line to ask the clients to omit their client-side decorations if possible.
 // If the client will specifically ask for CSD, the request will be honored.
@@ -270,21 +281,52 @@ screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
 // You can also set this to null to disable saving screenshots to disk.
 // screenshot-path null
 
-// Animation settings.
-// The wiki explains how to configure individual animations:
-// https://github.com/YaLTeR/niri/wiki/Configuration:-Animations
-animations {
-    // Uncomment to turn off all animations.
-    // off
-
-    // Slow down all animations by this factor. Values below 1 speed them up instead.
-    // slowdown 3.0
+// Block out mako notifications from screencasts.
+layer-rule {
+    match namespace="^notifications$"
+    opacity 0.8
+    block-out-from "screencast"
 }
 
-// Window rules let you adjust behavior for individual windows.
-// Find more information on the wiki:
-// https://github.com/YaLTeR/niri/wiki/Configuration:-Window-Rules
+// Make fuzzel semitransparent.
+layer-rule {
+    match namespace="^launcher$"
 
+    opacity 0.95
+}
+
+layer-rule {
+    match namespace="waybar"
+    match at-startup=true
+
+    // Properties that apply continuously.
+    opacity 0.8
+    block-out-from "screencast"
+    // block-out-from "screen-capture"
+
+    shadow {
+        on
+        // off
+        softness 40
+        spread 5
+        offset x=0 y=5
+        draw-behind-window true
+        color "#00000064"
+        // inactive-color "#00000064"
+    }
+
+    geometry-corner-radius 12
+    place-within-backdrop true
+}
+
+workspace "games"
+
+window-rule {
+    match is-active=false
+    opacity 0.8
+}
+
+// https://github.com/YaLTeR/niri/wiki/Configuration:-Window-Rules
 // Work around WezTerm's initial configure bug
 // by setting an empty default-column-width.
 window-rule {
@@ -301,14 +343,34 @@ window-rule {
     // - host Firefox (app-id is "firefox")
     // - Flatpak Firefox (app-id is "org.mozilla.firefox")
     match app-id=r#"firefox$"# title="^Picture-in-Picture$"
+    match app-id="zen" title="^Picture-in-Picture$"
     open-floating true
+    default-floating-position x=32 y=32 relative-to="bottom-right"
+    opacity 0.95
 }
 
+window-rule {
+    match app-id=r#"firefox$"#
+    match app-id="zen"
+    default-column-width { proportion 0.75; }
+}
+
+// Gaming windows
 window-rule {
     match app-id=r#"RetroArch$"#
     open-fullscreen true
     open-focused true
+    open-on-workspace "games"
+    variable-refresh-rate true
 }
+
+window-rule {
+    match app-id="es-de"
+    open-fullscreen true
+    open-focused true
+    open-on-workspace "games"
+}
+
 
 
 // Example: block out two password managers from screen capture.
