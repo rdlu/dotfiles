@@ -8,7 +8,7 @@
   border: none;
   border-radius: 0;
   min-height: 0;
-  font-family: CaskaydiaMono Nerd Font Propo;
+  font-family: iMWritingDuo Nerd Font Propo;
   font-size: 12px;
 }
 
@@ -38,15 +38,49 @@
 #bluetooth,
 #pulseaudio,
 #clock,
+#power-profiles-daemon,
+#language,
 #custom-power-menu {
-  min-width: 12px;
-  margin: 0 7.5px;
+  padding-left: 0.5em;
+  padding-right: 0.5em;
 }
 
 #custom-expand-icon {
-  margin-right: 12px;
+  padding: 0 0.5em;
 }
 
 tooltip {
   padding: 2px;
+}
+
+#window {
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+}
+
+window#waybar.kitty {
+    background-color: #fff;
+    color: #666;
+}
+
+window#waybar.zen {
+    background-color: #eeeeee;
+    color: #000000;
+}
+
+/* make window module transparent when no windows present */
+window#waybar.empty #window {
+    background-color: transparent;
+}
+
+#power-profiles-daemon.power-saver {
+  color: #090;
+}
+
+#power-profiles-daemon.balanced {
+  color: #0ab;
+}
+
+#power-profiles-daemon.performance {
+  color: #dd0;
 }
