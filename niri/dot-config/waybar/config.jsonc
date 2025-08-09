@@ -20,7 +20,8 @@
     "network",
     "pulseaudio",
     "cpu",
-    "battery"
+    "battery",
+    "user"
   ],
   "niri/workspaces": {
     "format": "{icon}",
@@ -177,5 +178,13 @@
     },
     "dynamic-len": 40
     // "ignored-players": ["firefox"]
+  },
+  "user": {
+    // "format": "{user} (up {work_d} days ↑)",
+    "format": "",
+    "interval": 60,
+    "height": 24,
+    "width": 24,
+    "icon": true
   }
 }
