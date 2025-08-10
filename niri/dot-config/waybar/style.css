@@ -52,7 +52,13 @@
 }
 
 tooltip {
-  padding: 2px;
+  background-color: rgba(0,0,0, 0.0);
+  padding: 0.5em;
+  border: 1px solid rgba(153, 50, 204, 0.9);
+  border-radius: 4px;
+}
+tooltip label {
+  padding: 0.5em;
 }
 
 #window {
@@ -89,4 +95,8 @@ window#waybar.empty #window {
 
 #mpris.paused {
   color: #995;
+}
+
+#bluetooth {
+  color: #4169e1;
 }
