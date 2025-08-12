@@ -2,22 +2,32 @@
 @define-color background #1a1b26;
 
 * {
-  background-color: @background;
-  color: @foreground;
-
-  border: none;
-  border-radius: 0;
-  min-height: 0;
   font-family: iMWritingDuo Nerd Font Propo;
   font-size: 12px;
+  transition: all 0.5s ease;
+}
+
+window#waybar{
+  all: unset;
 }
 
 .modules-left {
   margin-left: 8px;
+  margin-bottom: 2px;
 }
 
 .modules-right {
   margin-right: 8px;
+  margin-bottom: 2px;
+}
+
+.modules-center {
+  margin-bottom: 2px;
+}
+
+
+.modules-right .module, .modules-left .module, .modules-center .module {
+    color: @foreground;
 }
 
 #workspaces button {
@@ -42,13 +52,20 @@
 #language,
 #mpris,
 #user,
-#custom-power-menu {
-  padding-left: 0.5em;
-  padding-right: 0.5em;
+#custom-expand-icon,
+#perf {
+  padding: 0.1em 0.5em;
+  background: alpha(@background, .95);
+  color: @foreground;
+  border-radius: 8px;
+  margin-right: 2px;
 }
 
-#custom-expand-icon {
-  padding: 0 0.1em;
+#window {
+  padding: 0.1em 1em;
+  background: alpha(@background, .95);
+  color: @foreground;
+  border-radius: 8px;
 }
 
 tooltip {
@@ -59,11 +76,6 @@ tooltip {
 }
 tooltip label {
   padding: 0.5em;
-}
-
-#window {
-    padding-left: 0.5em;
-    padding-right: 0.5em;
 }
 
 window#waybar.kitty {
@@ -99,4 +111,25 @@ window#waybar.empty #window {
 
 #bluetooth {
   color: #4169e1;
+}
+
+#battery.charging {
+    color: #090;
+}
+
+@keyframes blink {
+    to {
+        background-color: #ffffff;
+        color: black;
+    }
+}
+
+#battery.warning:not(.charging) {
+    background: #f53c3c;
+    color: white;
+    animation-name: blink;
+    animation-duration: 0.5s;
+    animation-timing-function: steps(12);
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
 }

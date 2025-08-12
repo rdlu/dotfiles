@@ -19,7 +19,7 @@
     "bluetooth",
     "network",
     "pulseaudio",
-    "cpu",
+    "group/perf",
     "battery",
     "clock"
   ],
@@ -35,11 +35,6 @@
       "active": "",
       "default": ""
     }
-  },
-  "cpu": {
-    "interval": 5,
-    "format": "󰍛",
-    "on-click": "alacritty -e btop"
   },
   "clock": {
     "format": "{:%H:%M}",
@@ -205,5 +200,28 @@
     "height": 24,
     "width": 24,
     "icon": true
+  },
+  "group/perf": {
+    "orientation": "inherit",
+    "drawer": {
+      "transition-duration": 500,
+      "transition-left-to-right": false,
+      "children-class": "perf-element"
+    },
+    "modules": [
+      "custom/perf-icon",
+      "temperature",
+      "cpu",
+      "memory"
+    ]
+  },
+  "custom/perf-icon": {
+    "tooltip": false,
+    "format": "",
+    "on-click": "alacritty -e btop"
+  },
+  "cpu": {
+    "interval": 5,
+    "format": "󰍛"
   }
 }
