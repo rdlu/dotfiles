@@ -1,0 +1,7 @@
+[default]
+duration = "1h"
+mode = "center"
+initial-transition = false
+
+[any]
+path = "~/Pictures/Wallpapers"
