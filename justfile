@@ -97,7 +97,7 @@ kitty-terminal:
 [group("install-graphical")]
 niri-window-manager:
   @just _echowarning "1) Installing niri and related tools"
-  yay -S --needed blueberry brightnessctl cliphist fuzzel gdm gnome-keyring inter-font mako niri-git noto-fonts noto-fonts-cjk noto-fonts-emoji noto-fonts-extra mate-polkit swayidle swaylock ttf-firacode-nerd ttf-font-awesome waybar wl-clipboard wlsunset wpaperd xdg-desktop-portal-gnome xwayland-satellite ttf-iawriter-nerd
+  yay -S --needed blueberry brightnessctl udiskie cliphist fuzzel gdm gnome-keyring inter-font mako niri-git noto-fonts noto-fonts-cjk noto-fonts-emoji noto-fonts-extra mate-polkit swayidle swaylock ttf-firacode-nerd ttf-font-awesome waybar wl-clipboard wlsunset wpaperd xdg-desktop-portal-gnome xwayland-satellite ttf-iawriter-nerd
 
   @just _echowarning "\n2) Stowing niri config"
   stow --dotfiles -S niri
@@ -125,15 +125,21 @@ yazi-file-manager:
   @just _echowarning "\n3) Installing Yazi plugins"
   ya pkg install
 
+
+[group("stow")]
 stow:
   stow --dotfiles -S home idea git scripts terminal lazyvim vim systemd
 
+[group("stow")]
 stow-daisy:
   stow --dotfiles -S home terminal niri scripts lazyvim vim systemd
 
-systemd-niri-config:
+# Enables the systemd services for some essential niri helpers
+systemd-niri-config: systemd-niri-config-install wpaper-reload mako-reload waybar-reload swayidle-reload
+systemd-niri-config-install:
   systemctl --user add-wants niri.service wpaperd.service
   systemctl --user add-wants niri.service mako.service
+  systemctl --user add-wants niri.service swayidle.service
   systemctl --user add-wants niri.service swayosd-libinput-backend.service
 
 [group("niri-reload")]
@@ -151,3 +157,7 @@ waybar-reload:
   @just _echowarning "Reloading Waybar"
   systemctl --user reload-or-restart waybar.service
  
+[group("niri-reload")]
+swayidle-reload:
+  @just _echowarning "Reloading Swayidle"
+  systemctl --user reload-or-restart swayidle.service
