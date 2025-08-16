@@ -61,9 +61,18 @@ cursor {
     hide-after-inactive-ms 1000
 }
 
+// output "DP-2" {
+//   focus-at-startup
+// }
+
+output "DP-2" {
+  scale 1.75
+  position x=0 y=0
+}
 
 output "eDP-1" {
     variable-refresh-rate
+    // position x=1536 y=0
     // variable-refresh-rate on-demand=true
 }
 
