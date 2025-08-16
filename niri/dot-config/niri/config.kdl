@@ -141,7 +141,7 @@ layout {
 
 spawn-at-startup "/usr/lib/mate-polkit/polkit-mate-authentication-agent-1"
 spawn-at-startup "swayosd-server"
-spawn-at-startup "pkexec swayosd-libinput-backend"
+// spawn-at-startup "pkexec swayosd-libinput-backend"
 spawn-at-startup "xwayland-satellite"
 spawn-at-startup "flatpak" "run" "it.mijorus.smile" "--start-hidden"
 spawn-at-startup "wl-paste" "--watch" "cliphist" "store"
