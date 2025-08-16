@@ -82,7 +82,7 @@ layout {
     // - "always", the focused column will always be centered.
     // - "on-overflow", focusing a column will center it if it doesn't fit
     //   together with the previously focused column.
-    center-focused-column "on-overflow"
+    center-focused-column "never"
 
     empty-workspace-above-first
 
@@ -105,7 +105,7 @@ layout {
     border {
         // off
 
-        width 1
+        width 2
         // active-color "#8A2BE2"
         inactive-color "#505050"
 
@@ -158,13 +158,12 @@ environment {
 // Additionally, clients will be informed that they are tiled, removing some client-side rounded corners.
 // This option will also fix border/focus ring drawing behind some semitransparent windows.
 // After enabling or disabling this, you need to restart the apps for this to take effect.
-prefer-no-csd
+// prefer-no-csd
 
 // You can change the path where screenshots are saved.
 // A ~ at the front will be expanded to the home directory.
 // The path is formatted with strftime(3) to give you the screenshot date and time.
 screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
-
 // You can also set this to null to disable saving screenshots to disk.
 // screenshot-path null
 
@@ -206,6 +205,8 @@ layer-rule {
     place-within-backdrop true
 }
 
+workspace "base"
+workspace "brain"
 workspace "games"
 
 window-rule {
@@ -225,7 +226,13 @@ window-rule {
 }
 
 window-rule {
-  default-column-width { proportion 0.33333; }
+    match app-id="kitty"
+    default-column-width { proportion 0.92; }
+}
+
+window-rule {
+    match title="^Calculator"
+    default-column-width { proportion 0.33333; }
 }
 
 // Open the Firefox picture-in-picture player as floating by default.
@@ -243,7 +250,7 @@ window-rule {
 window-rule {
     match app-id=r#"firefox$"#
     match app-id="zen"
-    default-column-width { proportion 0.97; }
+    default-column-width { proportion 0.92; }
 }
 
 // Gaming windows
