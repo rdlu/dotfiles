@@ -9,10 +9,10 @@
     "niri/workspaces"
   ],
   "modules-center": [
-    "niri/window"
+    "niri/window",
+    "mpris"
   ],
   "modules-right": [
-    "mpris",
     "group/tray-expander",
     "niri/language",
     "power-profiles-daemon",
@@ -205,7 +205,6 @@
     "orientation": "inherit",
     "drawer": {
       "transition-duration": 500,
-      "transition-left-to-right": false,
       "children-class": "perf-element"
     },
     "modules": [
