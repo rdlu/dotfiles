@@ -134,6 +134,10 @@ stow:
 stow-daisy:
   stow --dotfiles -S home terminal niri scripts lazyvim vim systemd
 
+[group("stow")]
+stow-check:
+  stow -n -v --dotfiles -S terminal niri scripts lazyvim vim systemd home
+
 # Enables the systemd services for some essential niri helpers
 systemd-niri-config: systemd-niri-config-install wpaper-reload mako-reload waybar-reload swayidle-reload
 systemd-niri-config-install:
