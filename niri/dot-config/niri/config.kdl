@@ -54,10 +54,11 @@ input {
     focus-follows-mouse max-scroll-amount="30%"
 }
 cursor {
-    xcursor-size 24
+  xcursor-theme "Adwaita"
+  xcursor-size 24
 
-    hide-when-typing
-    hide-after-inactive-ms 1000
+  hide-when-typing
+  hide-after-inactive-ms 1000
 }
 
 output "DP-2" {
@@ -75,7 +76,7 @@ output "eDP-1" {
 layout {
     // Set gaps around windows in logical pixels.
     gaps 2
-
+    background-color "transparent"
     // When to center a column when changing focus, options are:
     // - "never", default behavior, focusing an off-screen column will keep at the left
     //   or right edge of the screen.
@@ -142,6 +143,11 @@ spawn-at-startup "/usr/lib/mate-polkit/polkit-mate-authentication-agent-1"
 spawn-at-startup "swayosd-server"
 spawn-at-startup "pkexec swayosd-libinput-backend"
 spawn-at-startup "xwayland-satellite"
+spawn-at-startup "flatpak" "run" "it.mijorus.smile" "--start-hidden"
+spawn-at-startup "wl-paste" "--watch" "cliphist" "store"
+spawn-at-startup "cliphist" "wipe"
+spawn-at-startup "wlsunset" "-S" "05:45" "-s" "18:00"
+spawn-at-startup "udiskie"
 environment {
     DISPLAY ":0"
     GDK_BACKEND "wayland,x11,*"
@@ -154,6 +160,8 @@ environment {
     PROTON_ENABLE_WAYLAND "1"
     CHROMIUM_FLAGS "--enable-features=UseOzonePlatform --ozone-platform=wayland --gtk-version=4"
     XDG_DATA_DIRS "~/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/share:/usr/local/share:~/.local/share"
+    CLIPHIST_MAX_ITEMS "20"
+    TERMINAL "kitty"
 }
 
 // Uncomment this line to ask the clients to omit their client-side decorations if possible.
@@ -193,18 +201,12 @@ layer-rule {
     block-out-from "screencast"
     // block-out-from "screen-capture"
 
-    shadow {
-        // on
-        off
-        softness 40
-        spread 5
-        offset x=0 y=5
-        draw-behind-window true
-        color "#00000064"
-        // inactive-color "#00000064"
-    }
-
     geometry-corner-radius 12
+    place-within-backdrop true
+}
+
+layer-rule {
+    match namespace="^wpaperd-"
     place-within-backdrop true
 }
 
@@ -272,6 +274,18 @@ window-rule {
     open-on-workspace "games"
 }
 
+window-rule {
+    match app-id="gamescope"
+    match app-id="PrismLauncher$"
+    match app-id="steam"
+    open-on-workspace "games"
+}
+// Dont auto focus
+window-rule {
+    match app-id="steam"
+    open-focused false
+}
+
 
 
 // Example: block out two password managers from screen capture.
@@ -292,6 +306,29 @@ window-rule {
     geometry-corner-radius 4
     clip-to-geometry true
     draw-border-with-background false
+}
+
+window-rule {
+    match is-floating=true
+    shadow {
+        on
+    }
+}
+
+// Screencasted windows
+window-rule {
+    match is-window-cast-target=true
+    border {
+        active-color "#ff0000"
+        inactive-color "#aa0000"
+    }
+    shadow {
+        color "#aa0000"
+    }
+    tab-indicator {
+        active-color "#ff0000"
+        inactive-color "#aa0000"
+    }
 }
 
 binds {
@@ -487,7 +524,10 @@ binds {
     // Consume one window from the right to the bottom of the focused column.
     Mod+Comma  { consume-window-into-column; }
     // Expel the bottom window from the focused column to the right.
-    Mod+Period { expel-window-from-column; }
+    Mod+Ctrl+Comma { expel-window-from-column; }
+    Mod+Period {
+        spawn "flatpak" "run" "it.mijorus.smile"
+    }
 
     Mod+R { switch-preset-column-width; }
     Mod+Shift+R { switch-preset-window-height; }
@@ -520,8 +560,11 @@ binds {
     Mod+Shift+Equal { set-window-height "+10%"; }
 
     // Move the focused window between the floating and the tiling layout.
-    Mod+V       { toggle-window-floating; }
-    Mod+Shift+V { switch-focus-between-floating-and-tiling; }
+    Mod+B      { toggle-window-floating; }
+    Mod+Shift+B { switch-focus-between-floating-and-tiling; }
+    Mod+V hotkey-overlay-title="Manage clipboard" {
+        spawn "sh" "-c" "cliphist list | fuzzel --dmenu --placeholder clipboard --with-nth 2 | cliphist decode | wl-copy"
+    }
 
     // Toggle tabbed column display mode.
     // Windows in this column will appear as vertical tabs,
@@ -534,6 +577,15 @@ binds {
     Print { screenshot; }
     Ctrl+Print { screenshot-screen; }
     Alt+Print { screenshot-window; }
+    Mod+P {
+        set-dynamic-cast-window
+    }
+    Mod+Ctrl+P {
+        set-dynamic-cast-monitor
+    }
+    Mod+Alt+P {
+        clear-dynamic-cast-target
+    }
 
     // Applications such as remote-desktop clients and software KVM switches may
     // request that niri stops processing the keyboard shortcuts defined here
@@ -552,4 +604,14 @@ binds {
     // Powers off the monitors. To turn them back on, do any input like
     // moving the mouse or pressing any other key.
     Mod+Shift+P { power-off-monitors; }
+}
+
+overview {
+    workspace-shadow {
+        softness 30
+        spread 5
+        offset x=0 y=5
+        color "#0007"
+        // off
+    }
 }
