@@ -1,5 +1,9 @@
 // Check the wiki for a full description of the configuration:
 // https://github.com/YaLTeR/niri/wiki/Configuration:-Introduction
+debug {
+    // preview-render "screencast"
+    // preview-render "screen-capture"
+}
 
 // https://github.com/YaLTeR/niri/wiki/Configuration:-Input
 input {
@@ -62,14 +66,15 @@ cursor {
 }
 
 output "DP-2" {
-  scale 1.75
+  scale 2.0
   position x=0 y=0
   focus-at-startup
 }
 
 output "eDP-1" {
-    variable-refresh-rate
-    // variable-refresh-rate on-demand=true
+  scale 1.0
+  variable-refresh-rate
+  // variable-refresh-rate on-demand=true
 }
 
 // https://github.com/YaLTeR/niri/wiki/Configuration:-Layout
@@ -240,12 +245,18 @@ window-rule {
     default-column-width { proportion 0.33333; }
 }
 
+window-rule {
+    match app-id="firefox$"
+    match app-id="zen"
+    default-column-width { proportion 0.92; }
+}
+
 // Open the Firefox picture-in-picture player as floating by default.
 window-rule {
     // This app-id regular expression will work for both:
     // - host Firefox (app-id is "firefox")
     // - Flatpak Firefox (app-id is "org.mozilla.firefox")
-    match app-id=r#"firefox$"# title="^Picture-in-Picture$"
+    match app-id="firefox$" title="^Picture-in-Picture$"
     match app-id="zen" title="^Picture-in-Picture$"
     open-floating true
     default-floating-position x=32 y=32 relative-to="bottom-right"
@@ -253,9 +264,14 @@ window-rule {
 }
 
 window-rule {
-    match app-id=r#"firefox$"#
-    match app-id="zen"
-    default-column-width { proportion 0.92; }
+    match app-id=r#"firefox$"# title="Bitwarden"
+    match app-id="zen" title="Bitwarden"
+    // match title="Bitwarden"
+    open-floating true
+    open-focused true
+    block-out-from "screencast"
+
+    default-column-width { proportion 0.33333; }
 }
 
 // Gaming windows
@@ -283,6 +299,12 @@ window-rule {
 // Dont auto focus
 window-rule {
     match app-id="steam"
+    open-focused false
+}
+
+window-rule {
+    match app-id="^gimp" title="^GIMP Startup$"
+
     open-focused false
 }
 
