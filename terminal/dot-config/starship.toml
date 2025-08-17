@@ -2,6 +2,7 @@
 
 format = "$username$hostname$shell$all"
 right_format = "$cmd_duration$status"
+add_newline = true
 
 palette = 'tokyonight'
 
