@@ -4,6 +4,8 @@
   "position": "bottom",
   "spacing": 0,
   "height": 26,
+  "margin-top": 1,
+  "margin-bottom": 1,
   "modules-left": [
     "user",
     "niri/workspaces"
@@ -13,26 +15,27 @@
     "mpris"
   ],
   "modules-right": [
+    "privacy",
     "group/tray-expander",
     "niri/language",
     "power-profiles-daemon",
     "bluetooth",
     "network",
-    "pulseaudio",
+    "wireplumber",
     "group/perf",
     "battery",
+    "idle_inhibitor",
     "clock"
   ],
   "niri/workspaces": {
     "format": "{icon}",
     "format-icons": {
-      // Named workspaces
-      // (you need to configure them in niri)
-      "browser": "",
-      "discord": "",
-      "chat": "<b></b>",
+      "brain": "🧠",
+      "chat": "󰭹",
+      "base": "",
+      "games": "󰊖",
       // Icons by state
-      "active": "",
+      // "active": "",
       "default": ""
     }
   },
@@ -126,7 +129,7 @@
     "tooltip-format": "Devices connected: {num_connections}",
     "on-click": "blueberry"
   },
-  "pulseaudio": {
+  "wireplumber": {
     "format": "{icon}",
     "on-click": "alacritty --class=Wiremix -e wiremix",
     "on-click-right": "pamixer -t",
@@ -159,6 +162,17 @@
   "tray": {
     "icon-size": 12,
     "spacing": 12
+  },
+  "idle_inhibitor": {
+    "format": "{icon}",
+    "format-icons": {
+      "activated": "",
+      "deactivated": ""
+    }
+  },
+  "privacy": {
+    "icon-size": 12,
+    "icon-spacing": 0
   },
   "niri/window": {
     // "format": "{app_id}@{title}",
