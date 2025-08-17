@@ -11,6 +11,7 @@ alias mv "mv -i" # "m" - never forget
 alias cp "cp -i"
 alias b "cd - >/dev/null && l" # b stands for back
 alias ya yazi
+bind alt-f yazi
 
 if test (uname) != Darwin
     alias ls 'ls --color'
