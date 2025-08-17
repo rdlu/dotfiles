@@ -554,12 +554,12 @@ binds {
     Mod+R { switch-preset-column-width; }
     Mod+Shift+R { switch-preset-window-height; }
     Mod+Ctrl+R { reset-window-height; }
-    Mod+F { maximize-column; }
-    Mod+Shift+F { fullscreen-window; }
+    Mod+Z { maximize-column; }
+    Mod+Shift+Z { fullscreen-window; }
 
     // Expand the focused column to space not taken up by other fully visible columns.
     // Makes the column "fill the rest of the space".
-    Mod+Ctrl+F { expand-column-to-available-width; }
+    Mod+Ctrl+Z { expand-column-to-available-width; }
 
     Mod+C { center-column; }
 
@@ -582,11 +582,13 @@ binds {
     Mod+Shift+Equal { set-window-height "+10%"; }
 
     // Move the focused window between the floating and the tiling layout.
-    Mod+B      { toggle-window-floating; }
-    Mod+Shift+B { switch-focus-between-floating-and-tiling; }
+    Mod+F      { toggle-window-floating; }
+    Mod+Shift+F { switch-focus-between-floating-and-tiling; }
     Mod+V hotkey-overlay-title="Manage clipboard" {
         spawn "sh" "-c" "cliphist list | fuzzel --dmenu --placeholder clipboard --with-nth 2 | cliphist decode | wl-copy"
     }
+    //hides the waybar
+    Mod+B { spawn "pkill" "-SIGUSR1" "waybar"; }
 
     // Toggle tabbed column display mode.
     // Windows in this column will appear as vertical tabs,
