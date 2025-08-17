@@ -1,0 +1,7 @@
+ignore-empty-password
+show-failed-attempts
+daemonize
+color=232136
+font=Inter
+font-size=12
+indicator-thickness=8
