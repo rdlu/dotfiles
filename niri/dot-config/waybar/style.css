@@ -2,7 +2,7 @@
 @define-color background #1a1b26;
 
 * {
-  font-family: iMWritingDuo Nerd Font Propo;
+  font-family: FontAwesome, iMWritingDuo Nerd Font Propo, sans-serif;
   font-size: 12px;
   transition: all 0.5s ease;
 }
@@ -13,16 +13,10 @@ window#waybar{
 
 .modules-left {
   margin-left: 8px;
-  margin-bottom: 2px;
 }
 
 .modules-right {
   margin-right: 8px;
-  margin-bottom: 2px;
-}
-
-.modules-center {
-  margin-bottom: 2px;
 }
 
 .modules-center .module {
@@ -34,15 +28,40 @@ window#waybar{
     color: @foreground;
 }
 
+
+/* If workspaces is the leftmost module, omit left margin */
+.modules-left>widget:first-child>#workspaces {
+  margin-left: 0;
+}
+
 #workspaces button {
   all: initial;
   padding: 0 6px;
-  margin: 0 1px;
-  min-width: 9px;
+  margin: 0 2px;
+  min-width: 18px;
+  color: #ffffff;
+  background-color: transparent;
+  border: none;
+  border-radius: 8px;
 }
 
 #workspaces button.empty {
   opacity: 0.5;
+}
+
+#workspaces button:hover {
+  background: rgba(0, 0, 0, 0.2);
+  box-shadow: inset 0 0 transparent;
+}
+
+#workspaces button.focused {
+  background-color: #ccabf8;
+  color: #15161e;
+}
+
+#workspaces button.urgent {
+  background-color: #e0af68;
+  color: #15161e;
 }
 
 #tray,
@@ -51,11 +70,13 @@ window#waybar{
 #network,
 #bluetooth,
 #pulseaudio,
+#wireplumber,
 #clock,
 #power-profiles-daemon,
 #language,
 #mpris,
 #user,
+#idle_inhibitor,
 #custom-expand-icon,
 #perf {
   padding: 0.1em 0.5em;
@@ -63,6 +84,12 @@ window#waybar{
   background-color: @background;
   border-radius: 8px;
   margin-right: 2px;
+}
+
+
+#clock {
+  font-size: 16px;
+  font-weight: bold;
 }
 
 #mpris {
@@ -122,12 +149,58 @@ window#waybar.empty #window {
     }
 }
 
-#battery.warning:not(.charging) {
-    background: #f53c3c;
+#battery.critical:not(.charging) {
+    background-color: #f53c3c;
     color: white;
     animation-name: blink;
     animation-duration: 0.5s;
     animation-timing-function: steps(12);
     animation-iteration-count: infinite;
     animation-direction: alternate;
+}
+
+#battery.warning:not(.charging) {
+  background-color: #f7768e;
+  color: #15161e;
+}
+
+#battery.plugged {
+  color: #9ece6a;
+}
+
+#network.disconnected {
+  background-color: #f7768e;
+  color: #15161e;
+}
+
+#wireplumber.muted {
+  background-color: #c33;
+  color: #15161e;
+}
+
+#tray>.passive {
+  -gtk-icon-effect: dim;
+}
+
+#tray>.needs-attention {
+  -gtk-icon-effect: highlight;
+  background-color: #e0af68;
+  color: #15161e;
+}
+
+#idle_inhibitor.activated {
+  background-color: #e0af68;
+  color: #15161e;
+}
+
+#privacy {
+  padding: 0 4px;
+  margin: 0 4px;
+  background-color: #e0af68;
+  border-radius: 8px;
+}
+
+#privacy-item {
+  padding: 0 0.5em;
+  color: #15161e;
 }
