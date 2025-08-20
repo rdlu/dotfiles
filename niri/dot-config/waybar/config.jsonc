@@ -80,7 +80,7 @@
     "tooltip-format-disconnected": "Disconnected",
     "interval": 3,
     "nospacing": 1,
-    "on-click": "alacritty --class=Impala -e impala"
+    "on-click": "ghostty --title=Impala --class=Impala -e impala"
   },
   "battery": {
     "format": "{capacity}% {icon}",
@@ -131,7 +131,7 @@
   },
   "wireplumber": {
     "format": "{icon}",
-    "on-click": "alacritty --class=Wiremix -e wiremix",
+    "on-click": "ghostty --title=Wiremix --class=Wiremix -e wiremix",
     "on-click-right": "pamixer -t",
     "tooltip-format": "Playing at {volume}%",
     "scroll-step": 5,
@@ -231,7 +231,7 @@
   "custom/perf-icon": {
     "tooltip": false,
     "format": "",
-    "on-click": "alacritty -e btop"
+    "on-click": "ghostty --class=btop --title=btop -e btop"
   },
   "cpu": {
     "interval": 5,
