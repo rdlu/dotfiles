@@ -22,6 +22,7 @@
     "bluetooth",
     "network",
     "wireplumber",
+    "wireplumber#source",
     "group/perf",
     "battery",
     "idle_inhibitor",
@@ -133,7 +134,8 @@
     "format": "{icon}",
     "on-click": "ghostty --title=Wiremix --class=Wiremix -e wiremix",
     "on-click-right": "easyeffects",
-    "tooltip-format": "Playing at {volume}% [{node_name}]",
+    "on-click-middle": "swayosd-client --output-volume mute-toggle",
+    "tooltip-format": "  Playing at {volume}% [{node_name}]",
     "scroll-step": 5,
     "format-muted": "󰝟",
     "format-icons": {
@@ -143,6 +145,15 @@
         ""
       ]
     }
+  },
+  "wireplumber#source": {
+    "node-type": "Audio/Source",
+    "format": "󰍬",
+    "tooltip-format": "󰍬 Listening at {volume}% [{node_name}]",
+    "format-muted": "󰍭",
+    "on-click": "ghostty --title=Wiremix --class=Wiremix -e wiremix",
+    "on-click-right": "swayosd-client --input-volume mute-toggle",
+    "scroll-step": 5
   },
   "group/tray-expander": {
     "orientation": "inherit",
