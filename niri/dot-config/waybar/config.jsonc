@@ -132,8 +132,8 @@
   "wireplumber": {
     "format": "{icon}",
     "on-click": "ghostty --title=Wiremix --class=Wiremix -e wiremix",
-    "on-click-right": "pamixer -t",
-    "tooltip-format": "Playing at {volume}%",
+    "on-click-right": "easyeffects",
+    "tooltip-format": "Playing at {volume}% [{node_name}]",
     "scroll-step": 5,
     "format-muted": "󰝟",
     "format-icons": {
