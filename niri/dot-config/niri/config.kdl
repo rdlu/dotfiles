@@ -167,6 +167,7 @@ environment {
     XDG_DATA_DIRS "~/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/share:/usr/local/share:~/.local/share"
     CLIPHIST_MAX_ITEMS "20"
     TERMINAL "kitty"
+    BEMOJI_PICKER_CMD "fuzzel -d"
 }
 
 // Uncomment this line to ask the clients to omit their client-side decorations if possible.
@@ -547,9 +548,9 @@ binds {
     // Consume one window from the right to the bottom of the focused column.
     Mod+Comma  { consume-window-into-column; }
     // Expel the bottom window from the focused column to the right.
-    Mod+Ctrl+Comma { expel-window-from-column; }
+    Mod+Shift+Comma { expel-window-from-column; }
     Mod+Period {
-        spawn "flatpak" "run" "it.mijorus.smile"
+      spawn "bemoji" "-t"
     }
 
     Mod+R { switch-preset-column-width; }
