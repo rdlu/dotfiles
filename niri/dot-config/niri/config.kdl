@@ -225,7 +225,9 @@ layer-rule {
 
 workspace "base"
 workspace "brain"
-workspace "games"
+workspace "games" {
+  open-on-output "HDMI-A-1"
+}
 
 window-rule {
     match is-active=false
@@ -451,17 +453,14 @@ binds {
     Mod+Shift+Ctrl+Up    { move-column-to-monitor-up; }
     Mod+Shift+Ctrl+Right { move-column-to-monitor-right; }
     Mod+Shift+Ctrl+H     { move-column-to-monitor-left; }
-    Mod+Shift+Ctrl+J     { move-column-to-monitor-down; }
-    Mod+Shift+Ctrl+K     { move-column-to-monitor-up; }
+    Mod+Shift+Ctrl+J     { move-workspace-to-monitor-left; }
+    Mod+Shift+Ctrl+K     { move-workspace-to-monitor-right; }
     Mod+Shift+Ctrl+L     { move-column-to-monitor-right; }
 
     // Alternatively, there are commands to move just a single window:
     // Mod+Shift+Ctrl+Left  { move-window-to-monitor-left; }
     // ...
 
-    // And you can also move a whole workspace to another monitor:
-    // Mod+Shift+Ctrl+Left  { move-workspace-to-monitor-left; }
-    // ...
 
     Mod+Page_Down      { focus-workspace-down; }
     Mod+Page_Up        { focus-workspace-up; }
@@ -556,7 +555,7 @@ binds {
     Mod+Comma  { consume-window-into-column; }
     // Expel the bottom window from the focused column to the right.
     Mod+Shift+Comma { expel-window-from-column; }
-    Mod+Period {
+    Mod+Period hotkey-overlay-title="Emoji Finder" {
       spawn "bemoji" "-t"
     }
 
@@ -596,8 +595,7 @@ binds {
     Mod+V hotkey-overlay-title="Manage clipboard" {
         spawn "sh" "-c" "cliphist list | fuzzel --dmenu --placeholder clipboard --with-nth 2 | cliphist decode | wl-copy"
     }
-    //hides the waybar
-    Mod+B { spawn "pkill" "-SIGUSR1" "waybar"; }
+    Mod+B hotkey-overlay-title="Hide Waybar" { spawn "pkill" "-SIGUSR1" "waybar"; }
 
     // Toggle tabbed column display mode.
     // Windows in this column will appear as vertical tabs,
