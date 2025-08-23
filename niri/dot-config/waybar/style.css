@@ -2,7 +2,7 @@
 @define-color background #1a1b26;
 
 * {
-  font-family: FontAwesome, iMWritingDuo Nerd Font Propo, sans-serif;
+  font-family: iMWritingDuo Nerd Font Propo, sans-serif;
   font-size: 12px;
   transition: all 0.5s ease;
 }
