@@ -139,29 +139,43 @@ window#waybar.empty #window {
 }
 
 #battery.charging {
-    color: #090;
+  color: #090;
 }
 
 @keyframes blink {
-    to {
-        background-color: #ffffff;
-        color: black;
-    }
+  to {
+    background-color: #ffffff;
+    color: black;
+  }
+}
+
+@keyframes blink-text {
+  to {
+    /* background-color:  #ccabf8; */
+    background-color: @background;
+    color: #fff;
+  }
 }
 
 #battery.critical:not(.charging) {
-    background-color: #f53c3c;
-    color: white;
-    animation-name: blink;
-    animation-duration: 0.5s;
-    animation-timing-function: steps(12);
-    animation-iteration-count: infinite;
-    animation-direction: alternate;
+  background-color: #f53c3c;
+  color: white;
+  animation-name: blink;
+  animation-duration: 0.5s;
+  animation-timing-function: steps(12);
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
 }
 
 #battery.warning:not(.charging) {
-  background-color: #f7768e;
+  background-color: #e0af68;
   color: #15161e;
+  animation-name: blink-text;
+  animation-duration: 2s;
+  animation-timing-function: steps(30);
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+
 }
 
 #battery.plugged {
