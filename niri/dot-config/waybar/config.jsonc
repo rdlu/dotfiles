@@ -28,18 +28,7 @@
     "idle_inhibitor",
     "clock"
   ],
-  "niri/workspaces": {
-    "format": "{icon}",
-    "format-icons": {
-      "brain": "🧠",
-      "chat": "󰭹",
-      "base": "",
-      "games": "󰊖",
-      // Icons by state
-      // "active": "",
-      "default": ""
-    }
-  },
+  "include": "~/.config/waybar/config-niri.jsonc",
   "clock": {
     "format": "{:%H:%M}",
     // "format-alt": "{:%d %B W%V %Y}",
@@ -177,22 +166,13 @@
   "idle_inhibitor": {
     "format": "{icon}",
     "format-icons": {
-      "activated": "",
-      "deactivated": ""
+      "activated": "󰛊",
+      "deactivated": "󰾫"
     }
   },
   "privacy": {
     "icon-size": 12,
     "icon-spacing": 0
-  },
-  "niri/window": {
-    // "format": "{app_id}@{title}",
-    "format": "{title}",
-    "icon": true
-  },
-  "niri/language": {
-    // "format": "{short}-{variant}"
-    "format": "{short}"
   },
   "power-profiles-daemon": {
     "format": "{icon}",
