@@ -8,6 +8,11 @@ use = "yazi-rs/plugins:full-border"
 rev = "d7588f6"
 hash = "3996fc74044bc44144b323686f887e1"
 
+[[plugin.deps]]
+use = "AnirudhG07/plugins-yazi:copy-file-contents"
+rev = "71545f4"
+hash = "f8530ee84fee95dbcc26bb1d8d8019c7"
+
 [[flavor.deps]]
 use = "BennyOe/tokyo-night"
 rev = "5f56364"
