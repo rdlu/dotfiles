@@ -48,14 +48,11 @@ on = ["g", "v", "r"]
 run = "cd ~/Videos/Recording"
 desc = "Go to Recordings"
 
-# yank and copy to clipboard
-[[mgr.prepend_keymap]]
-on = "y"
-run = [
-  'shell -- for path in "$argv"; echo "file://$path"; end | wl-copy -t text/uri-list',
-  "yank",
-]
-
 [[mgr.prepend_keymap]]
 on = "M"
 run = "plugin mount"
+
+[[mgr.prepend_keymap]]
+on = ["<A-y>"]
+run = "plugin copy-file-contents"
+desc = "Copy file contents"
