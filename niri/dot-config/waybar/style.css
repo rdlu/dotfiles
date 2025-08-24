@@ -182,6 +182,16 @@ window#waybar.empty #window {
   color: #9ece6a;
 }
 
+#temperature.critical {
+  background-color: #f53c3c;
+  color: white;
+  animation-name: blink;
+  animation-duration: 0.5s;
+  animation-timing-function: steps(12);
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+
 #network.disconnected {
   background-color: #f7768e;
   color: #15161e;

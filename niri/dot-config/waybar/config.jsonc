@@ -226,6 +226,25 @@
   },
   "cpu": {
     "interval": 5,
-    "format": "󰍛"
+    "format": "󰍛 {usage}% {icon} {avg_frequency:0.1f}GHz",
+    "format-icons": [
+      "<span color='#69ff94'>▁</span>", // green
+      "<span color='#2aa9ff'>▂</span>", // blue
+      "<span color='#f8f8f2'>▃</span>", // white
+      "<span color='#f8f8f2'>▄</span>", // white
+      "<span color='#ffffa5'>▅</span>", // yellow
+      "<span color='#ffffa5'>▆</span>", // yellow
+      "<span color='#ff9977'>▇</span>", // orange
+      "<span color='#dd532e'>█</span>" // red
+    ]
+  },
+  "memory": {
+    "interval": 30,
+    "format": " {}%",
+    "tooltip-format": "  {used:0.1f}G/{total:0.1f}G\nSw {swapUsed:0.1f}G/{swapTotal:0.1f}G"
+  },
+  "temperature": {
+    "critical-threshold": 80,
+    "format": "  {temperatureC}°C"
   }
 }
