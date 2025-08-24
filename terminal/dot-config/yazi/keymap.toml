@@ -52,6 +52,10 @@ desc = "Go to Recordings"
 [[mgr.prepend_keymap]]
 on = "y"
 run = [
-  'shell -- for path in "$@"; do echo "file://$path"; done | wl-copy -t text/uri-list',
+  'shell -- for path in "$argv"; echo "file://$path"; end | wl-copy -t text/uri-list',
   "yank",
 ]
+
+[[mgr.prepend_keymap]]
+on = "M"
+run = "plugin mount"
