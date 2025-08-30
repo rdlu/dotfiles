@@ -286,6 +286,18 @@ window-rule {
 
 // Gaming windows
 window-rule {
+  match app-id="com.obsproject.Studio"
+  open-on-workspace "brain"
+  open-focused true
+  open-maximized true
+  opacity 1.0
+  border {
+    active-color "#ff0000"
+    inactive-color "#aa0000"
+  }
+}
+
+window-rule {
     match app-id=r#"RetroArch$"#
     open-fullscreen true
     open-focused true
