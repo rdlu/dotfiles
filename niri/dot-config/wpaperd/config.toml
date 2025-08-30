@@ -1,7 +1,7 @@
 [default]
 duration = "24h"
-# mode = "center"
-mode = "fit-border-color"
+mode = "center"
+# mode = "fit-border-color"
 initial-transition = false
 
 [any]
