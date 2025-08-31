@@ -169,7 +169,7 @@ environment {
     MOZ_ENABLE_WAYLAND "1"
     ELECTRON_OZONE_PLATFORM_HINT "wayland"
     OZONE_PLATFORM "wayland"
-    PROTON_ENABLE_WAYLAND "1"
+    // PROTON_ENABLE_WAYLAND "1"
     CHROMIUM_FLAGS "--enable-features=UseOzonePlatform --ozone-platform=wayland --gtk-version=4"
     XDG_DATA_DIRS "~/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/share:/usr/local/share:~/.local/share"
     CLIPHIST_MAX_ITEMS "20"
