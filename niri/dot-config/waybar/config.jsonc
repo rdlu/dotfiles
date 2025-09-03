@@ -121,7 +121,7 @@
   },
   "wireplumber": {
     "format": "{icon}",
-    "on-click": "ghostty --title=Wiremix --class=Wiremix -e wiremix",
+    "on-click": "ghostty --title=Wiremix --class=Wiremix -e wiremix -v output",
     "on-click-right": "easyeffects",
     "on-click-middle": "swayosd-client --output-volume mute-toggle",
     "tooltip-format": "  Playing at {volume}% [{node_name}]",
@@ -140,7 +140,7 @@
     "format": "󰍬",
     "tooltip-format": "󰍬 Listening at {volume}% [{node_name}]",
     "format-muted": "󰍭",
-    "on-click": "ghostty --title=Wiremix --class=Wiremix -e wiremix",
+    "on-click": "ghostty --title=Wiremix --class=Wiremix -e wiremix -v input",
     "on-click-right": "swayosd-client --input-volume mute-toggle",
     "scroll-step": 5
   },
