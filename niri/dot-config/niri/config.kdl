@@ -307,6 +307,15 @@ window-rule {
 }
 
 window-rule {
+  match app-id="Hollow Knight Silksong"
+  open-on-workspace "games"
+  open-fullscreen true
+  tiled-state false
+  open-focused true
+  variable-refresh-rate true
+}
+
+window-rule {
     match app-id="es-de"
     open-fullscreen true
     open-focused true
@@ -318,6 +327,7 @@ window-rule {
     match app-id="gamescope"
     match app-id="PrismLauncher$"
     match app-id="steam"
+    match app-id="heroic"
     open-on-workspace "games"
 }
 // Dont auto focus
