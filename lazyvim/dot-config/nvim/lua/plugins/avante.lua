@@ -37,7 +37,7 @@ return {
     "stevearc/dressing.nvim",
     "nvim-lua/plenary.nvim",
     "MunifTanjim/nui.nvim",
-    "ravitemer/mcphub.nvim", -- Required for MCP Hub integration
+    -- "ravitemer/mcphub.nvim", -- Required for MCP Hub integration
     --- The below dependencies are optional,
     "nvim-tree/nvim-web-devicons", -- or echasnovski/mini.icons
     {
