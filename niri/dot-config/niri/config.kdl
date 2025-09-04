@@ -305,6 +305,15 @@ window-rule {
 }
 
 window-rule {
+  match app-id="Hollow Knight Silksong"
+  open-on-workspace "games"
+  open-fullscreen true
+  tiled-state false
+  open-focused true
+  variable-refresh-rate true
+}
+
+window-rule {
     open-fullscreen true
     open-focused true
     open-on-workspace "games"
