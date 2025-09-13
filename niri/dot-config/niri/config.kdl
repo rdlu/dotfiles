@@ -227,7 +227,8 @@ layer-rule {
 workspace "base"
 workspace "brain"
 workspace "games" {
-  open-on-output "HDMI-A-1"
+  // open-on-output "HDMI-A-1"
+  open-on-output "DP-2"
 }
 
 window-rule {
@@ -478,8 +479,8 @@ binds {
     Mod+Shift+Ctrl+Up    { move-column-to-monitor-up; }
     Mod+Shift+Ctrl+Right { move-column-to-monitor-right; }
     Mod+Shift+Ctrl+H     { move-column-to-monitor-left; }
-    Mod+Shift+Ctrl+J     { move-workspace-to-monitor-left; }
-    Mod+Shift+Ctrl+K     { move-workspace-to-monitor-right; }
+    Mod+Shift+Ctrl+J hotkey-overlay-title="Move Workspace to Monitor Left"     { move-workspace-to-monitor-left; }
+    Mod+Shift+Ctrl+K hotkey-overlay-title="Move Workspace to Monitor Right"   { move-workspace-to-monitor-right; }
     Mod+Shift+Ctrl+L     { move-column-to-monitor-right; }
 
     // Alternatively, there are commands to move just a single window:
