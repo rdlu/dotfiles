@@ -7,12 +7,17 @@ return {
     -- your configuration comes here
     -- or leave it empty to use the default settings
     -- refer to the configuration section below
-    root_dir = "~/Documents/Suika Box/", -- set it to your desired directory or remain at it is
-    default_split = "float", -- or "vertical" or "horizontal" or "none" based on your preference
+    root_dir = "~/Documents/Suika Box", -- set it to your desired directory or remain at it is
+    default_split = "none", -- or "vertical" or "horizontal" or "none" based on your preference
     rollover_todo = {
       enabled = true, -- enable rollover
     },
     picker = "snacks", -- or "fzf" or "telescope" or "mini" based on your preference
+    dir_names = {
+      notes = "00.notes",
+      todos = "todos",
+      journals = "00.journals",
+    },
   },
 
   keys = {
@@ -74,7 +79,7 @@ return {
       desc = "[DotMd] Open",
     },
     {
-      "<leader>sz",
+      "<leader>sn",
       function()
         require("dotmd").pick()
       end,
