@@ -1,3 +1,3 @@
 -- bootstrap lazy.nvim, LazyVim and your plugins
 require("config.lazy")
-vim.cmd("set spelllang=en_us,pt_br")
+vim.opt.spelllang = { "en", "pt_br" }
