@@ -65,7 +65,7 @@ fastfetch:
 [group("install-essentials")]
 fish-shell:
   @just _echowarning "1) Installing fish, fish plugin manager, and Starship prompt"
-  yay -S --needed fisher fish starship atuin mise eza lazygit jj tmux zellij
+  yay -S --needed fisher fish starship atuin mise eza lazygit jj tmux zellij stow
   git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 
   @just _echowarning "\n2) Stowing fish config"
