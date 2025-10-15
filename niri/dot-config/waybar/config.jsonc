@@ -245,6 +245,7 @@
     "tooltip-format": "  {used:0.1f}G/{total:0.1f}G\nSw {swapUsed:0.1f}G/{swapTotal:0.1f}G"
   },
   "temperature": {
+    "thermal-zone": 8,
     "critical-threshold": 80,
     "format": "  {temperatureC}°C"
   }
