@@ -1,0 +1,19 @@
+[Desktop Entry]
+Version=1.0
+Name=Zellij
+Type=Application
+Comment=Manage Your Terminal Applications
+Terminal=true
+Exec=zellij
+Icon=zellij
+Categories=ConsoleOnly;System;
+GenericName=Terminal Multiplexer
+Name[en]=Zellij
+Name[en_US]=Zellij
+Name[en_US.UTF-8]=Zellij
+Comment[en]=Manage Your Terminal Applications
+Comment[en_US]=Manage Your Terminal Applications
+Comment[en_US.UTF-8]=Manage Your Terminal Applications
+NoDisplay=true
+StartupNotify=false
+
