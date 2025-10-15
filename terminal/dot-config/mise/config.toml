@@ -20,7 +20,6 @@ bun = true
 zig = "0.13.0"
 lazydocker = "0.23"
 node = "23"
-python = "3.12"
 uv = "latest"
 "ubi:duckdb/duckdb" = "latest"
 bun = "latest"
