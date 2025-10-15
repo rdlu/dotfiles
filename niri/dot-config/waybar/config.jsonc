@@ -214,20 +214,16 @@
       "click-to-reveal": true
     },
     "modules": [
-      "custom/perf-icon",
       "temperature",
       "cpu",
       "memory"
     ]
   },
-  "custom/perf-icon": {
-    "tooltip": false,
-    "format": "",
-    "on-right-click": "ghostty --class=btop --title=btop -e btop"
-  },
   "cpu": {
     "interval": 5,
     "format": "󰍛 {usage}% {icon} {avg_frequency:0.1f}GHz",
+    "on-click": "ghostty --class=btop --title=btop -e btop",
+    "on-click-right": "ghostty --class=bottom --title=bottom -e btm",
     "format-icons": [
       "<span color='#69ff94'>▁</span>", // green
       "<span color='#2aa9ff'>▂</span>", // blue
@@ -242,11 +238,13 @@
   "memory": {
     "interval": 30,
     "format": " {}%",
+    "on-click": "ghostty --class=btop --title=btop -e btop",
+    "on-click-right": "ghostty --class=bottom --title=bottom -e btm",
     "tooltip-format": "  {used:0.1f}G/{total:0.1f}G\nSw {swapUsed:0.1f}G/{swapTotal:0.1f}G"
   },
   "temperature": {
     "thermal-zone": 8,
-    "critical-threshold": 80,
-    "format": "  {temperatureC}°C"
+    "critical-threshold": 90,
+    "format": " {temperatureC}°C"
   }
 }
