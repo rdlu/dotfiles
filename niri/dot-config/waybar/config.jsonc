@@ -210,7 +210,8 @@
     "orientation": "inherit",
     "drawer": {
       "transition-duration": 500,
-      "children-class": "perf-element"
+      "children-class": "perf-element",
+      "click-to-reveal": true
     },
     "modules": [
       "custom/perf-icon",
@@ -222,7 +223,7 @@
   "custom/perf-icon": {
     "tooltip": false,
     "format": "",
-    "on-click": "ghostty --class=btop --title=btop -e btop"
+    "on-right-click": "ghostty --class=btop --title=btop -e btop"
   },
   "cpu": {
     "interval": 5,
