@@ -144,7 +144,8 @@ systemd-niri-config-install:
   systemctl --user add-wants niri.service wpaperd.service
   systemctl --user add-wants niri.service mako.service
   systemctl --user add-wants niri.service swayidle.service
-  systemctl --user add-wants niri.service swayosd-libinput-backend.service
+  systemctl --user add-wants niri.service waybar.service
+  systemctl enable swayosd-libinput-backend.service
 
 [group("niri-reload")]
 wpaper-reload:
@@ -159,7 +160,8 @@ mako-reload:
 [group("niri-reload")]
 waybar-reload:
   @just _echowarning "Reloading Waybar"
-  systemctl --user reload-or-restart waybar.service
+  # systemctl --user reload-or-restart waybar.service
+  systemctl --user restart waybar.service
  
 [group("niri-reload")]
 swayidle-reload:
