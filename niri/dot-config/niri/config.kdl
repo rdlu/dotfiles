@@ -151,12 +151,13 @@ spawn-at-startup "/usr/lib/mate-polkit/polkit-mate-authentication-agent-1"
 //spawn-sh-at-startup "/usr/lib/polkit-kde-authentication-agent-1 &" // Polkit
 spawn-at-startup "swayosd-server"
 // spawn-at-startup "pkexec swayosd-libinput-backend"
-spawn-at-startup "xwayland-satellite"
-spawn-at-startup "flatpak" "run" "it.mijorus.smile" "--start-hidden"
+// spawn-at-startup "xwayland-satellite"
 spawn-at-startup "wl-paste" "--watch" "cliphist" "store"
 spawn-at-startup "cliphist" "wipe"
 spawn-at-startup "wlsunset" "-S" "05:45" "-s" "18:00"
 spawn-at-startup "udiskie"
+spawn-at-startup "niriusd"
+
 environment {
     //DISPLAY ":0"
     DISPLAY ":1"
@@ -196,7 +197,8 @@ screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
 layer-rule {
     match namespace="^notifications$"
     opacity 0.8
-    block-out-from "screencast"
+    // block-out-from "screencast"
+    block-out-from "screen-capture"
 }
 
 // Make fuzzel semitransparent.
@@ -226,6 +228,7 @@ layer-rule {
 
 workspace "base"
 workspace "brain"
+workspace "comms"
 workspace "games" {
   // open-on-output "HDMI-A-1"
   open-on-output "DP-2"
@@ -295,6 +298,15 @@ window-rule {
     block-out-from "screencast"
 
     default-column-width { proportion 0.33333; }
+}
+
+// Communications and chat windows
+window-rule {
+  match app-id="Rocket.Chat"
+  match app-id="Fastmail"
+  open-on-workspace "comms"
+  // block-out-from "screencast"
+  block-out-from "screen-capture"
 }
 
 // Gaming windows
@@ -688,4 +700,9 @@ overview {
         color "#0007"
         // off
     }
+}
+
+xwayland-satellite {
+    // off
+    path "xwayland-satellite"
 }
