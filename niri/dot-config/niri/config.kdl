@@ -225,10 +225,11 @@ layer-rule {
     place-within-backdrop true
 }
 
+// workspaces
 workspace "base"
-workspace "brain"
 workspace "comms"
-workspace "games" {
+workspace "notes"
+workspace "xgames" {
   // open-on-output "HDMI-A-1"
   open-on-output "DP-2"
 }
@@ -324,14 +325,14 @@ window-rule {
 window-rule {
     open-fullscreen true
     open-focused true
-    open-on-workspace "games"
+    open-on-workspace "xgames"
     variable-refresh-rate true
     tiled-state false
 }
 
 window-rule {
   match app-id="Hollow Knight Silksong"
-  open-on-workspace "games"
+  open-on-workspace "xgames"
   open-fullscreen true
   tiled-state false
   open-focused true
@@ -341,12 +342,12 @@ window-rule {
 window-rule {
     open-fullscreen true
     open-focused true
-    open-on-workspace "games"
+    open-on-workspace "xgames"
     tiled-state false
 }
 
 window-rule {
-    open-on-workspace "games"
+    open-on-workspace "xgames"
 }
 // Dont auto focus
 window-rule {
