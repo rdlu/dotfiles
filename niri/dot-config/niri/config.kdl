@@ -276,6 +276,17 @@ window-rule {
 }
 
 window-rule {
+    match title="^Picture in picture$"
+    default-floating-position x=32 y=32 relative-to="bottom-right"
+    open-floating true
+    opacity 0.95
+    min-width 320
+    max-width 640
+    min-height 180
+    max-height 360
+}
+
+window-rule {
     match app-id=r#"firefox$"# title="Bitwarden"
     match app-id="zen" title="Bitwarden"
     // match title="Bitwarden"
