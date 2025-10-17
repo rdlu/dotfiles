@@ -5,7 +5,8 @@ function show_power_menu
         "󰤄 Suspend" \
         "󰜉 Restart" \
         "󰐥 Shutdown" \
-        "🚀 Waybar restart"
+        "🚀 Waybar restart" \
+        "󰩈 Exit session"
 
     set -l selection (printf '%s\n' $menu_options | fuzzel --dmenu)
 
@@ -20,6 +21,8 @@ function show_power_menu
             systemctl poweroff
         case "*Waybar*"
             systemctl --user restart waybar.service
+        case "*Exit*"
+            niri msg action quit
     end
 end
 
