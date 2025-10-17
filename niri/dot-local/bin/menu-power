@@ -6,11 +6,11 @@ function show_power_menu
         "󰜉 Restart" \
         "󰐥 Shutdown"
 
-    set -l selection (printf '%s\n' $menu_options | walker --dmenu)
+    set -l selection (printf '%s\n' $menu_options | fuzzel --dmenu)
 
     switch "$selection"
         case "*Lock*"
-            hyprlock
+            swaylock
         case "*Suspend*"
             systemctl suspend
         case "*Restart*"
