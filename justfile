@@ -97,7 +97,7 @@ kitty-terminal:
 [group("install-graphical")]
 niri-window-manager:
   @just _echowarning "1) Installing niri and related tools"
-  yay -S --needed blueberry brightnessctl udiskie cliphist fuzzel gdm gnome-keyring inter-font mako niri-git noto-fonts noto-fonts-cjk noto-fonts-emoji noto-fonts-extra mate-polkit swayidle swaylock ttf-firacode-nerd ttf-font-awesome waybar wl-clipboard wlsunset wpaperd xdg-desktop-portal-gnome xwayland-satellite ttf-iawriter-nerd
+  yay -S --needed bluetui brightnessctl udiskie cliphist fuzzel gdm gnome-keyring inter-font mako niri-git noto-fonts noto-fonts-cjk noto-fonts-emoji noto-fonts-extra mate-polkit swayidle swaylock ttf-firacode-nerd ttf-font-awesome waybar wl-clipboard wlsunset wpaperd xdg-desktop-portal-gnome xwayland-satellite ttf-iawriter-nerd
 
   @just _echowarning "\n2) Stowing niri config"
   stow --dotfiles -S niri
