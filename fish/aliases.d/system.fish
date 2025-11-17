@@ -7,7 +7,6 @@ abbr -a mux tmux new -A -s mux0 fish
 abbr -a mux1 tmux new -A -s mux1 fish
 
 # System management
-abbr -a pacman sudo pacman
 abbr -a systart sudo systemctl start
 abbr -a systatus sudo systemctl status
 abbr -a sysnable sudo systemctl enable --now
@@ -55,8 +54,6 @@ function nmap-dig --description "Scan Filtered sites [target-site=github.io] [ta
     nmap -iL /tmp/ips.txt -p 80,443 -sV -Pn -n -oG -
     rm /tmp/ips.txt
 end
-
-
 
 function myps
     ps $argv -u $USER -o pid,%cpu,%mem,start,time,bsdtime,command
