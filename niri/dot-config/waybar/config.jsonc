@@ -117,7 +117,7 @@
     "format-disabled": "󰂲",
     "format-connected": "",
     "tooltip-format": "Devices connected: {num_connections}",
-    "on-click": "blueberry"
+    "on-click": "ghostty --title=BlueTUI --class=bluetui -e bluetui"
   },
   "wireplumber": {
     "format": "{icon}",
