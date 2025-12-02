@@ -69,11 +69,13 @@ output "HDMI-A-1" {
   scale 2.0
   position x=0 y=0
   focus-at-startup
-  mode "3840x2160@60.000"
+  mode "3840x2160"
 }
 
 output "DP-1" {
   scale 2.0
+  // scale 1.0
+  // mode "2560x1440"
   position x=0 y=0
   focus-at-startup
 }
@@ -426,7 +428,10 @@ binds {
     XF86AudioMicMute     allow-when-locked=true { spawn "swayosd-client" "--input-volume" "mute-toggle"; }
     XF86MonBrightnessUp  allow-when-locked=true { spawn "swayosd-client" "--brightness" "+10"; }
     XF86MonBrightnessDown allow-when-locked=true { spawn "swayosd-client" "--brightness" "-10"; }
-
+    XF86AudioNext allow-when-locked=true { spawn-sh "playerctl next"; }
+    XF86AudioPause allow-when-locked=true { spawn-sh "playerctl play-pause"; }
+    XF86AudioPlay  allow-when-locked=true { spawn-sh "playerctl play-pause"; }
+    XF86AudioPrev  allow-when-locked=true { spawn-sh "playerctl previous"; }
 
     // Open/close the Overview: a zoomed-out view of workspaces and windows.
     // You can also move the mouse into the top-left hot corner,
