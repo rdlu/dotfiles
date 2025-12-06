@@ -246,6 +246,8 @@
   },
   "temperature": {
     "critical-threshold": 80,
+    //"thermal-zone": 8,
+    //"critical-threshold": 90,
     "format": " {temperatureC}°C"
   }
 }

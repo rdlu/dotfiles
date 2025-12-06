@@ -8,6 +8,7 @@ output "HDMI-A-1" {
 output "DP-1" {
   scale 2.0
   // scale 1.0
+  // scale 1.75
   // mode "2560x1440"
   position x=0 y=0
   focus-at-startup
