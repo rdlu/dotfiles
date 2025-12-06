@@ -1,0 +1,20 @@
+output "HDMI-A-1" {
+  scale 2.0
+  position x=0 y=0
+  focus-at-startup
+  mode "3840x2160"
+}
+
+output "DP-1" {
+  scale 2.0
+  // scale 1.0
+  // mode "2560x1440"
+  position x=0 y=0
+  focus-at-startup
+}
+
+output "eDP-1" {
+  scale 1.0
+  variable-refresh-rate
+  // variable-refresh-rate on-demand=true
+}
