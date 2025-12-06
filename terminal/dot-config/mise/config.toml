@@ -15,6 +15,9 @@ bun = true
 "pipx:xxh-xxh" = "latest"
 "pipx:epy-reader" = "latest"
 "pipx:aider-chat" = { version = "latest", extras = "browser,playwright,fzf,help" }
+erlang = "27.3"
+elixir = "1.18.4-otp-27"
+ruby = "3.2"
 zig = "0.13.0"
 lazydocker = "0.23"
 python = "3.12"
@@ -34,6 +37,7 @@ bun = "latest"
 "cargo:monolith" = "latest"
 "cargo:jj-cli" = "latest"
 "cargo:lazyjj" = "latest"
+"ubi:tidewave-ai/mcp_proxy_rust" = { version = "latest", exe = "mcp-proxy" }
 "cargo:scooter" = "latest"
 "cargo:gittype" = "latest"
 "cargo:xleak" = "latest"
