@@ -1,4 +1,8 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
 format = "$username$hostname$shell$all"
+right_format = "$cmd_duration$status"
+add_newline = true
 
 palette = 'tokyonight'
 
@@ -66,13 +70,15 @@ disabled = true
 
 # Prompt: param 2 └─
 [character]
-success_symbol = " [╰─λ](bold cyan)"
-error_symbol = " [×](bold red)"
+success_symbol = "[ ╰─❯](bold purple)"
+# success_symbol = " [╰─λ](bold cyan)"
+error_symbol = " [╰─×](bold red)"
 
 # SYMBOLS
 [status]
-symbol = "🔴"
-format = '[\[$symbol$status_maybe_int\]]($style)'
+format = " [$status]($style)"
+# symbol = "🔴"
+# format = '[\[$symbol$status_maybe_int\]]($style)'
 map_symbol = true
 disabled = false
 

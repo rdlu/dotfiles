@@ -1,7 +1,7 @@
 git:
-  paging:
-    colorArg: always
-    pager: delta --dark --paging=never
+  pagers:
+    - colorArg: always
+      pager: delta --dark --paging=never
   autoFetch: false
 gui:
   # Format used when displaying time if the time is less than 24 hours ago.

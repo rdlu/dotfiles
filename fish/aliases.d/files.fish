@@ -10,16 +10,18 @@ alias less 'less -FSRXc'
 alias mv "mv -i" # "m" - never forget
 alias cp "cp -i"
 alias b "cd - >/dev/null && l" # b stands for back
+bind alt-f yazi
 
 if test (uname) != Darwin
     alias ls 'ls --color'
 end
 
 if type -q eza; and status is-interactive
-    alias l "eza --time-style long-iso --color=auto -F"
-    alias ll "l -hl"
-    alias la "l -a"
-    alias ls l
+    alias ls "eza -al --time-style long-iso --color=auto --group-directories-first --icons"
+    alias la 'eza -a --color=always --group-directories-first --icons'  # all files and dirs
+    alias ll 'eza -l --color=always --group-directories-first --icons'  # long format
+    alias lt 'eza -aT --color=always --group-directories-first --icons' # tree listing
+    alias l. "eza -a | grep -e '^\.'"                                     # show only dotfiles
 else
     alias l "ls --color=auto -F"
     alias ll "l -Ahl"

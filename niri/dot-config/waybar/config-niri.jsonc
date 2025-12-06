@@ -1,0 +1,26 @@
+{
+  "niri/workspaces": {
+    "format": "{icon}",
+    "format-icons": {
+      "brain": "🧠",
+      "comms": "󰭹",
+      "base": "",
+      "dev": "",
+      "notes": "🧠",
+      "games": "󰊖",
+      "xgames": "󰊖",
+      // Icons by state
+      // "active": "",
+      "default": ""
+    }
+  },
+  "niri/window": {
+    // "format": "{app_id}@{title}",
+    "format": "{title}",
+    "icon": true
+  },
+  "niri/language": {
+    // "format": "{short}-{variant}"
+    "format": "{short}"
+  }
+}

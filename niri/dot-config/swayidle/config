@@ -1,0 +1,4 @@
+timeout 301 swaylock
+timeout 601 "niri msg action power-off-monitors"
+before-sleep swaylock
+lock swaylock
