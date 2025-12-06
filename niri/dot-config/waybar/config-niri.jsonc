@@ -3,7 +3,7 @@
     "format": "{icon}",
     "format-icons": {
       "brain": "🧠",
-      "chat": "󰭹",
+      "comms": "󰭹",
       "base": "",
       "games": "󰊖",
       // Icons by state

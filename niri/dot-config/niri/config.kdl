@@ -36,6 +36,7 @@ include "layer-rules.kdl"
 
 workspace "base"
 workspace "brain"
+workspace "comms"
 workspace "games" {
   open-on-output "HDMI-A-1"
   // open-on-output "DP-1"

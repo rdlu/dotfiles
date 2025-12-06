@@ -54,6 +54,15 @@ window-rule {
     default-column-width { proportion 0.33333; }
 }
 
+// Communications and chat windows
+window-rule {
+  match app-id="Rocket.Chat"
+  match app-id="Fastmail"
+  open-on-workspace "comms"
+  // block-out-from "screencast"
+  block-out-from "screen-capture"
+}
+
 // Gaming windows
 window-rule {
   match app-id="com.obsproject.Studio"
