@@ -34,6 +34,7 @@ screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
 // Layer rules (waybar, notifications, fuzzel, wpaperd)
 include "layer-rules.kdl"
 
+// workspaces
 workspace "base"
 workspace "brain"
 workspace "comms"
@@ -56,4 +57,9 @@ overview {
         color "#0007"
         // off
     }
+}
+
+xwayland-satellite {
+    // off
+    path "xwayland-satellite"
 }

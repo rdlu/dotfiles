@@ -211,7 +211,8 @@
     "drawer": {
       "click-to-reveal": true,
       "transition-duration": 500,
-      "children-class": "perf-element"
+      "children-class": "perf-element",
+      "click-to-reveal": true
     },
     "modules": [
       "temperature",
@@ -219,15 +220,12 @@
       "memory"
     ]
   },
-  "custom/perf-icon": {
-    "tooltip": false,
-    "format": "",
-    "on-click": "ghostty --class=btop --title=btop -e btop"
-  },
   "cpu": {
     "interval": 5,
     "on-click": "ghostty --class=btop --title=btop -e btop",
     "format": "󰍛 {usage}% {icon} {avg_frequency:0.1f}GHz",
+    "on-click": "ghostty --class=btop --title=btop -e btop",
+    "on-click-right": "ghostty --class=bottom --title=bottom -e btm",
     "format-icons": [
       "<span color='#69ff94'>▁</span>", // green
       "<span color='#2aa9ff'>▂</span>", // blue
@@ -242,6 +240,8 @@
   "memory": {
     "interval": 30,
     "format": " {}%",
+    "on-click": "ghostty --class=btop --title=btop -e btop",
+    "on-click-right": "ghostty --class=bottom --title=bottom -e btm",
     "tooltip-format": "  {used:0.1f}G/{total:0.1f}G\nSw {swapUsed:0.1f}G/{swapTotal:0.1f}G"
   },
   "temperature": {

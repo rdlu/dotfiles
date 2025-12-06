@@ -65,7 +65,7 @@ fastfetch:
 [group("install-essentials")]
 fish-shell:
   @just _echowarning "1) Installing fish, fish plugin manager, and Starship prompt"
-  yay -S --needed fisher fish starship atuin mise eza lazygit jj tmux zellij
+  yay -S --needed fisher fish starship atuin mise eza lazygit jj tmux zellij stow
   git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 
   @just _echowarning "\n2) Stowing fish config"
@@ -97,7 +97,7 @@ kitty-terminal:
 [group("install-graphical")]
 niri-window-manager:
   @just _echowarning "1) Installing niri and related tools"
-  yay -S --needed blueberry brightnessctl udiskie cliphist fuzzel gdm gnome-keyring inter-font mako niri-git noto-fonts noto-fonts-cjk noto-fonts-emoji noto-fonts-extra mate-polkit swayidle swaylock ttf-firacode-nerd ttf-font-awesome waybar wl-clipboard wlsunset wpaperd xdg-desktop-portal-gnome xwayland-satellite ttf-iawriter-nerd
+  yay -S --needed bluetui brightnessctl udiskie cliphist fuzzel gdm gnome-keyring inter-font mako niri-git noto-fonts noto-fonts-cjk noto-fonts-emoji noto-fonts-extra mate-polkit swayidle swaylock ttf-firacode-nerd ttf-font-awesome waybar wl-clipboard wlsunset wpaperd xdg-desktop-portal-gnome xwayland-satellite ttf-iawriter-nerd
 
   @just _echowarning "\n2) Stowing niri config"
   stow --dotfiles -S niri
@@ -144,7 +144,8 @@ systemd-niri-config-install:
   systemctl --user add-wants niri.service wpaperd.service
   systemctl --user add-wants niri.service mako.service
   systemctl --user add-wants niri.service swayidle.service
-  systemctl --user add-wants niri.service swayosd-libinput-backend.service
+  systemctl --user add-wants niri.service waybar.service
+  systemctl enable swayosd-libinput-backend.service
 
 [group("niri-reload")]
 wpaper-reload:
@@ -159,7 +160,8 @@ mako-reload:
 [group("niri-reload")]
 waybar-reload:
   @just _echowarning "Reloading Waybar"
-  systemctl --user reload-or-restart waybar.service
+  # systemctl --user reload-or-restart waybar.service
+  systemctl --user restart waybar.service
  
 [group("niri-reload")]
 swayidle-reload:
