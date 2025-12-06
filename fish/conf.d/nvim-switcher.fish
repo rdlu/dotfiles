@@ -1,7 +1,3 @@
-function nvim-lazy
-    env NVIM_APPNAME=nvim-lazy nvim $argv
-end
-
 function nvim-full
     env NVIM_APPNAME=nvim-full nvim $argv
 end
