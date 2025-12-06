@@ -1,0 +1,31 @@
+// Block out mako notifications from screencasts.
+layer-rule {
+    match namespace="^notifications$"
+    opacity 0.8
+    block-out-from "screencast"
+}
+
+// Make fuzzel semitransparent.
+layer-rule {
+    match namespace="^launcher$"
+
+    opacity 0.95
+}
+
+layer-rule {
+    match namespace="waybar"
+    match at-startup=true
+
+    // Properties that apply continuously.
+    opacity 0.8
+    block-out-from "screencast"
+    // block-out-from "screen-capture"
+
+    geometry-corner-radius 12
+    place-within-backdrop true
+}
+
+layer-rule {
+    match namespace="^wpaperd-"
+    place-within-backdrop true
+}

@@ -1,0 +1,167 @@
+// https://github.com/YaLTeR/niri/wiki/Configuration:-Window-Rules
+
+window-rule {
+    match is-active=false
+    opacity 0.8
+}
+
+// Work around WezTerm's initial configure bug
+// by setting an empty default-column-width.
+window-rule {
+    // This regular expression is intentionally made as specific as possible,
+    // since this is the default config, and we want no false positives.
+    // You can get away with just app-id="wezterm" if you want.
+    match app-id=r#"^org\.wezfurlong\.wezterm$"#
+    default-column-width {}
+}
+
+window-rule {
+    match app-id="kitty"
+    default-column-width { proportion 0.92; }
+}
+
+window-rule {
+    match title="^Calculator"
+    default-column-width { proportion 0.33333; }
+}
+
+window-rule {
+    match app-id="firefox$"
+    match app-id="zen"
+    default-column-width { proportion 0.92; }
+}
+
+// Open the Firefox picture-in-picture player as floating by default.
+window-rule {
+    // This app-id regular expression will work for both:
+    // - host Firefox (app-id is "firefox")
+    // - Flatpak Firefox (app-id is "org.mozilla.firefox")
+    match app-id="firefox$" title="^Picture-in-Picture$"
+    match app-id="zen" title="^Picture-in-Picture$"
+    open-floating true
+    default-floating-position x=32 y=32 relative-to="bottom-right"
+    opacity 0.95
+}
+
+window-rule {
+    match app-id=r#"firefox$"# title="Bitwarden"
+    match app-id="zen" title="Bitwarden"
+    // match title="Bitwarden"
+    open-floating true
+    open-focused true
+    block-out-from "screencast"
+
+    default-column-width { proportion 0.33333; }
+}
+
+// Communications and chat windows
+window-rule {
+  match app-id="Rocket.Chat"
+  match app-id="Fastmail"
+  open-on-workspace "comms"
+  // block-out-from "screencast"
+  block-out-from "screen-capture"
+}
+
+// Gaming windows
+window-rule {
+  match app-id="com.obsproject.Studio"
+  open-on-workspace "brain"
+  open-focused true
+  open-maximized true
+  opacity 1.0
+  border {
+    active-color "#ff0000"
+    inactive-color "#aa0000"
+  }
+}
+
+window-rule {
+    match app-id=r#"RetroArch$"#
+    open-fullscreen true
+    open-focused true
+    open-on-workspace "games"
+    variable-refresh-rate true
+    tiled-state false
+}
+
+window-rule {
+  match app-id="Hollow Knight Silksong"
+  open-on-workspace "games"
+  open-fullscreen true
+  tiled-state false
+  open-focused true
+  variable-refresh-rate true
+}
+
+window-rule {
+    match app-id="es-de"
+    open-fullscreen true
+    open-focused true
+    open-on-workspace "games"
+    tiled-state false
+}
+
+window-rule {
+    match app-id="gamescope"
+    match app-id="PrismLauncher$"
+    match app-id="steam"
+    match app-id="heroic"
+    open-on-workspace "games"
+}
+// Dont auto focus
+window-rule {
+    match app-id="steam"
+    open-focused false
+}
+
+window-rule {
+    match app-id="^gimp" title="^GIMP Startup$"
+
+    open-focused false
+}
+
+
+
+// Example: block out two password managers from screen capture.
+// (This example rule is commented out with a "/-" in front.)
+/-window-rule {
+    match app-id=r#"^org\.keepassxc\.KeePassXC$"#
+    match app-id=r#"^org\.gnome\.World\.Secrets$"#
+
+    block-out-from "screen-capture"
+
+    // Use this instead if you want them visible on third-party screenshot tools.
+    // block-out-from "screencast"
+}
+
+// Example: enable rounded corners for all windows.
+// (This example rule is commented out with a "/-" in front.)
+window-rule {
+    geometry-corner-radius 4
+    clip-to-geometry true
+    draw-border-with-background false
+}
+
+window-rule {
+    match is-floating=true
+    shadow {
+        on
+    }
+}
+
+// Screencasted windows
+window-rule {
+    match is-window-cast-target=true
+    border {
+        active-color "#ff0000"
+        inactive-color "#aa0000"
+    }
+    shadow {
+        color "#aa0000"
+    }
+    tab-indicator {
+        active-color "#ff0000"
+        inactive-color "#aa0000"
+    }
+}

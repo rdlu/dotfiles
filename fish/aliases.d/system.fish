@@ -62,8 +62,6 @@ function nmap-dig --description "Scan Filtered sites [target-site=github.io] [ta
     rm /tmp/ips.txt
 end
 
-
-
 function myps
     ps $argv -u $USER -o pid,%cpu,%mem,start,time,bsdtime,command
 end

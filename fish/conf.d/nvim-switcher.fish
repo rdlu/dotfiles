@@ -7,7 +7,7 @@ function nv
 end
 
 function nvims
-    set items default nvim-full
+    set items default nvim-lazy nvim-full
     set config (printf "%s\n" $items | fzf --prompt=" Neovim Config = " --height=~50% --layout=reverse --border --exit-0)
     if [ -z $config ]
         echo "Nothing selected"
