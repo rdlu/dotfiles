@@ -24,4 +24,5 @@ environment {
     TERMINAL "kitty"
     BEMOJI_PICKER_CMD "fuzzel -d \"emojis\""
     XCOMPOSEFILE "~/.XCompose"
+    EDITOR "nvim"
 }

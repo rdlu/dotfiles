@@ -4,19 +4,26 @@ function show_power_menu
     set -l menu_options " Lock" \
         "󰤄 Suspend" \
         "󰜉 Restart" \
-        "󰐥 Shutdown"
+        "󰐥 Shutdown" \
+        "🚀 Waybar restart" \
+        "󰩈 Exit session"
 
-    set -l selection (printf '%s\n' $menu_options | walker --dmenu)
+    # set -l selection (printf '%s\n' $menu_options | walker --dmenu)
+    set -l selection (printf '%s\n' $menu_options | fuzzel --dmenu)
 
     switch "$selection"
         case "*Lock*"
-            hyprlock
+            swaylock
         case "*Suspend*"
             systemctl suspend
         case "*Restart*"
             systemctl reboot
         case "*Shutdown*"
             systemctl poweroff
+        case "*Waybar*"
+            systemctl --user restart waybar.service
+        case "*Exit*"
+            niri msg action quit
     end
 end
 
