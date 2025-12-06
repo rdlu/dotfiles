@@ -1,0 +1,32 @@
+@define-color background-color #1a1b26;
+@define-color border-color #663399;
+@define-color label #a9b1d6;
+@define-color image #a9b1d6;
+@define-color progress #a9b1d6;
+
+window {
+  border-radius: 4px;
+  opacity: 0.9;
+  border: 2px solid @border-color;
+  background-color: @background-color;
+}
+
+label {
+  font-family: 'iMWritingDuo Nerd Font Propo';
+  font-size: 11pt;
+
+  color: @label;
+}
+
+image {
+  color: @image;
+}
+
+progressbar {
+  border-radius: 0;
+}
+
+progress {
+  background-color: @progress;
+  min-width: 10px;
+}

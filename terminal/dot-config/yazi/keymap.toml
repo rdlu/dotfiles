@@ -1,0 +1,58 @@
+[[mgr.prepend_keymap]]
+on = ["g", "C"]
+run = "cd ~/.dotfiles"
+desc = "Go to dotfiles"
+
+[[mgr.prepend_keymap]]
+on = ["g", "d"]
+run = "cd ~/Documents"
+desc = "Go to Documents"
+
+[[mgr.prepend_keymap]]
+on = ["g", "D"]
+run = "cd ~/Downloads"
+desc = "Go to Downloads"
+
+[[mgr.prepend_keymap]]
+on = ["g", "G", "s"]
+run = "cd ~/.local/share/Steam/steamapps/common"
+desc = "Go to steamapps"
+
+[[mgr.prepend_keymap]]
+on = ["g", "m"]
+run = "cd ~/Music"
+desc = "Go to Music"
+
+[[mgr.prepend_keymap]]
+on = ["g", "P"]
+run = "cd ~/Projects"
+desc = "Go to Projects"
+
+[[mgr.prepend_keymap]]
+on = ["g", "p", "p"]
+run = "cd ~/Pictures"
+desc = "Go to Pictures"
+
+[[mgr.prepend_keymap]]
+on = ["g", "p", "s"]
+run = "cd ~/Pictures/Screenshots"
+desc = "Go to Screenshots"
+
+[[mgr.prepend_keymap]]
+on = ["g", "v", "v"]
+run = "cd ~/Videos"
+desc = "Go to Videos"
+
+[[mgr.prepend_keymap]]
+on = ["g", "v", "r"]
+run = "cd ~/Videos/Recording"
+desc = "Go to Recordings"
+
+[[mgr.prepend_keymap]]
+on = "M"
+run = "plugin mount"
+
+[[mgr.prepend_keymap]]
+on = ["<A-y>"]
+run = "plugin copy-file-contents"
+desc = "Copy file contents"

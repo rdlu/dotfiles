@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Electron 38
+Icon=electron38
+Exec=electron38 %u
+Categories=Development;GTK;
+StartupNotify=true
+Name[en]=Electron 38
+Name[en_US]=Electron 38
+Name[en_US.UTF-8]=Electron 38
+NoDisplay=true
+Terminal=false
+
