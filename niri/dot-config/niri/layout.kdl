@@ -30,9 +30,9 @@ layout {
     }
 
     border {
-        // off
+        on
 
-        width 2
+        width 1
         // active-color "#8A2BE2"
         inactive-color "#505050"
 
