@@ -7,6 +7,7 @@ spawn-at-startup "wl-paste" "--watch" "cliphist" "store"
 spawn-at-startup "cliphist" "wipe"
 spawn-at-startup "wlsunset" "-S" "05:45" "-s" "18:00"
 spawn-at-startup "udiskie"
+spawn-at-startup "walker --gapplication-service"
 
 environment {
     // DISPLAY ":0"
