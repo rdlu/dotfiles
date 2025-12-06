@@ -209,6 +209,7 @@
   "group/perf": {
     "orientation": "inherit",
     "drawer": {
+      "click-to-reveal": true,
       "transition-duration": 500,
       "children-class": "perf-element",
       "click-to-reveal": true
@@ -221,6 +222,7 @@
   },
   "cpu": {
     "interval": 5,
+    "on-click": "ghostty --class=btop --title=btop -e btop",
     "format": "󰍛 {usage}% {icon} {avg_frequency:0.1f}GHz",
     "on-click": "ghostty --class=btop --title=btop -e btop",
     "on-click-right": "ghostty --class=bottom --title=bottom -e btm",
@@ -243,8 +245,9 @@
     "tooltip-format": "  {used:0.1f}G/{total:0.1f}G\nSw {swapUsed:0.1f}G/{swapTotal:0.1f}G"
   },
   "temperature": {
-    "thermal-zone": 8,
-    "critical-threshold": 90,
+    "critical-threshold": 80,
+    //"thermal-zone": 8,
+    //"critical-threshold": 90,
     "format": " {temperatureC}°C"
   }
 }

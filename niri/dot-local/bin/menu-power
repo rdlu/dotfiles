@@ -6,8 +6,14 @@ function show_power_menu
         "󰜉 Restart" \
         "󰐥 Shutdown" \
         "🚀 Waybar restart" \
+        "󰤨 Wi-Fi" \
+        " Bluetooth" \
+        " Sound" \
+        " Microphone" \
+        " System Monitor" \
         "󰩈 Exit session"
 
+    # set -l selection (printf '%s\n' $menu_options | walker --dmenu)
     set -l selection (printf '%s\n' $menu_options | fuzzel --dmenu)
 
     switch "$selection"
@@ -19,8 +25,18 @@ function show_power_menu
             systemctl reboot
         case "*Shutdown*"
             systemctl poweroff
+        case "*Wi-Fi*"
+            ghostty --title=Impala --class=Impala -e impala
         case "*Waybar*"
             systemctl --user restart waybar.service
+        case "*Sound*"
+            ghostty --title=Wiremix --class=Wiremix -e wiremix -v output
+        case "*Microphone*"
+            ghostty --title=Wiremix --class=Wiremix -e wiremix -v input
+        case "*Bluetooth*"
+            ghostty --title=BlueTUI --class=bluetui -e bluetui
+        case "*System*"
+            ghostty --class=btop --title=btop -e btop
         case "*Exit*"
             niri msg action quit
     end
