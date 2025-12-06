@@ -1,9 +1,11 @@
 #!/usr/bin/env fish
 echo '---- Upgrade system packages ----'
-sudo dnf upgrade
+yay
 echo '---- Upgrade flatpak packages ----'
 flatpak update
 echo '---- Upgrade cargo packages ----'
 cargo install-update --all
 echo '---- Upgrade mise/rtx packages ----'
 mise upgrade --interactive
+echo '---- Upgrade appman packages ----'
+appman update
