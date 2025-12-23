@@ -19,7 +19,7 @@ return {
         hide_code_editor = false,
         -- Hide the Strudel eval error display under the editor
         -- (optional, default: false)
-        hide_error_display = false,
+        hide_error_display = true,
       },
       -- Set to `true` to automatically trigger the code evaluation after saving the buffer content
       -- Only works if the playback was already started (doesn't start the playback on save)
