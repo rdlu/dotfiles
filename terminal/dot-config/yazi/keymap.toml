@@ -56,3 +56,15 @@ run = "plugin mount"
 on = ["<A-y>"]
 run = "plugin copy-file-contents"
 desc = "Copy file contents"
+
+[[mgr.prepend_keymap]]
+on = ["c", "y"]
+run = [
+  'shell -- for path in "$@"; do echo "file://$path"; done | wl-copy -t text/uri-list',
+  "yank",
+]
+desc = "Copy (and yank) the current file to the Wayland Clipboard"
+
+[[mgr.prepend_keymap]]
+on = ["g", "r"]
+run = 'shell -- ya emit cd "$(git rev-parse --show-toplevel)"'
