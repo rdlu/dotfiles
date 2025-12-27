@@ -15,7 +15,7 @@ function check_dependencies
     end
 
     if not command -v fzf >/dev/null 2>&1
-        set -a missing_deps "fzf"
+        set -a missing_deps fzf
     end
 
     if test (count $missing_deps) -gt 0
@@ -174,9 +174,9 @@ function show_main_menu
         "🔓 Unmount a Share" \
         "📁 CD to Mounted Share" \
         "📋 Copy CD Command to Clipboard" \
-        "🗂️  Open in Yazi" \
+        "🗂️ Open in Yazi" \
         "🔍 Discover Network Shares" \
-        "🚪 Exit"
+        "🚪 Quit"
 
     printf "%s\n" $choices | fzf \
         --height=40% \
@@ -708,8 +708,7 @@ function main
                     --header="Press Esc to return" \
                     --preview='echo "URI: {2}" | tr "|" "\n"' \
                     --preview-window=down:3:wrap \
-                    --delimiter='|' \
-                    > /dev/null
+                    --delimiter='|' >/dev/null
 
             case "🚪*"
                 clear
