@@ -1,0 +1,280 @@
+#!/usr/bin/env fish
+
+# discover-services - Find network services (SMB shares, WSD devices, mDNS services)
+# Usage: discover-services [OPTIONS]
+# Options:
+#   -s, --smb       Discover SMB/CIFS shares (default if no options specified)
+#   -w, --wsd       Discover WSD devices
+#   -m, --mdns      Discover all mDNS/Zeroconf services
+#   -a, --all       Discover all service types
+#   -h, --help      Show this help message
+
+function show_help
+    echo "Usage: discover-services [OPTIONS]"
+    echo ""
+    echo "Discover network services like Windows shares, WSD devices, and mDNS services"
+    echo ""
+    echo "Options:"
+    echo "  -s, --smb       Discover SMB/CIFS shares (default)"
+    echo "  -w, --wsd       Discover WSD devices (printers, scanners)"
+    echo "  -m, --mdns      Discover all mDNS/Zeroconf services"
+    echo "  -a, --all       Discover all service types"
+    echo "  -h, --help      Show this help message"
+    echo ""
+    echo "Examples:"
+    echo "  discover-services              # Discover SMB shares only"
+    echo "  discover-services --all        # Discover all services"
+    echo "  discover-services -s -w        # Discover SMB shares and WSD devices"
+end
+
+# Check if avahi-browse is available
+if not command -v avahi-browse >/dev/null 2>&1
+    echo "Error: avahi-browse not found. Install with:" >&2
+    echo "  Arch/Manjaro: sudo pacman -S avahi" >&2
+    echo "  Debian/Ubuntu: sudo apt install avahi-utils" >&2
+    exit 1
+end
+
+# Parse arguments
+set -l discover_smb false
+set -l discover_wsd false
+set -l discover_mdns false
+set -l discover_all false
+
+if test (count $argv) -eq 0
+    # Default to SMB if no arguments
+    set discover_smb true
+else
+    for arg in $argv
+        switch $arg
+            case -h --help
+                show_help
+                exit 0
+            case -s --smb
+                set discover_smb true
+            case -w --wsd
+                set discover_wsd true
+            case -m --mdns
+                set discover_mdns true
+            case -a --all
+                set discover_all true
+            case '*'
+                echo "Unknown option: $arg" >&2
+                show_help
+                exit 1
+        end
+    end
+end
+
+# If --all is specified, enable everything
+if test "$discover_all" = true
+    set discover_smb true
+    set discover_wsd true
+    set discover_mdns true
+end
+
+echo "🔍 Discovering network services..."
+echo ""
+
+# Function to decode avahi-browse escape sequences (decimal, not octal!)
+function decode_avahi_string
+    # Use awk to decode escape sequences
+    # \NNN (3 digits) -> ASCII character decimal N
+    # \X (other) -> just X (remove backslash)
+    echo "$argv[1]" | awk '
+    BEGIN { bs = sprintf("%c", 92) }
+    {
+        result = ""
+        i = 1
+        while (i <= length($0)) {
+            c = substr($0, i, 1)
+            if (c == bs) {
+                if (i + 3 <= length($0) && substr($0, i+1, 3) ~ /^[0-9]{3}$/) {
+                    decimal = substr($0, i+1, 3) + 0
+                    result = result sprintf("%c", decimal)
+                    i += 4
+                } else if (i + 1 <= length($0)) {
+                    result = result substr($0, i+1, 1)
+                    i += 2
+                } else {
+                    result = result c
+                    i++
+                }
+            } else {
+                result = result c
+                i++
+            }
+        }
+        print result
+    }'
+end
+
+# Discover SMB/CIFS shares
+if test "$discover_smb" = true
+    echo "📁 SMB/CIFS Shares:"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+    # Check if smbclient is available for share enumeration
+    set has_smbclient false
+    if command -v smbclient >/dev/null 2>&1
+        set has_smbclient true
+    end
+
+    # Store discovered hosts to avoid duplicates
+    set -l discovered_hosts
+
+    # Discover SMB shares via mDNS
+    avahi-browse -t _smb._tcp --resolve --parsable 2>/dev/null | while read -l line
+        # Parse avahi-browse output (format: =;interface;protocol;name;type;domain;host;address;port;txt...)
+        if string match -q '=;*' $line
+            set fields (string split ';' $line)
+            if test (count $fields) -ge 8
+                # Decode octal escape sequences (e.g., \032 for space, \047 for quote)
+                set name (decode_avahi_string $fields[4])
+                set host (decode_avahi_string $fields[7])
+                set address $fields[8]
+
+                # Skip if already discovered
+                if contains $address $discovered_hosts
+                    continue
+                end
+                set -a discovered_hosts $address
+
+                echo "  • $name"
+                echo "    Host: $host"
+                echo "    Address: $address"
+                echo "    SMB: smb://$address/"
+
+                # List shared folders if smbclient is available
+                if test "$has_smbclient" = true
+                    echo "    Shares:"
+                    # Use -N for null authentication (guest), -g for machine-readable output
+                    set shares (smbclient -L $address -N -g 2>/dev/null | grep "^Disk|")
+                    if test -n "$shares"
+                        for share in $shares
+                            set share_info (string split '|' $share)
+                            if test (count $share_info) -ge 2
+                                set share_name $share_info[2]
+                                set share_comment $share_info[3]
+                                echo "      - $share_name"
+                                if test -n "$share_comment"
+                                    echo "        ($share_comment)"
+                                end
+                                echo "        smb://$address/$share_name"
+                            end
+                        end
+                    else
+                        echo "      (No shares accessible or authentication required)"
+                    end
+                else
+                    echo "    (Install smbclient to list shared folders)"
+                end
+                echo ""
+            end
+        end
+    end
+
+    # Also try NetBIOS discovery if nmblookup is available
+    if command -v nmblookup >/dev/null 2>&1
+        echo "  Scanning NetBIOS names..."
+        set netbios_hosts (nmblookup -S \* 2>/dev/null | grep '<20>' | awk '{print $1}' | sort -u)
+
+        for nb_host in $netbios_hosts
+            # Skip if already discovered via mDNS
+            if contains $nb_host $discovered_hosts
+                continue
+            end
+            set -a discovered_hosts $nb_host
+
+            echo "  • NetBIOS: $nb_host"
+            echo "    Address: $nb_host"
+
+            # List shares if smbclient is available
+            if test "$has_smbclient" = true
+                echo "    Shares:"
+                set shares (smbclient -L $nb_host -N -g 2>/dev/null | grep "^Disk|")
+                if test -n "$shares"
+                    for share in $shares
+                        set share_info (string split '|' $share)
+                        if test (count $share_info) -ge 2
+                            set share_name $share_info[2]
+                            set share_comment $share_info[3]
+                            echo "      - $share_name"
+                            if test -n "$share_comment"
+                                echo "        ($share_comment)"
+                            end
+                            echo "        smb://$nb_host/$share_name"
+                        end
+                    end
+                else
+                    echo "      (No shares accessible or authentication required)"
+                end
+            end
+            echo ""
+        end
+    end
+
+    if not test "$has_smbclient" = true
+        echo "  Note: Install smbclient for detailed share enumeration" >&2
+        echo "    Arch/Manjaro: sudo pacman -S smbclient" >&2
+        echo "    Debian/Ubuntu: sudo apt install smbclient" >&2
+    end
+
+    echo ""
+end
+
+# Discover WSD devices
+if test "$discover_wsd" = true
+    echo "🖨️  WSD Devices (Printers, Scanners):"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+    # WSD typically uses _workstation._tcp, _printer._tcp, _scanner._tcp
+    for service in _workstation._tcp _printer._tcp _scanner._tcp _device-info._tcp
+        avahi-browse -t $service --resolve --parsable 2>/dev/null | while read -l line
+            if string match -q '=;*' $line
+                set fields (string split ';' $line)
+                if test (count $fields) -ge 8
+                    # Decode octal escape sequences
+                    set name (decode_avahi_string $fields[4])
+                    set host (decode_avahi_string $fields[7])
+                    set address $fields[8]
+                    echo "  • $name ($service)"
+                    echo "    Host: $host"
+                    echo "    Address: $address"
+                    echo ""
+                end
+            end
+        end
+    end
+
+    echo ""
+end
+
+# Discover all mDNS services
+if test "$discover_mdns" = true
+    echo "🌐 All mDNS/Zeroconf Services:"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+    # Browse all available services
+    avahi-browse -a -t --resolve --parsable 2>/dev/null | while read -l line
+        if string match -q '=;*' $line
+            set fields (string split ';' $line)
+            if test (count $fields) -ge 8
+                # Decode octal escape sequences
+                set name (decode_avahi_string $fields[4])
+                set service_type (decode_avahi_string $fields[5])
+                set host (decode_avahi_string $fields[7])
+                set address $fields[8]
+                echo "  • $name"
+                echo "    Type: $service_type"
+                echo "    Host: $host"
+                echo "    Address: $address"
+                echo ""
+            end
+        end
+    end
+
+    echo ""
+end
+
+echo "✅ Discovery complete!"
