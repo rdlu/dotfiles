@@ -1,0 +1,297 @@
+#!/usr/bin/env fish
+
+# smb-manager - Mount, unmount, and manage SMB/CIFS shares using gio
+# Usage: smb-manager [COMMAND] [OPTIONS]
+# Commands:
+#   mount <uri>         Mount an SMB share (e.g., smb://server/share)
+#   umount <uri|path>   Unmount an SMB share
+#   list                List all mounted shares (default)
+#   cd <uri|name>       Change directory to a mounted share (with zoxide)
+#   -h, --help          Show this help message
+
+function show_help
+    echo "Usage: smb-manager [COMMAND] [OPTIONS]"
+    echo ""
+    echo "Manage SMB/CIFS network shares using GIO/GVFS"
+    echo ""
+    echo "Commands:"
+    echo "  mount <uri>         Mount an SMB share"
+    echo "                      URI format: smb://[user@]server/share"
+    echo "                      Examples:"
+    echo "                        smb://192.168.1.100/documents"
+    echo "                        smb://user@server.local/backup"
+    echo ""
+    echo "  umount <uri|path>   Unmount an SMB share by URI or mount path"
+    echo "                      Examples:"
+    echo "                        smb://192.168.1.100/documents"
+    echo "                        /run/user/1000/gvfs/smb-share:server=..."
+    echo ""
+    echo "  list                List all currently mounted shares (default)"
+    echo ""
+    echo "  cd <uri|name>       Change directory to a mounted share"
+    echo "                      Uses fuzzy matching to find the share"
+    echo "                      Requires zoxide for directory changing"
+    echo ""
+    echo "  -h, --help          Show this help message"
+    echo ""
+    echo "Examples:"
+    echo "  smb-manager                           # List mounted shares"
+    echo "  smb-manager mount smb://nas/media     # Mount a share"
+    echo "  smb-manager cd nas                    # CD to share (fuzzy match)"
+    echo "  smb-manager umount smb://nas/media    # Unmount a share"
+end
+
+# Check if gio is available
+if not command -v gio >/dev/null 2>&1
+    echo "Error: gio command not found. Install with:" >&2
+    echo "  Arch/Manjaro: sudo pacman -S glib2" >&2
+    echo "  Debian/Ubuntu: sudo apt install glib2.0-bin" >&2
+    exit 1
+end
+
+# Function to list mounted shares
+function list_mounts
+    echo "📂 Mounted SMB/CIFS Shares:"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+
+    set -l found_smb false
+    set -l mount_list (gio mount -l 2>/dev/null)
+
+    for line in $mount_list
+        # Match lines like: Mount(0): music on 192.168.0.50 -> smb://192.168.0.50/music/
+        if string match -qr "^Mount\([0-9]+\): .* -> smb://" $line
+            set found_smb true
+
+            # Extract name and URI
+            set -l parts (string replace -r "^Mount\([0-9]+\): (.*) -> (smb://.*)" '$1|$2' $line)
+            set -l split_parts (string split '|' $parts)
+
+            if test (count $split_parts) -ge 2
+                set -l name $split_parts[1]
+                set -l uri (string trim $split_parts[2])
+
+                echo "  • $name"
+                echo "    URI: $uri"
+
+                # Get local path using gio info
+                set -l local_path (gio info "$uri" 2>/dev/null | grep "local path:" | string replace "local path: " "" | string trim)
+
+                if test -n "$local_path"
+                    echo "    Path: $local_path"
+                end
+                echo ""
+            end
+        end
+    end
+
+    if not test "$found_smb" = true
+        echo "  No SMB/CIFS shares currently mounted"
+        echo ""
+    end
+end
+
+# Function to mount a share
+function mount_share
+    set -l uri $argv[1]
+
+    if test -z "$uri"
+        echo "Error: No URI specified" >&2
+        echo "Usage: smb-manager mount <uri>" >&2
+        echo "Example: smb-manager mount smb://192.168.1.100/documents" >&2
+        return 1
+    end
+
+    # Validate SMB URI format
+    if not string match -q "smb://*" $uri
+        echo "Error: Invalid SMB URI. Must start with smb://" >&2
+        echo "Example: smb://server/share or smb://user@server/share" >&2
+        return 1
+    end
+
+    echo "🔗 Mounting: $uri"
+
+    # Try to mount with gio
+    if gio mount $uri
+        echo "✅ Successfully mounted!"
+        echo ""
+
+        # Show where it was mounted
+        set -l in_mount false
+        for line in (gio mount -l)
+            if string match -q "  Uri: $uri" $line
+                set in_mount true
+            else if test "$in_mount" = true; and string match -q "  activation_root: *" $line
+                set -l mount_path (string replace "  activation_root: " "" $line)
+                echo "Mount point: $mount_path"
+                break
+            end
+        end
+
+        return 0
+    else
+        echo "❌ Failed to mount share" >&2
+        echo "This might be due to:" >&2
+        echo "  - Authentication required (you'll be prompted)" >&2
+        echo "  - Server not reachable" >&2
+        echo "  - Invalid share name" >&2
+        return 1
+    end
+end
+
+# Function to unmount a share
+function umount_share
+    set -l target $argv[1]
+
+    if test -z "$target"
+        echo "Error: No URI or path specified" >&2
+        echo "Usage: smb-manager umount <uri|path>" >&2
+        echo "Example: smb-manager umount smb://192.168.1.100/documents" >&2
+        return 1
+    end
+
+    echo "🔓 Unmounting: $target"
+
+    # Try to unmount
+    if gio mount -u $target
+        echo "✅ Successfully unmounted!"
+        return 0
+    else
+        echo "❌ Failed to unmount share" >&2
+        echo "Possible reasons:" >&2
+        echo "  - Share not mounted" >&2
+        echo "  - Share in use (close any programs using it)" >&2
+        echo "  - Try using the full mount path instead of URI" >&2
+        return 1
+    end
+end
+
+# Function to change directory to a mounted share
+function cd_to_share
+    set -l search_term $argv[1]
+
+    if test -z "$search_term"
+        echo "Error: No search term specified" >&2
+        echo "Usage: smb-manager cd <uri|name>" >&2
+        echo "Example: smb-manager cd nas" >&2
+        return 1
+    end
+
+    # Check if zoxide is available
+    if not command -v zoxide >/dev/null 2>&1
+        echo "Warning: zoxide not found, falling back to regular cd" >&2
+        echo "Install zoxide for better directory jumping:" >&2
+        echo "  https://github.com/ajeetdsouza/zoxide" >&2
+        set use_zoxide false
+    else
+        set use_zoxide true
+    end
+
+    # Get all SMB mount paths
+    set -l mount_paths
+    set -l mount_list (gio mount -l 2>/dev/null)
+
+    for line in $mount_list
+        # Match lines like: Mount(0): music on 192.168.0.50 -> smb://192.168.0.50/music/
+        if string match -qr "^Mount\([0-9]+\): .* -> smb://" $line
+            # Extract URI
+            set -l parts (string replace -r "^Mount\([0-9]+\): (.*) -> (smb://.*)" '$1|$2' $line)
+            set -l split_parts (string split '|' $parts)
+
+            if test (count $split_parts) -ge 2
+                set -l uri (string trim $split_parts[2])
+
+                # Get local path using gio info
+                set -l local_path (gio info "$uri" 2>/dev/null | grep "local path:" | string replace "local path: " "" | string trim)
+
+                if test -n "$local_path"
+                    set -a mount_paths $local_path
+                end
+            end
+        end
+    end
+
+    if test (count $mount_paths) -eq 0
+        echo "Error: No SMB shares currently mounted" >&2
+        echo "Use 'smb-manager mount <uri>' to mount a share first" >&2
+        return 1
+    end
+
+    # Find matching mount
+    set -l matched_path ""
+    for path in $mount_paths
+        if string match -q "*$search_term*" $path
+            set matched_path $path
+            break
+        end
+    end
+
+    if test -z "$matched_path"
+        echo "Error: No mounted share matches '$search_term'" >&2
+        echo "Available mounts:" >&2
+        for path in $mount_paths
+            echo "  - $path" >&2
+        end
+        return 1
+    end
+
+    echo "📁 Changing to: $matched_path"
+
+    # Change directory
+    if test "$use_zoxide" = true
+        # Add to zoxide database and change directory
+        zoxide add $matched_path
+        cd $matched_path
+    else
+        cd $matched_path
+    end
+
+    if test $status -eq 0
+        echo "✅ Changed directory successfully!"
+        # Print current directory for confirmation
+        echo "Current directory: "(pwd)
+    else
+        echo "❌ Failed to change directory" >&2
+        return 1
+    end
+end
+
+# Parse command
+if test (count $argv) -eq 0
+    # Default to list
+    list_mounts
+    exit 0
+end
+
+set -l command $argv[1]
+
+switch $command
+    case -h --help help
+        show_help
+        exit 0
+
+    case list ls
+        list_mounts
+        exit 0
+
+    case mount m
+        mount_share $argv[2]
+        exit $status
+
+    case umount unmount u um
+        umount_share $argv[2]
+        exit $status
+
+    case cd go
+        cd_to_share $argv[2]
+        # Note: cd in a subshell won't affect parent shell
+        # User should use: eval (smb-manager cd <name>)
+        # or source the script or create a fish function wrapper
+        exit $status
+
+    case '*'
+        echo "Unknown command: $command" >&2
+        echo ""
+        show_help
+        exit 1
+end

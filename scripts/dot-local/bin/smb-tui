@@ -1,0 +1,723 @@
+#!/usr/bin/env fish
+
+# smb-tui - Interactive TUI for managing SMB/CIFS shares
+# Usage: smb-tui
+
+set -g SCRIPT_NAME "SMB Manager TUI"
+set -g VERSION "1.0.0"
+
+# Check dependencies
+function check_dependencies
+    set -l missing_deps
+
+    if not command -v gio >/dev/null 2>&1
+        set -a missing_deps "gio (glib2)"
+    end
+
+    if not command -v fzf >/dev/null 2>&1
+        set -a missing_deps "fzf"
+    end
+
+    if test (count $missing_deps) -gt 0
+        echo "Error: Missing required dependencies:" >&2
+        for dep in $missing_deps
+            echo "  - $dep" >&2
+        end
+        echo "" >&2
+        echo "Install with:" >&2
+        echo "  Arch/Manjaro: sudo pacman -S glib2 fzf" >&2
+        echo "  Debian/Ubuntu: sudo apt install glib2.0-bin fzf" >&2
+        return 1
+    end
+    return 0
+end
+
+# Decode avahi-browse escape sequences (from discover-services)
+function decode_avahi_string
+    # Use awk to decode escape sequences
+    # \NNN (3 digits) -> ASCII character decimal N
+    # \X (other) -> just X (remove backslash)
+    echo "$argv[1]" | awk '
+    BEGIN { bs = sprintf("%c", 92) }
+    {
+        result = ""
+        i = 1
+        while (i <= length($0)) {
+            c = substr($0, i, 1)
+            if (c == bs) {
+                if (i + 3 <= length($0) && substr($0, i+1, 3) ~ /^[0-9]{3}$/) {
+                    decimal = substr($0, i+1, 3) + 0
+                    result = result sprintf("%c", decimal)
+                    i += 4
+                } else if (i + 1 <= length($0)) {
+                    result = result substr($0, i+1, 1)
+                    i += 2
+                } else {
+                    result = result c
+                    i++
+                }
+            } else {
+                result = result c
+                i++
+            }
+        }
+        print result
+    }'
+end
+
+# URL encode a string for SMB URIs
+function url_encode
+    echo "$argv[1]" | awk '
+    BEGIN {
+        for (i = 0; i < 256; i++)
+            ord[sprintf("%c", i)] = i
+    }
+    {
+        result = ""
+        for (i = 1; i <= length($0); i++) {
+            c = substr($0, i, 1)
+            if (c ~ /[A-Za-z0-9._~-]/)
+                result = result c
+            else
+                result = result sprintf("%%%02X", ord[c])
+        }
+        print result
+    }'
+end
+
+# Get list of mounted SMB shares with paths
+function get_mounted_shares
+    set -l mounts
+    set -l mount_list (gio mount -l 2>/dev/null)
+
+    for line in $mount_list
+        # Match lines like: Mount(0): music on 192.168.0.50 -> smb://192.168.0.50/music/
+        if string match -qr "^Mount\([0-9]+\): .* -> smb://" $line
+            # Extract name and URI
+            set -l parts (string replace -r "^Mount\([0-9]+\): (.*) -> (smb://.*)" '$1|$2' $line)
+            set -l split_parts (string split '|' $parts)
+
+            if test (count $split_parts) -ge 2
+                set -l name $split_parts[1]
+                set -l uri (string trim $split_parts[2])
+
+                # Get local path using gio info
+                set -l local_path (gio info "$uri" 2>/dev/null | grep "local path:" | string replace "local path: " "" | string trim)
+
+                if test -n "$local_path"
+                    set -a mounts "$name|$uri|$local_path"
+                else
+                    set -a mounts "$name|$uri|"
+                end
+            end
+        end
+    end
+
+    printf "%s\n" $mounts
+end
+
+# Discover available SMB shares
+function discover_shares
+    echo "🔍 Discovering SMB shares on the network..." >&2
+    echo "This may take a few seconds..." >&2
+    echo "" >&2
+
+    set -l shares
+    set -l discovered_hosts
+
+    # Use avahi to discover SMB shares
+    if command -v avahi-browse >/dev/null 2>&1
+        set -l avahi_output (avahi-browse -t _smb._tcp --resolve --parsable 2>/dev/null)
+
+        for line in $avahi_output
+            if string match -q '=;*' $line
+                set -l fields (string split ';' $line)
+                if test (count $fields) -ge 8
+                    # Decode the name from avahi (removes escape sequences like \032)
+                    set -l name (decode_avahi_string $fields[4])
+                    set -l address $fields[8]
+
+                    if not contains $address $discovered_hosts
+                        set -a discovered_hosts $address
+
+                        # Try to list shares if smbclient is available
+                        if command -v smbclient >/dev/null 2>&1
+                            set -l share_list (smbclient -L $address -N -g 2>/dev/null | grep "^Disk|")
+                            for share in $share_list
+                                set -l share_info (string split '|' $share)
+                                if test (count $share_info) -ge 2
+                                    set -l share_name $share_info[2]
+                                    # URL encode the share name for proper SMB URI
+                                    set -l encoded_share (url_encode $share_name)
+                                    set -l share_uri "smb://$address/$encoded_share"
+                                    set -a shares "$name - $share_name|$share_uri"
+                                end
+                            end
+                        else
+                            # Just add the server
+                            set -a shares "$name (server)|smb://$address/"
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    printf "%s\n" $shares
+end
+
+# Main menu
+function show_main_menu
+    set -l choices \
+        "📂 List Mounted Shares" \
+        "🔗 Mount a Share" \
+        "🔓 Unmount a Share" \
+        "📁 CD to Mounted Share" \
+        "📋 Copy CD Command to Clipboard" \
+        "🗂️  Open in Yazi" \
+        "🔍 Discover Network Shares" \
+        "🚪 Exit"
+
+    printf "%s\n" $choices | fzf \
+        --height=40% \
+        --border \
+        --prompt="SMB Manager > " \
+        --header="Select an action" \
+        --preview="" \
+        --preview-window=hidden
+end
+
+# List mounted shares
+function list_mounted_shares_interactive
+    set -l mounts (get_mounted_shares)
+
+    if test (count $mounts) -eq 0
+        echo ""
+        echo "No SMB shares currently mounted."
+        echo ""
+        read -l -P "Press Enter to continue... "
+        return
+    end
+
+    clear
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "📂 Mounted SMB Shares"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+
+    for mount in $mounts
+        set -l parts (string split '|' $mount)
+        set -l name $parts[1]
+        set -l uri $parts[2]
+        set -l path $parts[3]
+
+        echo "• $name"
+        echo "  URI:  $uri"
+        echo "  Path: $path"
+        echo ""
+    end
+
+    read -l -P "Press Enter to continue... "
+end
+
+# Mount a share
+function mount_share_interactive
+    # Show options: manual entry or discover
+    set -l method (printf "📝 Enter URI manually\n🔍 Discover shares on network\n" | fzf \
+        --height=40% \
+        --border \
+        --prompt="Mount > " \
+        --header="How do you want to find the share?")
+
+    if test -z "$method"
+        return # User cancelled
+    end
+
+    set -l uri ""
+
+    if string match -q "📝*" $method
+        # Manual entry
+        echo ""
+        echo "Enter the SMB URI (e.g., smb://server/share or smb://user@server/share):"
+        read -l uri
+
+        if test -z "$uri"
+            echo "Cancelled."
+            sleep 1
+            return
+        end
+
+    else if string match -q "🔍*" $method
+        # Discover shares
+        clear
+        set -l discovered (discover_shares)
+
+        if test (count $discovered) -eq 0
+            echo ""
+            echo "No shares discovered on the network."
+            echo ""
+            echo "You can:"
+            echo "  1. Make sure SMB servers are running on your network"
+            echo "  2. Install smbclient for better discovery"
+            echo "  3. Enter the URI manually"
+            echo ""
+            read -l -P "Press Enter to continue... "
+            return
+        end
+
+        # Let user select from discovered shares
+        set -l selected (printf "%s\n" $discovered | fzf \
+            --height=60% \
+            --border \
+            --prompt="Select share > " \
+            --header="Discovered SMB shares" \
+            --preview='echo {}' \
+            --preview-window=down:3:wrap)
+
+        if test -z "$selected"
+            return # User cancelled
+        end
+
+        set -l parts (string split '|' $selected)
+        set uri $parts[2]
+    end
+
+    # Mount the share
+    clear
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "🔗 Mounting Share"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    echo "URI: $uri"
+    echo ""
+    echo "Note: You may be prompted for credentials..."
+    echo ""
+
+    # Check if already mounted
+    set -l already_mounted false
+    for mount in (get_mounted_shares)
+        set -l parts (string split '|' $mount)
+        if test "$parts[2]" = "$uri"
+            set already_mounted true
+            echo "⚠️  This share is already mounted at: $parts[3]"
+            echo ""
+            read -l -P "Press Enter to continue... "
+            return
+        end
+    end
+
+    # Try to mount (don't capture output to allow interactive authentication)
+    gio mount $uri
+    set -l mount_status $status
+
+    if test $mount_status -eq 0
+        echo ""
+        echo "✅ Successfully mounted!"
+
+        # Give gio a moment to register the mount
+        sleep 1
+
+        # Show mount point
+        set -l mounts (get_mounted_shares)
+        for mount in $mounts
+            set -l parts (string split '|' $mount)
+            if test "$parts[2]" = "$uri"
+                echo "Mount point: $parts[3]"
+                break
+            end
+        end
+    else
+        echo ""
+        echo "❌ Failed to mount share"
+        echo ""
+        echo "Possible reasons:"
+        echo "  - Authentication failed or cancelled"
+        echo "  - Server not reachable"
+        echo "  - Invalid share name or permissions"
+        echo "  - Share already mounted (check with list command)"
+    end
+
+    echo ""
+    read -l -P "Press Enter to continue... "
+end
+
+# Unmount a share
+function unmount_share_interactive
+    set -l mounts (get_mounted_shares)
+
+    if test (count $mounts) -eq 0
+        echo ""
+        echo "No SMB shares currently mounted."
+        echo ""
+        read -l -P "Press Enter to continue... "
+        return
+    end
+
+    # Format for display
+    set -l display_items
+    for mount in $mounts
+        set -l parts (string split '|' $mount)
+        set -a display_items "$parts[1] → $parts[2]"
+    end
+
+    # Let user select which to unmount
+    set -l selected (printf "%s\n" $display_items | fzf \
+        --height=60% \
+        --border \
+        --prompt="Unmount > " \
+        --header="Select share to unmount")
+
+    if test -z "$selected"
+        return # User cancelled
+    end
+
+    # Extract URI from selection
+    set -l uri (string replace -r '^.* → ' '' $selected)
+
+    clear
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "🔓 Unmounting Share"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    echo "URI: $uri"
+    echo ""
+
+    if gio mount -u $uri
+        echo "✅ Successfully unmounted!"
+    else
+        echo "❌ Failed to unmount share"
+        echo ""
+        echo "The share might be in use. Close any programs accessing it."
+    end
+
+    echo ""
+    read -l -P "Press Enter to continue... "
+end
+
+# CD to mounted share
+function cd_to_share_interactive
+    set -l mounts (get_mounted_shares)
+
+    if test (count $mounts) -eq 0
+        echo ""
+        echo "No SMB shares currently mounted."
+        echo ""
+        read -l -P "Press Enter to continue... "
+        return
+    end
+
+    # Format for display
+    set -l display_items
+    set -l paths
+    for mount in $mounts
+        set -l parts (string split '|' $mount)
+        set -a display_items "$parts[1] → $parts[3]"
+        set -a paths $parts[3]
+    end
+
+    # Let user select which share to cd to
+    set -l selected (printf "%s\n" $display_items | fzf \
+        --height=60% \
+        --border \
+        --prompt="CD to > " \
+        --header="Select share to navigate to")
+
+    if test -z "$selected"
+        return # User cancelled
+    end
+
+    # Extract path from selection
+    set -l target_path (string replace -r '^.* → ' '' $selected)
+
+    # Ask user what to do
+    set -l action (printf "🚀 Open fish session here\n📋 Copy cd command to clipboard\n🗂️  Open in Yazi\n" | fzf \
+        --height=40% \
+        --border \
+        --prompt="Action > " \
+        --header="What would you like to do?")
+
+    if test -z "$action"
+        return # User cancelled
+    end
+
+    clear
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "📁 Selected Share"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    echo "Path: $target_path"
+    echo ""
+
+    if string match -q "🚀*" $action
+        # Open fish session
+        echo "Opening a new fish session in this directory..."
+        echo "Type 'exit' to return to the TUI."
+        echo ""
+        read -l -P "Press Enter to continue... "
+
+        # Add to zoxide if available
+        if command -v zoxide >/dev/null 2>&1
+            zoxide add $target_path 2>/dev/null
+        end
+
+        # Start a new fish session in that directory
+        clear
+        cd $target_path
+        fish
+
+    else if string match -q "📋*" $action
+        # Copy to clipboard
+        if not command -v wl-copy >/dev/null 2>&1
+            echo "❌ Error: wl-copy not found"
+            echo ""
+            echo "Install wl-clipboard for Wayland clipboard support:"
+            echo "  Arch/Manjaro: sudo pacman -S wl-clipboard"
+            echo "  Debian/Ubuntu: sudo apt install wl-clipboard"
+            echo ""
+            read -l -P "Press Enter to continue... "
+            return
+        end
+
+        # Build the cd command
+        set -l cd_command "cd \"$target_path\""
+
+        # Copy to clipboard
+        echo -n $cd_command | wl-copy
+
+        echo "✅ Copied to clipboard!"
+        echo ""
+        echo "Command: $cd_command"
+        echo ""
+        echo "You can now paste this in any terminal with Ctrl+Shift+V"
+
+        # Add to zoxide if available
+        if command -v zoxide >/dev/null 2>&1
+            zoxide add $target_path 2>/dev/null
+            echo ""
+            echo "💡 Tip: You can also use 'z "$(basename $target_path)"' after pasting once"
+        end
+
+        echo ""
+        read -l -P "Press Enter to continue... "
+
+    else if string match -q "🗂️*" $action
+        # Open in yazi
+        if not command -v yazi >/dev/null 2>&1
+            echo "❌ Error: yazi not found"
+            echo ""
+            echo "Install yazi file manager:"
+            echo "  Arch/Manjaro: sudo pacman -S yazi"
+            echo "  Or via cargo: cargo install --locked yazi-fm"
+            echo "  https://github.com/sxyazi/yazi"
+            echo ""
+            read -l -P "Press Enter to continue... "
+            return
+        end
+
+        # Add to zoxide if available
+        if command -v zoxide >/dev/null 2>&1
+            zoxide add $target_path 2>/dev/null
+        end
+
+        # Open yazi
+        clear
+        yazi $target_path
+    end
+end
+
+# Open yazi in mounted share
+function open_yazi_interactive
+    set -l mounts (get_mounted_shares)
+
+    if test (count $mounts) -eq 0
+        echo ""
+        echo "No SMB shares currently mounted."
+        echo ""
+        read -l -P "Press Enter to continue... "
+        return
+    end
+
+    # Check if yazi is available
+    if not command -v yazi >/dev/null 2>&1
+        echo ""
+        echo "❌ Error: yazi not found"
+        echo ""
+        echo "Install yazi file manager:"
+        echo "  Arch/Manjaro: sudo pacman -S yazi"
+        echo "  Or via cargo: cargo install --locked yazi-fm"
+        echo "  https://github.com/sxyazi/yazi"
+        echo ""
+        read -l -P "Press Enter to continue... "
+        return
+    end
+
+    # Format for display
+    set -l display_items
+    for mount in $mounts
+        set -l parts (string split '|' $mount)
+        set -a display_items "$parts[1] → $parts[3]"
+    end
+
+    # Let user select which share
+    set -l selected (printf "%s\n" $display_items | fzf \
+        --height=60% \
+        --border \
+        --prompt="Open in Yazi > " \
+        --header="Select share to open in Yazi")
+
+    if test -z "$selected"
+        return # User cancelled
+    end
+
+    # Extract path from selection
+    set -l target_path (string replace -r '^.* → ' '' $selected)
+
+    # Add to zoxide if available
+    if command -v zoxide >/dev/null 2>&1
+        zoxide add $target_path 2>/dev/null
+    end
+
+    # Open yazi
+    clear
+    yazi $target_path
+end
+
+# Copy CD command to clipboard
+function copy_cd_command_interactive
+    set -l mounts (get_mounted_shares)
+
+    if test (count $mounts) -eq 0
+        echo ""
+        echo "No SMB shares currently mounted."
+        echo ""
+        read -l -P "Press Enter to continue... "
+        return
+    end
+
+    # Format for display
+    set -l display_items
+    for mount in $mounts
+        set -l parts (string split '|' $mount)
+        set -a display_items "$parts[1] → $parts[3]"
+    end
+
+    # Let user select which share
+    set -l selected (printf "%s\n" $display_items | fzf \
+        --height=60% \
+        --border \
+        --prompt="Copy CD for > " \
+        --header="Select share to copy cd command")
+
+    if test -z "$selected"
+        return # User cancelled
+    end
+
+    # Extract path from selection
+    set -l target_path (string replace -r '^.* → ' '' $selected)
+
+    clear
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "📋 Copy CD Command"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+
+    # Check if wl-copy is available
+    if not command -v wl-copy >/dev/null 2>&1
+        echo "❌ Error: wl-copy not found"
+        echo ""
+        echo "Install wl-clipboard for Wayland clipboard support:"
+        echo "  Arch/Manjaro: sudo pacman -S wl-clipboard"
+        echo "  Debian/Ubuntu: sudo apt install wl-clipboard"
+        echo ""
+        read -l -P "Press Enter to continue... "
+        return
+    end
+
+    # Build the cd command
+    set -l cd_command "cd \"$target_path\""
+
+    # Copy to clipboard
+    echo -n $cd_command | wl-copy
+
+    echo "✅ Copied to clipboard!"
+    echo ""
+    echo "Command: $cd_command"
+    echo ""
+    echo "You can now paste this in any terminal with Ctrl+Shift+V"
+
+    # Add to zoxide if available
+    if command -v zoxide >/dev/null 2>&1
+        zoxide add $target_path 2>/dev/null
+        echo ""
+        echo "💡 Tip: You can also use 'z "$(basename $target_path)"' after visiting once"
+    end
+
+    echo ""
+    read -l -P "Press Enter to continue... "
+end
+
+# Main loop
+function main
+    # Check dependencies first
+    if not check_dependencies
+        exit 1
+    end
+
+    # Main TUI loop
+    while true
+        clear
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "  $SCRIPT_NAME v$VERSION"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo ""
+
+        set -l choice (show_main_menu)
+
+        if test -z "$choice"
+            # User pressed Esc or cancelled
+            clear
+            echo "Goodbye!"
+            exit 0
+        end
+
+        switch $choice
+            case "📂*"
+                list_mounted_shares_interactive
+
+            case "🔗*"
+                mount_share_interactive
+
+            case "🔓*"
+                unmount_share_interactive
+
+            case "📁*"
+                cd_to_share_interactive
+
+            case "📋*"
+                copy_cd_command_interactive
+
+            case "🗂️*"
+                open_yazi_interactive
+
+            case "🔍*"
+                clear
+                discover_shares | fzf \
+                    --height=80% \
+                    --border \
+                    --prompt="Discovered Shares > " \
+                    --header="Press Esc to return" \
+                    --preview='echo "URI: {2}" | tr "|" "\n"' \
+                    --preview-window=down:3:wrap \
+                    --delimiter='|' \
+                    > /dev/null
+
+            case "🚪*"
+                clear
+                echo "Goodbye!"
+                exit 0
+        end
+    end
+end
+
+# Run main function
+main
