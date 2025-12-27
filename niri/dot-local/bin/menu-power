@@ -8,6 +8,7 @@ function show_power_menu
         "🚀 Waybar restart" \
         "󰤨 Wi-Fi" \
         " Bluetooth" \
+        "🗂️ SMB Shares" \
         " Sound" \
         " Microphone" \
         " System Monitor" \
@@ -29,6 +30,8 @@ function show_power_menu
             ghostty --title=Impala --class=Impala -e impala
         case "*Waybar*"
             systemctl --user restart waybar.service
+        case "*SMB*"
+            ghostty --title="SMB Manager" --class=smb-tui -e ~/.local/bin/smb-tui
         case "*Sound*"
             ghostty --title=Wiremix --class=Wiremix -e wiremix -v output
         case "*Microphone*"
