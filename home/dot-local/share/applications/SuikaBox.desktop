@@ -3,8 +3,7 @@ Version=1.0
 Name=Suika Box
 Comment=Vault
 # Exec=kitty --name "Suika Box" --app-id SuikaBox --title "Suika Box" nvim 'Documents/Suika Box/inbox.md'
-Path=~/Documents/Suika Box/
-Exec=ghostty --title=SuikaBox --class=SuikaBox -e "nvim" "$HOME/Documents/Suika Box/inbox.md"
+Exec=ghostty --title=SuikaBox --class=SuikaBox -e "fish" "-c" "nvim $HOME/Documents/Suika\ Box/inbox.md"
 Terminal=false
 Type=Application
 Keywords=Text;editor;
