@@ -19,7 +19,7 @@ binds {
     Mod+Slash hotkey-overlay-title="Run an Application: fuzzel" { spawn "fuzzel"; }
     Super+Alt+L hotkey-overlay-title="Lock the Screen: swaylock" { spawn "swaylock"; }
     Mod+Escape hotkey-overlay-title="Menu Power" { spawn "~/.local/bin/menu-power"; }
-    Mod+E { spawn-sh "nautilus"; }
+    Mod+E { spawn-sh "ghostty -e yazi"; }
 
     // You can also use a shell. Do this if you need pipes, multiple commands, etc.
     // Note: the entire command goes as a single argument in the end.
@@ -49,10 +49,10 @@ binds {
 
     Mod+Q { close-window; }
 
-    Mod+Left  { focus-column-left; }
+    Mod+Left  hotkey-overlay-title=null { focus-column-left; }
     Mod+Down  { focus-window-down; }
     Mod+Up    { focus-window-up; }
-    Mod+Right { focus-column-right; }
+    Mod+Right hotkey-overlay-title=null { focus-column-right; }
     Mod+H     { focus-column-left; }
     // Mod+J     { focus-window-down; }
     // Mod+K     { focus-window-up; }
@@ -102,12 +102,12 @@ binds {
     // ...
 
 
-    Mod+Page_Down      { focus-workspace-down; }
-    Mod+Page_Up        { focus-workspace-up; }
-    Mod+U              { focus-workspace-down; }
-    Mod+I              { focus-workspace-up; }
-    Mod+Ctrl+Page_Down { move-column-to-workspace-down; }
-    Mod+Ctrl+Page_Up   { move-column-to-workspace-up; }
+    Mod+Page_Down hotkey-overlay-title=null { focus-workspace-down; }
+    Mod+Page_Up hotkey-overlay-title=null { focus-workspace-up; }
+    Mod+U { focus-workspace-down; }
+    Mod+I { focus-workspace-up; }
+    Mod+Ctrl+Page_Down hotkey-overlay-title=null { move-column-to-workspace-down; }
+    Mod+Ctrl+Page_Up  hotkey-overlay-title=null { move-column-to-workspace-up; }
     Mod+Ctrl+U         { move-column-to-workspace-down; }
     Mod+Ctrl+I         { move-column-to-workspace-up; }
 
@@ -245,7 +245,7 @@ binds {
     Mod+Space       { switch-layout "next"; }
     Mod+Shift+Space { switch-layout "prev"; }
 
-    Print { screenshot; }
+    Print hotkey-overlay-title=null { screenshot; }
     Ctrl+Print { screenshot-screen; }
     Alt+Print { screenshot-window; }
     Mod+P {
