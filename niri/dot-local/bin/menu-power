@@ -3,7 +3,7 @@
 function show_power_menu
     set -l menu_options " Lock" \
         "󰤄 Suspend" \
-        "󰜉 Restart" \
+        "󰜉 Reboot [Restart]" \
         "󰐥 Shutdown" \
         "🚀 Waybar restart" \
         "󰤨 Wi-Fi" \
@@ -22,7 +22,7 @@ function show_power_menu
             swaylock
         case "*Suspend*"
             systemctl suspend
-        case "*Restart*"
+        case "*Reboot*"
             systemctl reboot
         case "*Shutdown*"
             systemctl poweroff
