@@ -38,3 +38,5 @@ lazydocker = "0.24"
 "cargo:gittype" = "latest"
 "cargo:xleak" = "latest"
 "pipx:aider-chat" = { version = "latest", playwright = "", browser = "", uvx_args = "--python 3.12" }
+python = "system"
+"pipx:pocket-tts" = "latest"
