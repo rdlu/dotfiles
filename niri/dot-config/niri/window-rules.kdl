@@ -109,6 +109,17 @@ window-rule {
     match app-id="heroic"
     open-on-workspace "games"
 }
+
+window-rule {
+  match app-id="^steam_app"
+  match app-id="gamescope"
+  open-on-workspace "games"
+  open-fullscreen true
+  tiled-state false
+  open-focused true
+  variable-refresh-rate true
+}
+
 // Dont auto focus
 window-rule {
     match app-id="steam"
