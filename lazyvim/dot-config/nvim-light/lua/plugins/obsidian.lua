@@ -62,19 +62,22 @@ return {
       --- See: https://github.com/obsidian-nvim/obsidian.nvim/wiki/Template#customizations
       customizations = {},
     },
-    note_frontmatter_func = function(note)
-      local out = { id = note.id, aliases = note.aliases, tags = note.tags }
+    legacy_commands = false,
+    frontmatter = {
+      func = function(note)
+        local out = { id = note.id, aliases = note.aliases, tags = note.tags }
 
-      -- `note.metadata` contains any manually added fields in the frontmatter.
-      -- So here we just make sure those fields are kept in the frontmatter.
-      if note.metadata ~= nil and not vim.tbl_isempty(note.metadata) then
-        for k, v in pairs(note.metadata) do
-          out[k] = v
+        -- `note.metadata` contains any manually added fields in the frontmatter.
+        -- So here we just make sure those fields are kept in the frontmatter.
+        if note.metadata ~= nil and not vim.tbl_isempty(note.metadata) then
+          for k, v in pairs(note.metadata) do
+            out[k] = v
+          end
         end
-      end
 
-      return out
-    end,
+        return out
+      end,
+    },
     completion = {
       nvim_cmp = false,
       -- Enables completion using blink.cmp
