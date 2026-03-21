@@ -2,7 +2,7 @@
 
 window-rule {
     match is-active=false
-    opacity 0.8
+    opacity 0.95
 }
 
 // Work around WezTerm's initial configure bug
