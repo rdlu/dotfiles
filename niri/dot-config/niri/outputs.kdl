@@ -1,19 +1,31 @@
-output "HDMI-A-1" {
-  scale 2.0
-  position x=0 y=0
+output "Invalid Vendor Codename - RTK HG540T40 0x01010101" {
   focus-at-startup
-  mode "3840x2160"
+  scale 1.5
+  // variable-refresh-rate
 }
 
-output "DP-1" {
-  scale 2.0
-  // scale 1.0
-  // scale 1.75
-  // mode "2560x1440"
-  position x=0 y=0
-  focus-at-startup
-}
+// output "HDMI-A-1" {
+//   scale 2.0
+//   position x=0 y=0
+//   focus-at-startup
+//   mode "3840x2160"
+// }
 
+// output "DP-1" {
+//   // scale 2.0
+//   // scale 1.0
+//   scale 1.25
+//   // scale 1.75
+//   // mode "2560x1440"
+//   position x=0 y=0
+//   focus-at-startup
+//   // variable-refresh-rate on-demand=true
+//   variable-refresh-rate
+// }
+output "DP-2" {
+
+   position x=0 y=0
+}
 output "eDP-1" {
   scale 1.0
   variable-refresh-rate
