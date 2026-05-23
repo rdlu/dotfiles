@@ -18,18 +18,19 @@ Config lives at `~/.config/wl-kbptr/config`, stowed from
 
 |                              | Current monitor  | Other monitor    |
 | ---------------------------- | ---------------- | ---------------- |
-| **default** (tile,bisect)    | `Mod+G`          | `Mod+M`          |
-| **+ click**                  | `Mod+Shift+G`    | `Mod+Shift+M`    |
-| **coarse** (tile only)       | `Mod+Alt+G`      | `Mod+Alt+M`      |
-| **tile + split**             | `Mod+Ctrl+G`     | `Mod+Ctrl+M`     |
-| **bisect-only** (narrow)     | `Mod+N`          | —                |
-| **bisect-only + click**      | `Mod+Shift+N`    | —                |
+| **default** (tile,bisect)    | `Mod+G`          | `Mod+A`          |
+| **+ click**                  | `Mod+Shift+G`    | `Mod+Shift+A`    |
+| **coarse** (tile only)       | `Mod+Alt+G`      | `Mod+Alt+A`      |
+| **tile + split**             | `Mod+Ctrl+G`     | `Mod+Ctrl+A`     |
+| **bisect-only** (narrow)     | `Mod+N`          | `Mod+M`          |
+| **bisect-only + click**      | `Mod+Shift+N`    | `Mod+Shift+M`    |
 
-The `Mod+N` family skips tile entirely. Each step splits the current
-area into 8 cells (2×4) — pick one with `a`/`s`/`d`/`f`/`z`/`x`/`c`/`v`
-(positional left-hand on the keyboard), repeat until the cursor's where
-you want, then **Enter** (or `j`/`k`/`l` to commit with a click). Fewer
-choices per step than tile, more steps total, less cognitive load.
+The bisect-only families (`Mod+N` current, `Mod+M` other) skip tile
+entirely. Each step splits the current area into 8 cells (2×4) — pick
+one with `a`/`s`/`d`/`f`/`z`/`x`/`c`/`v` (positional left-hand on the
+keyboard), repeat until the cursor's where you want, then **Enter**
+(or `j`/`k`/`l` to commit with a click). Fewer choices per step than
+tile, more steps total, less cognitive load.
 
 Other-monitor binds run `~/.local/bin/wl-kbptr-other-output` (stowed from
 `niri/dot-local/bin/wl-kbptr-other-output`). The helper picks the
