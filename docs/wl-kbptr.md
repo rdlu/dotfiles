@@ -16,12 +16,20 @@ Config lives at `~/.config/wl-kbptr/config`, stowed from
 
 ## Binds
 
-|                          | Current monitor  | Other monitor    |
-| ------------------------ | ---------------- | ---------------- |
-| **default** (tile,bisect) | `Mod+G`          | `Mod+M`          |
-| **+ click**              | `Mod+Shift+G`    | `Mod+Shift+M`    |
-| **coarse** (tile only)   | `Mod+Alt+G`      | `Mod+Alt+M`      |
-| **tile + split**         | `Mod+Ctrl+G`     | `Mod+Ctrl+M`     |
+|                              | Current monitor  | Other monitor    |
+| ---------------------------- | ---------------- | ---------------- |
+| **default** (tile,bisect)    | `Mod+G`          | `Mod+M`          |
+| **+ click**                  | `Mod+Shift+G`    | `Mod+Shift+M`    |
+| **coarse** (tile only)       | `Mod+Alt+G`      | `Mod+Alt+M`      |
+| **tile + split**             | `Mod+Ctrl+G`     | `Mod+Ctrl+M`     |
+| **bisect-only** (narrow)     | `Mod+N`          | —                |
+| **bisect-only + click**      | `Mod+Shift+N`    | —                |
+
+The `Mod+N` family skips tile entirely. Each step splits the current
+area into 8 cells (2×4) — pick one with `a`/`s`/`d`/`f`/`z`/`x`/`c`/`v`
+(positional left-hand on the keyboard), repeat until the cursor's where
+you want, then **Enter** (or `j`/`k`/`l` to commit with a click). Fewer
+choices per step than tile, more steps total, less cognitive load.
 
 Other-monitor binds run `~/.local/bin/wl-kbptr-other-output` (stowed from
 `niri/dot-local/bin/wl-kbptr-other-output`). The helper picks the
