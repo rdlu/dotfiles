@@ -16,7 +16,13 @@ modes=tile,bisect
 label_font_family=0xProto Nerd Font Mono
 
 [mode_bisect]
-label_font_family=0xProto Nerd Font Mono
+label_font_family=RecMonoCasual Nerd Font Mono
 
 [mode_floating]
-label_font_family=0xProto Nerd Font Mono
+label_font_family=Agave Nerd Font Mono
+label_font_size=20 70% 150
+label_color=#ffff
+label_select_color=#fd0f
+selectable_bg_color=#003a
+selectable_border_color=#08ff
+unselectable_bg_color=#000a
