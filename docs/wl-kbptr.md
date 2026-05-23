@@ -33,6 +33,8 @@ notes). Config lives at `~/.config/wl-kbptr/config`, stowed from
 | **tile + split**             | `Mod+Ctrl+G`     | `Mod+Ctrl+A`     |
 | **bisect → tile**            | `Mod+N`          | `Mod+M`          |
 | **bisect → tile + click**    | `Mod+Shift+N`    | `Mod+Shift+M`    |
+| **detect + click** (X-ray)   | `Mod+X`          | —                |
+| **detect only**              | `Mod+Shift+X`    | —                |
 
 The `Mod+N`/`Mod+M` families coarse-aim first, then refine on a grid:
 press the chord, bisect into the rough quadrant with

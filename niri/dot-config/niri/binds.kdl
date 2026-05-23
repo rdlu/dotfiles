@@ -35,6 +35,9 @@ binds {
     Mod+M hotkey-overlay-title="Mouse Warp: bisect then tile, other monitor" { spawn "~/.local/bin/wl-kbptr-other-output" "-o" "modes=bisect,tile"; }
     Mod+Shift+M hotkey-overlay-title="Mouse Warp + Click: bisect then tile, other monitor" { spawn "~/.local/bin/wl-kbptr-other-output" "-o" "modes=bisect,tile,click"; }
 
+    Mod+X hotkey-overlay-title="Mouse Warp: detect + click (X-ray)" { spawn "wl-kbptr" "-o" "modes=floating,click" "-o" "mode_floating.source=detect"; }
+    Mod+Shift+X hotkey-overlay-title="Mouse Warp: detect only" { spawn "wl-kbptr" "-o" "modes=floating" "-o" "mode_floating.source=detect"; }
+
     // You can also use a shell. Do this if you need pipes, multiple commands, etc.
     // Note: the entire command goes as a single argument in the end.
     // Mod+T { spawn "bash" "-c" "notify-send hello && exec alacritty"; }
