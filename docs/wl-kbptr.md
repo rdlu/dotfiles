@@ -118,11 +118,8 @@ on the home row.
 ## Files
 
 ```
-niri/
-  dot-config/
-    wl-kbptr/config              # home_row_keys + default mode chain
-    niri/binds.kdl               # Mod+G and Mod+M bind families
-  dot-local/
-    bin/wl-kbptr-other-output    # helper for the Mod+M family
-  wl-kbptr.md                    # this file
+docs/wl-kbptr.md                          # this file
+niri/dot-config/wl-kbptr/config           # home_row_keys + default mode chain
+niri/dot-config/niri/binds.kdl            # Mod+G and Mod+M bind families
+niri/dot-local/bin/wl-kbptr-other-output  # helper for the Mod+M family
 ```
