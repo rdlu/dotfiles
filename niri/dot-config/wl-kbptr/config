@@ -1,0 +1,13 @@
+[general]
+# 11 chars: 8 for bisect cells (row-major: 0..3 top, 4..7 bottom),
+# then left/right/middle click.
+#
+#   keyboard    screen cells
+#   a s d f       0 1 2 3   (top)
+#   z x c v       4 5 6 7   (bottom)
+#
+#   j = left click
+#   k = right click
+#   l = middle click
+home_row_keys=asdfzxcvjkl
+modes=tile,bisect

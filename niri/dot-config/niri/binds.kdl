@@ -21,6 +21,9 @@ binds {
     Mod+Escape hotkey-overlay-title="Menu Power" { spawn "~/.local/bin/menu-power"; }
     Mod+E { spawn-sh "ghostty -e yazi"; }
 
+    Mod+G hotkey-overlay-title="Mouse Warp: wl-kbptr" { spawn "wl-kbptr"; }
+    Mod+Shift+G hotkey-overlay-title="Mouse Warp + Click" { spawn "wl-kbptr" "-o" "modes=tile,bisect,click"; }
+
     // You can also use a shell. Do this if you need pipes, multiple commands, etc.
     // Note: the entire command goes as a single argument in the end.
     // Mod+T { spawn "bash" "-c" "notify-send hello && exec alacritty"; }
