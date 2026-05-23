@@ -1,0 +1,19 @@
+#!/bin/sh
+# Run wl-kbptr on the non-focused output.
+# Extra args are forwarded, so callers can append `-o modes=...,click` etc.
+set -eu
+
+focused=$(niri msg --json focused-output | jq -r .name)
+others=$(niri msg --json outputs | jq -r --arg f "$focused" 'keys[] | select(. != $f)')
+
+if [ -z "$others" ]; then
+    echo "wl-kbptr-other-output: only one output present; using default" >&2
+    exec wl-kbptr "$@"
+fi
+
+target=$(printf '%s\n' "$others" | head -n1)
+
+# niri only routes keyboard input to a layer-surface on the focused output,
+# so flip focus first; wl-kbptr's EXCLUSIVE keyboard grab then takes hold.
+niri msg action focus-monitor "$target"
+exec wl-kbptr -O "$target" "$@"
