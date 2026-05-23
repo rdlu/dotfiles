@@ -11,3 +11,12 @@
 #   l = middle click
 home_row_keys=asdfzxcvjkl
 modes=tile,bisect
+
+[mode_tile]
+label_font_family=Inter
+
+[mode_bisect]
+label_font_family=Inter
+
+[mode_floating]
+label_font_family=Inter
