@@ -30,10 +30,10 @@ binds {
     Mod+Alt+A hotkey-overlay-title="Mouse Warp: coarse, other monitor" { spawn "~/.local/bin/wl-kbptr-other-output" "-o" "modes=tile"; }
     Mod+Ctrl+A hotkey-overlay-title="Mouse Warp: tile + split, other monitor" { spawn "~/.local/bin/wl-kbptr-other-output" "-o" "modes=tile,split"; }
 
-    Mod+N hotkey-overlay-title="Mouse Warp: bisect-only (narrow)" { spawn "wl-kbptr" "-o" "modes=bisect"; }
-    Mod+Shift+N hotkey-overlay-title="Mouse Warp + Click: bisect-only" { spawn "wl-kbptr" "-o" "modes=bisect,click"; }
-    Mod+M hotkey-overlay-title="Mouse Warp: bisect-only, other monitor" { spawn "~/.local/bin/wl-kbptr-other-output" "-o" "modes=bisect"; }
-    Mod+Shift+M hotkey-overlay-title="Mouse Warp + Click: bisect-only, other monitor" { spawn "~/.local/bin/wl-kbptr-other-output" "-o" "modes=bisect,click"; }
+    Mod+N hotkey-overlay-title="Mouse Warp: bisect then tile" { spawn "wl-kbptr" "-o" "modes=bisect,tile"; }
+    Mod+Shift+N hotkey-overlay-title="Mouse Warp + Click: bisect then tile" { spawn "wl-kbptr" "-o" "modes=bisect,tile,click"; }
+    Mod+M hotkey-overlay-title="Mouse Warp: bisect then tile, other monitor" { spawn "~/.local/bin/wl-kbptr-other-output" "-o" "modes=bisect,tile"; }
+    Mod+Shift+M hotkey-overlay-title="Mouse Warp + Click: bisect then tile, other monitor" { spawn "~/.local/bin/wl-kbptr-other-output" "-o" "modes=bisect,tile,click"; }
 
     // You can also use a shell. Do this if you need pipes, multiple commands, etc.
     // Note: the entire command goes as a single argument in the end.
