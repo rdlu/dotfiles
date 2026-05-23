@@ -23,6 +23,12 @@ binds {
 
     Mod+G hotkey-overlay-title="Mouse Warp: wl-kbptr" { spawn "wl-kbptr"; }
     Mod+Shift+G hotkey-overlay-title="Mouse Warp + Click" { spawn "wl-kbptr" "-o" "modes=tile,bisect,click"; }
+    Mod+Alt+G hotkey-overlay-title="Mouse Warp: coarse (tile only)" { spawn "wl-kbptr" "-o" "modes=tile"; }
+    Mod+Ctrl+G hotkey-overlay-title="Mouse Warp: tile + split" { spawn "wl-kbptr" "-o" "modes=tile,split"; }
+    Mod+M hotkey-overlay-title="Mouse Warp: other monitor" { spawn "~/.local/bin/wl-kbptr-other-output"; }
+    Mod+Shift+M hotkey-overlay-title="Mouse Warp + Click: other monitor" { spawn "~/.local/bin/wl-kbptr-other-output" "-o" "modes=tile,bisect,click"; }
+    Mod+Alt+M hotkey-overlay-title="Mouse Warp: coarse, other monitor" { spawn "~/.local/bin/wl-kbptr-other-output" "-o" "modes=tile"; }
+    Mod+Ctrl+M hotkey-overlay-title="Mouse Warp: tile + split, other monitor" { spawn "~/.local/bin/wl-kbptr-other-output" "-o" "modes=tile,split"; }
 
     // You can also use a shell. Do this if you need pipes, multiple commands, etc.
     // Note: the entire command goes as a single argument in the end.
