@@ -17,6 +17,12 @@ Having installed at least `git`, `fish`, `tmux`, `stow`, `starship`; you can use
 
 Check inside the `setup` folder, at least the `*-base` scripts to follow what's needed to install with your package manager.
 
+## Docs
+
+Per-tool documentation lives under [`docs/`](./docs/):
+
+- [wl-kbptr](./docs/wl-kbptr.md) — keyboard-driven mouse pointer for niri.
+
 ## TMUX Basics
 
 I have an alias to open or continue a new TMUX session: `mux` or `mux1` (for the second muxer)
