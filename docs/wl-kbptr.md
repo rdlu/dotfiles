@@ -7,11 +7,20 @@ Upstream: <https://github.com/moverest/wl-kbptr>
 
 ## Install
 
+Bundled with the niri install target:
+
 ```sh
-yay -S wl-kbptr
+just niri-window-manager
 ```
 
-Config lives at `~/.config/wl-kbptr/config`, stowed from
+Or standalone:
+
+```sh
+yay -S wl-kbptr jq
+```
+
+`jq` is required by the `wl-kbptr-other-output` helper (see Multi-monitor
+notes). Config lives at `~/.config/wl-kbptr/config`, stowed from
 `niri/dot-config/wl-kbptr/config` in this repo.
 
 ## Binds
