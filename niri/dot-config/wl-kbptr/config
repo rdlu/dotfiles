@@ -13,10 +13,10 @@ home_row_keys=asdfzxcvjkl
 modes=tile,bisect
 
 [mode_tile]
-label_font_family=JetBrains Mono
+label_font_family=0xProto Nerd Font Mono
 
 [mode_bisect]
-label_font_family=JetBrains Mono
+label_font_family=0xProto Nerd Font Mono
 
 [mode_floating]
-label_font_family=JetBrains Mono
+label_font_family=0xProto Nerd Font Mono
