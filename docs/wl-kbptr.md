@@ -31,15 +31,16 @@ notes). Config lives at `~/.config/wl-kbptr/config`, stowed from
 | **+ click**                  | `Mod+Shift+G`    | `Mod+Shift+A`    |
 | **coarse** (tile only)       | `Mod+Alt+G`      | `Mod+Alt+A`      |
 | **tile + split**             | `Mod+Ctrl+G`     | `Mod+Ctrl+A`     |
-| **bisect-only** (narrow)     | `Mod+N`          | `Mod+M`          |
-| **bisect-only + click**      | `Mod+Shift+N`    | `Mod+Shift+M`    |
+| **bisect → tile**            | `Mod+N`          | `Mod+M`          |
+| **bisect → tile + click**    | `Mod+Shift+N`    | `Mod+Shift+M`    |
 
-The bisect-only families (`Mod+N` current, `Mod+M` other) skip tile
-entirely. Each step splits the current area into 8 cells (2×4) — pick
-one with `a`/`s`/`d`/`f`/`z`/`x`/`c`/`v` (positional left-hand on the
-keyboard), repeat until the cursor's where you want, then **Enter**
-(or `j`/`k`/`l` to commit with a click). Fewer choices per step than
-tile, more steps total, less cognitive load.
+The `Mod+N`/`Mod+M` families coarse-aim first, then refine on a grid:
+press the chord, bisect into the rough quadrant with
+`a`/`s`/`d`/`f`/`z`/`x`/`c`/`v` (positional left hand), recurse as deep
+as you want, then press **Enter** to hand the current area off to tile.
+Tile then shows labeled cells over that area — type the label, cursor
+warps. Different mental model from `Mod+G` ("scan grid, type label"):
+"point first, label second".
 
 Other-monitor binds run `~/.local/bin/wl-kbptr-other-output` (stowed from
 `niri/dot-local/bin/wl-kbptr-other-output`). The helper picks the
