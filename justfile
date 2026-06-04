@@ -189,7 +189,8 @@ systemd-niri-config-install:
   systemctl --user add-wants niri.service mako.service
   systemctl --user add-wants niri.service swayidle.service
   systemctl --user add-wants niri.service waybar.service
-  systemctl enable swayosd-libinput-backend.service
+  # swayosd-libinput-backend is a SYSTEM unit — sudo, not --user
+  -sudo systemctl enable --now swayosd-libinput-backend.service
 
 [group("niri-reload")]
 wpaper-reload:
@@ -224,6 +225,7 @@ services-enable:
   # mpd.service is already running, starting the socket fails ("already active").
   -systemctl --user enable --now mpd.service
   -systemctl --user enable mpd.socket
+  # syncthing is install-optional (see syncthing-file-sync); `-` skips if absent.
   -systemctl --user enable --now syncthing.service
   -systemctl --user enable solaar.service
 
@@ -232,7 +234,9 @@ services-enable:
   systemctl --user add-wants niri.service wpaperd.service
   systemctl --user add-wants niri.service mako.service
   systemctl --user add-wants niri.service swayidle.service
-  -systemctl enable swayosd-libinput-backend.service
+
+  @just _echowarning "\n3) swayosd backend (SYSTEM unit — sudo, NOT --user)"
+  -sudo systemctl enable --now swayosd-libinput-backend.service
 
 # Bring an existing machine fully up to date (each step best-effort)
 [group("maintenance")]
