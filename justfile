@@ -70,8 +70,10 @@ fastfetch:
   @just _echowarning "\n2) Stowing fastfetch config"
   stow --no-folding --dotfiles -S fastfetch
 
-# Essential CLI tools from the pacman repos (these are NOT managed by mise —
-# mise only handles version-pinned languages + tools not in the repos).
+# These are NOT managed by mise — mise only handles version-pinned languages
+# and tools that aren't in the pacman repos.
+
+# Essential CLI tools from the pacman repos
 [group("install-essentials")]
 cli-tools:
   @just _echowarning "Installing CLI tools via pacman"
