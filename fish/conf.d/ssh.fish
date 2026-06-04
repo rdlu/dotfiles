@@ -23,3 +23,32 @@ else
     # No agent file exists, start a new agent
     __start_agent
 end
+
+# Wrap ssh to automatically toggle tmux into "OFF" mode for nested tmux
+# sessions on the remote. Mirrors the F12 binding in ~/.tmux.conf so
+# that the local prefix is disabled while the ssh session is alive and
+# restored when it exits (for any reason).
+function ssh --wraps=ssh --description 'ssh wrapper that unlocks the local tmux prefix for nested sessions'
+    if set -q TMUX
+        tmux set prefix None \; \
+            set key-table off \; \
+            set status-style "fg=colour245,bg=colour52" \; \
+            set window-status-current-style "fg=colour232,bold,bg=colour160" \; \
+            set window-status-current-format " #I: #W [REMOTE] " \; \
+            refresh-client -S
+    end
+
+    command ssh $argv
+    set -l ssh_status $status
+
+    if set -q TMUX
+        tmux set -u prefix \; \
+            set -u key-table \; \
+            set -u status-style \; \
+            set -u window-status-current-style \; \
+            set -u window-status-current-format \; \
+            refresh-client -S
+    end
+
+    return $ssh_status
+end

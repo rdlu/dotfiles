@@ -13,7 +13,9 @@ home_row_keys=asdfzxcvjkl
 modes=tile,bisect
 
 [mode_tile]
-label_font_family=0xProto Nerd Font Mono
+label_font_family=DepartureMono Nerd Font
+selectable_bg_color=#4338ca77
+selectable_border_color=#6366f1ff
 
 [mode_bisect]
 label_font_family=RecMonoCasual Nerd Font Mono
