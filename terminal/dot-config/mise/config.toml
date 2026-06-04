@@ -10,31 +10,25 @@ uvx = true
 [settings.npm]
 bun = true
 
+# Shared tools (both machines). Host-specific tools live in the per-host
+# overlay: hosts/<hostname>/dot-config/mise/conf.d/<hostname>.toml
 [tools]
-"pipx:llm" = "latest"
-"pipx:xxh-xxh" = "latest"
-"pipx:epy-reader" = "latest"
+# Languages — kept in mise (version-pinned) alongside the pacman copies.
+# This dual install is intentional: pacman = system floor, mise = project pin.
 erlang = "29.0.1"
 elixir = "1.20.0-otp-29"
 ruby = "4.0"
 zig = "0.15.2"
 gleam = "1.14.0"
-lazydocker = "0.24"
-"cargo:bottom" = "latest"
-"cargo:probe-rs-tools" = "latest"
-"cargo:zellij" = "latest"
-"cargo:jaq" = "latest"
-"cargo:jnv" = "latest"
-"cargo:ttyper" = "latest"
-"pipx:playwright" = "latest"
-"pipx:posting" = "latest"
-"cargo:rainfrog" = "latest"
-"cargo:monolith" = "latest"
-"cargo:jj-cli" = "latest"
-"cargo:lazyjj" = "latest"
-"cargo:scooter" = "latest"
+
+# CLI/dev tools that are NOT in the pacman repos (AUR-only or fetched direct),
+# so mise is the right manager for them.
 "cargo:gittype" = "latest"
-"cargo:xleak" = "latest"
 "cargo:jiq" = "latest"
-"github:duckdb/duckdb" = "latest"
-"npm:@agentclientprotocol/claude-agent-acp" = "latest"
+"cargo:scooter" = "latest"
+"pipx:llm" = "latest"
+"pipx:xxh-xxh" = "latest"
+"pipx:epy-reader" = "latest"
+
+# Removed from mise — now installed via pacman (see justfile fish-shell recipe):
+#   bottom, zellij, jaq, jnv, ttyper, monolith, jujutsu(jj), lazyjj, lazydocker, duckdb

@@ -74,7 +74,8 @@ fastfetch:
 [group("install-essentials")]
 fish-shell:
   @just _echowarning "1) Installing fish, fish plugin manager, and Starship prompt"
-  paru -S --needed fisher fish starship atuin mise eza lazygit jj tmux zellij stow
+  paru -S --needed fisher fish starship atuin mise eza lazygit jj tmux zellij stow \
+    bottom jaq jnv ttyper monolith lazyjj lazydocker duckdb
   test -d ~/.tmux/plugins/tpm || git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 
   @just _echowarning "\n2) Stowing fish config"
@@ -242,7 +243,7 @@ doctor:
      command -v "$t" >/dev/null 2>&1 && echo "  ok    $t" || echo "  MISS  $t"; \
    done
   @just _echowarning "Shell"
-  @case "${SHELL:-}" in */fish) echo "  ok    \$SHELL is fish";; *) echo "  warn  \$SHELL=${SHELL:-unset} (expected fish)";; esac
+  @sh=$(getent passwd "$USER" | cut -d: -f7); case "$sh" in */fish) echo "  ok    login shell is fish ($sh)";; *) echo "  warn  login shell=$sh (expected fish)";; esac
   @just _echowarning "Host overlay"
   @host="$(hostname)"; [ -d "hosts/$host" ] && echo "  ok    hosts/$host present" || echo "  warn  no hosts/$host overlay"
   @just _echowarning "User services enabled"

@@ -1,3 +1,4 @@
-# daisy-only mise tools (merged additively on top of ~/.config/mise/config.toml).
-# Populate during the Phase 1 audit: `mise ls` on daisy, move daisy-only tools here.
+# daisy-only mise tools. Merged additively on top of ~/.config/mise/config.toml.
+# Only present on daisy (this overlay is stowed only there).
 [tools]
+"cargo:probe-rs-tools" = "latest"  # microcontroller side project
