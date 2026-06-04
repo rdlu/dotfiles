@@ -3,6 +3,6 @@
   "temperature": {
     "thermal-zone": 8,
     "critical-threshold": 90,
-    "format": " {temperatureC}°C"
+    "format": "󰔏 {temperatureC}°C"
   }
 }

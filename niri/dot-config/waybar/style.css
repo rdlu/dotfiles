@@ -87,6 +87,13 @@ window#waybar{
 }
 
 
+/* #temperature is the perf group's visible face, missing from the shared pill
+   rule. With the thermometer icon now leading the text, symmetric horizontal
+   padding sits the icon and the °C evenly inside the pill. */
+#temperature {
+  padding: 0.1em 0.2em;
+}
+
 #clock {
   font-size: 16px;
   font-weight: bold;
