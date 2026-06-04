@@ -1,3 +1,9 @@
-# xps-only mise tools (merged additively on top of ~/.config/mise/config.toml).
-# Populate during the Phase 2 audit: `mise ls` on xps, move xps-only tools here.
+# xps-only mise tools (work computer). Merged additively on top of
+# ~/.config/mise/config.toml. Only present on xps (this overlay is stowed
+# only there).
 [tools]
+"pipx:playwright" = "latest"
+"pipx:posting" = "latest"
+"cargo:rainfrog" = "latest"
+"cargo:xleak" = "latest"
+"npm:@agentclientprotocol/claude-agent-acp" = "latest"
