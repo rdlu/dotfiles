@@ -1,3 +1,9 @@
+set shell := ["bash", "-uc"]
+
+# Base stow packages deployed on every machine.
+# Host-specific bits live in hosts/<hostname>/ (see the `stow` recipe).
+base_packages := "home git idea scripts terminal lazyvim vim systemd niri"
+
 [private]
 default:
   @just --list
@@ -45,34 +51,37 @@ packages:
 [group("install-essentials")]
 dev-setup:
   @just _echowarning "1) Installing languages, runtimes, and toolchains"
-  yay -S --needed nodejs npm python3 rustup zig erlang elixir
+  paru -S --needed nodejs npm python3 rustup zig erlang elixir
 
   @just _echowarning "\n2) Installing Rust language"
-  rustup toolchain add stable-x86_64-unknown-linux-gnu
+  rustup default stable
 
   @just _echowarning "\n3) Setting git global config"
   git config --global init.defaultBranch "main"
 
+  @just _echowarning "\n4) Bootstrapping mise-managed tool versions"
+  mise install
+
 [group("install-other")]
 fastfetch:
   @just _echowarning "1) Installing fastfetch and dependencies"
-  yay -S fastfetch imagemagick
+  paru -S fastfetch imagemagick
 
   @just _echowarning "\n2) Stowing fastfetch config"
-  stow --dotfiles -S fastfetch
+  stow --no-folding --dotfiles -S fastfetch
 
 # fish shell and plugins
 [group("install-essentials")]
 fish-shell:
   @just _echowarning "1) Installing fish, fish plugin manager, and Starship prompt"
-  yay -S --needed fisher fish starship atuin mise eza lazygit jj tmux zellij stow
-  git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+  paru -S --needed fisher fish starship atuin mise eza lazygit jj tmux zellij stow
+  test -d ~/.tmux/plugins/tpm || git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 
   @just _echowarning "\n2) Stowing fish config"
-  stow --dotfiles -S terminal
+  stow --no-folding --dotfiles -S terminal
 
   @just _echowarning "\n3) Setting user shell"
-  chsh -s /usr/bin/fish
+  test "$SHELL" = /usr/bin/fish || chsh -s /usr/bin/fish
 
   @just _echowarning "\n4) Installing fish plugins"
   fish -c "fisher update"
@@ -80,27 +89,27 @@ fish-shell:
 [group("install-essentials")]
 helix-editor:
   @just _echowarning "1) Installing Helix and dependencies"
-  yay -S --needed bash-language-server clang fish-lsp helix just-lsp marksman python-lsp-server shfmt taplo-cli typescript-language-server vscode-css-languageserver vscode-html-languageserver vscode-json-languageserver yaml-language-server zls
+  paru -S --needed bash-language-server clang fish-lsp helix just-lsp marksman python-lsp-server shfmt taplo-cli typescript-language-server vscode-css-languageserver vscode-html-languageserver vscode-json-languageserver yaml-language-server zls
 
   @just _echowarning "\n2) Stowing Helix config"
-  stow --dotfiles -S helix
+  stow --no-folding --dotfiles -S helix
 
 [group("install-graphical")]
 kitty-terminal:
   @just _echowarning "1) Installing Kitty and dependencies"
-  yay -S --needed imagemagick kitty python-pygments ttf-firacode-nerd
+  paru -S --needed imagemagick kitty python-pygments ttf-firacode-nerd
 
   @just _echowarning "\n2) Stowing Kitty config"
-  stow --dotfiles -S terminal
+  stow --no-folding --dotfiles -S terminal
 
 # Install niri and tools used with it
 [group("install-graphical")]
 niri-window-manager:
   @just _echowarning "1) Installing niri and related tools"
-  yay -S --needed bluetui brightnessctl udiskie cliphist fuzzel gdm gnome-keyring inter-font jq mako niri-git nerd-fonts noto-fonts noto-fonts-cjk noto-fonts-emoji noto-fonts-extra mate-polkit swayidle swaylock ttf-font-awesome ttf-jetbrains-mono waybar wl-clipboard wl-kbptr wlsunset wpaperd xdg-desktop-portal-gnome xwayland-satellite
+  paru -S --needed bluetui brightnessctl udiskie cliphist fuzzel gdm gnome-keyring inter-font jq mako niri-git nerd-fonts noto-fonts noto-fonts-cjk noto-fonts-emoji noto-fonts-extra mate-polkit swayidle swaylock ttf-font-awesome ttf-jetbrains-mono waybar wl-clipboard wl-kbptr wlsunset wpaperd xdg-desktop-portal-gnome xwayland-satellite
 
   @just _echowarning "\n2) Stowing niri config"
-  stow --dotfiles -S niri
+  stow --no-folding --dotfiles -S niri
 
   # @just _echowarning "\n3) Enabling GNOME display manager service"
   # sudo systemctl enable gdm
@@ -108,7 +117,7 @@ niri-window-manager:
 [group("install-other")]
 syncthing-file-sync:
   @just _echowarning "1) Installing Syncthing"
-  yay -S syncthing
+  paru -S syncthing
 
   @just _echowarning "\n2) Enabling and starting Syncthing user service"
   systemctl enable --now --user syncthing
@@ -117,26 +126,52 @@ syncthing-file-sync:
 [group("install-essentials")]
 yazi-file-manager:
   @just _echowarning "1) Installing Yazi and dependencies"
-  yay -S --needed 7zip fd ffmpeg fzf imagemagick jq poppler resvg ripgrep wl-clipboard yazi zoxide
+  paru -S --needed 7zip fd ffmpeg fzf imagemagick jq poppler resvg ripgrep wl-clipboard yazi zoxide
 
   @just _echowarning "\n2) Stowing Yazi config"
-  stow --dotfiles -S terminal
+  stow --no-folding --dotfiles -S terminal
 
   @just _echowarning "\n3) Installing Yazi plugins"
   ya pkg install
 
 
+# --no-folding lets base + host overlay both populate shared dirs
+# (~/.config/mise, ~/.local/share/applications) without tree-folding conflicts.
+# The leading fold-aware `-D` clears any OLD folded symlinks first (e.g. a
+# previously folded ~/.config/mise) so the `-S --no-folding` rebuild as real
+# dirs never conflicts. `-` tolerates a first run where nothing is stowed yet.
+
+# Stow base packages + this host's overlay (hosts/$hostname/), auto-detected
 [group("stow")]
 stow:
-  stow --dotfiles -S home idea git scripts terminal lazyvim vim systemd
+  -stow -D --dotfiles -t ~ {{base_packages}}
+  stow -S --no-folding --dotfiles -t ~ {{base_packages}}
+  @host="$(hostname)"; \
+  if [ -d "hosts/$host" ]; then \
+    just _echowarning "Stowing host overlay: hosts/$host"; \
+    stow -D --dotfiles -d hosts -t ~ "$host" 2>/dev/null || true; \
+    stow -S --no-folding --dotfiles -d hosts -t ~ "$host"; \
+  else \
+    just _echowarning "No host overlay for '$host' (hosts/$host absent) -- skipping"; \
+  fi
 
-[group("stow")]
-stow-daisy:
-  stow --dotfiles -S home terminal niri scripts lazyvim vim systemd
-
+# Dry-run the stow above (shows what would change, touches nothing)
 [group("stow")]
 stow-check:
-  stow -n -v --dotfiles -S terminal niri scripts lazyvim vim systemd home
+  stow -n -v -R --no-folding --dotfiles -t ~ {{base_packages}}
+  @host="$(hostname)"; \
+  if [ -d "hosts/$host" ]; then \
+    stow -n -v -R --no-folding --dotfiles -d hosts -t ~ "$host"; \
+  fi
+
+# Remove all symlinks created by `stow` (host overlay first, then base)
+[group("stow")]
+unstow:
+  @host="$(hostname)"; \
+  if [ -d "hosts/$host" ]; then \
+    stow -D --dotfiles -d hosts -t ~ "$host"; \
+  fi
+  stow -D --dotfiles -t ~ {{base_packages}}
 
 # Enables the systemd services for some essential niri helpers
 systemd-niri-config: systemd-niri-config-install wpaper-reload mako-reload waybar-reload swayidle-reload
@@ -167,3 +202,52 @@ waybar-reload:
 swayidle-reload:
   @just _echowarning "Reloading Swayidle"
   systemctl --user reload-or-restart swayidle.service
+
+# Idempotent; replaces the old tracked *.target.wants/ symlinks. Lines that may
+# be absent on a fresh machine are prefixed `-` so a missing unit doesn't abort.
+
+# Enable + start the user services this setup expects
+[group("services")]
+services-enable:
+  @just _echowarning "1) Globally-enabled user services"
+  systemctl --user enable --now mpd.socket mpd.service
+  -systemctl --user enable --now syncthing.service
+  -systemctl --user enable solaar.service
+
+  @just _echowarning "\n2) niri-session helpers (started with niri via add-wants)"
+  systemctl --user add-wants niri.service waybar.service
+  systemctl --user add-wants niri.service wpaperd.service
+  systemctl --user add-wants niri.service mako.service
+  systemctl --user add-wants niri.service swayidle.service
+  -systemctl enable swayosd-libinput-backend.service
+
+# Bring an existing machine fully up to date (each step best-effort)
+[group("maintenance")]
+update:
+  -paru -Syu
+  -mise upgrade
+  -fish -c "fisher update"
+  -ya pkg upgrade
+  -nvim --headless "+Lazy! sync" +qa
+
+# Health check: tools present, shell, host overlay, services, mise, key symlinks
+[group("maintenance")]
+doctor:
+  @just _echowarning "Tools"
+  @for t in fish tmux stow mise paru git nvim; do \
+     command -v "$t" >/dev/null 2>&1 && echo "  ok    $t" || echo "  MISS  $t"; \
+   done
+  @just _echowarning "Shell"
+  @case "${SHELL:-}" in */fish) echo "  ok    \$SHELL is fish";; *) echo "  warn  \$SHELL=${SHELL:-unset} (expected fish)";; esac
+  @just _echowarning "Host overlay"
+  @host="$(hostname)"; [ -d "hosts/$host" ] && echo "  ok    hosts/$host present" || echo "  warn  no hosts/$host overlay"
+  @just _echowarning "User services enabled"
+  @for s in mpd.service waybar.service wpaperd.service mako.service swayidle.service; do \
+     echo "  $(systemctl --user is-enabled "$s" 2>/dev/null || echo missing)  $s"; \
+   done
+  @just _echowarning "mise resolves"
+  @mise ls >/dev/null 2>&1 && echo "  ok    mise ls" || echo "  warn  mise ls failed"
+  @just _echowarning "Key symlinks live"
+  @for l in ~/.config/fish/config.fish ~/.config/mise/config.toml ~/.config/waybar/config.jsonc; do \
+     [ -e "$l" ] && echo "  ok    $l" || echo "  MISS  $l"; \
+   done
