@@ -210,7 +210,11 @@ swayidle-reload:
 [group("services")]
 services-enable:
   @just _echowarning "1) Globally-enabled user services"
-  systemctl --user enable --now mpd.socket mpd.service
+  # Enable the service for boot + start it now (the bit that actually plays).
+  # Enable the socket for boot-time socket-activation but DON'T --now it: if
+  # mpd.service is already running, starting the socket fails ("already active").
+  -systemctl --user enable --now mpd.service
+  -systemctl --user enable mpd.socket
   -systemctl --user enable --now syncthing.service
   -systemctl --user enable solaar.service
 
