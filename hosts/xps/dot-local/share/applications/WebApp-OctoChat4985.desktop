@@ -1,0 +1,19 @@
+[Desktop Entry]
+Version=1.0
+Name=Octo Chat
+Comment=Rocket Chat Octo
+Exec=sh -c 'XAPP_FORCE_GTKWINDOW_ICON="webapp-manager" firefox --class WebApp-OctoChat4985 --name WebApp-OctoChat4985 --profile /home/rdlu/.local/share/ice/firefox/OctoChat4985 --no-remote "https://chat.octoscreen.de"'
+Terminal=false
+X-MultipleArgs=false
+Type=Application
+Icon=webapp-manager
+Categories=GTK;WebApps;
+MimeType=text/html;text/xml;application/xhtml_xml;
+StartupWMClass=WebApp-OctoChat4985
+StartupNotify=true
+X-WebApp-Browser=Firefox
+X-WebApp-URL=https://chat.octoscreen.de
+X-WebApp-CustomParameters=
+X-WebApp-Navbar=false
+X-WebApp-PrivateWindow=false
+X-WebApp-Isolated=true

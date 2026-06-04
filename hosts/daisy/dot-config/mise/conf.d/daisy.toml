@@ -1,0 +1,3 @@
+# daisy-only mise tools (merged additively on top of ~/.config/mise/config.toml).
+# Populate during the Phase 1 audit: `mise ls` on daisy, move daisy-only tools here.
+[tools]

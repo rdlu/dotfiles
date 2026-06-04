@@ -28,7 +28,10 @@
     "idle_inhibitor",
     "clock"
   ],
-  "include": "~/.config/waybar/config-niri.jsonc",
+  "include": [
+    "~/.config/waybar/config-niri.jsonc",
+    "~/.config/waybar/host.jsonc"
+  ],
   "clock": {
     "format": "{:%H:%M}",
     // "format-alt": "{:%d %B W%V %Y}",
@@ -243,11 +246,8 @@
     "on-click": "ghostty --class=btop --title=btop -e btop",
     "on-click-right": "ghostty --class=bottom --title=bottom -e btm",
     "tooltip-format": "  {used:0.1f}G/{total:0.1f}G\nSw {swapUsed:0.1f}G/{swapTotal:0.1f}G"
-  },
-  "temperature": {
-    "critical-threshold": 80,
-    //"thermal-zone": 8,
-    //"critical-threshold": 90,
-    "format": " {temperatureC}°C"
   }
+  // "temperature" is provided per-host via the included host.jsonc
+  // (hosts/<hostname>/dot-config/waybar/host.jsonc) -- daisy uses the
+  // default sensor, xps pins thermal-zone 8.
 }
