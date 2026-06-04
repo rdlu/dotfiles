@@ -1,0 +1,8 @@
+{
+  // xps (Dell XPS, Intel i7) — exposes the CPU package temp at thermal-zone 8
+  "temperature": {
+    "thermal-zone": 8,
+    "critical-threshold": 90,
+    "format": " {temperatureC}°C"
+  }
+}

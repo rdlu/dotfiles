@@ -1,0 +1,3 @@
+# xps-only mise tools (merged additively on top of ~/.config/mise/config.toml).
+# Populate during the Phase 2 audit: `mise ls` on xps, move xps-only tools here.
+[tools]

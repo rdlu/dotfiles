@@ -1,0 +1,19 @@
+[Desktop Entry]
+Version=1.0
+Name=Weather (Merry Sky)
+Comment=Weather Forecast
+Exec=sh -c 'XAPP_FORCE_GTKWINDOW_ICON="/home/rdlu/Downloads/merrysky-favicon.png" firefox --class WebApp-WeatherMerrySky1749 --name WebApp-WeatherMerrySky1749 --profile /home/rdlu/.local/share/ice/firefox/WeatherMerrySky1749 --no-remote "https://merrysky.net/"'
+Terminal=false
+X-MultipleArgs=false
+Type=Application
+Icon=/home/rdlu/Downloads/merrysky-favicon.png
+Categories=GTK;Utility;
+MimeType=text/html;text/xml;application/xhtml_xml;
+StartupWMClass=WebApp-WeatherMerrySky1749
+StartupNotify=true
+X-WebApp-Browser=Firefox
+X-WebApp-URL=https://merrysky.net/
+X-WebApp-CustomParameters=
+X-WebApp-Navbar=false
+X-WebApp-PrivateWindow=false
+X-WebApp-Isolated=true
