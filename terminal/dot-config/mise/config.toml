@@ -2,7 +2,7 @@
 
 [settings]
 experimental = true
-vfox = false
+disable_tools = ["python"]
 
 [settings.pipx]
 uvx = true
@@ -20,7 +20,6 @@ ruby = "4.0"
 zig = "0.15.2"
 gleam = "1.14.0"
 lazydocker = "0.24"
-"ubi:duckdb/duckdb" = "latest"
 "cargo:bottom" = "latest"
 "cargo:probe-rs-tools" = "latest"
 "cargo:zellij" = "latest"
@@ -30,13 +29,12 @@ lazydocker = "0.24"
 "pipx:playwright" = "latest"
 "pipx:posting" = "latest"
 "cargo:rainfrog" = "latest"
-"ubi:jesseduffield/lazydocker" = "latest"
 "cargo:monolith" = "latest"
 "cargo:jj-cli" = "latest"
 "cargo:lazyjj" = "latest"
 "cargo:scooter" = "latest"
 "cargo:gittype" = "latest"
 "cargo:xleak" = "latest"
-"pipx:aider-chat" = { version = "latest", playwright = "", browser = "", uvx_args = "--python 3.12" }
-python = "system"
-"pipx:pocket-tts" = "latest"
+"cargo:jiq" = "latest"
+"github:duckdb/duckdb" = "latest"
+"npm:@agentclientprotocol/claude-agent-acp" = "latest"
