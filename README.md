@@ -1,21 +1,43 @@
 # Rodrigo Dlu dotfiles
 
-My dotfiles
+My personal dotfiles, managed with **GNU Stow** + a **`justfile`**. Two machines:
 
-Intended use with:
+- **daisy** — AMD Ryzen notebook
+- **xps** — Intel i7 notebook (Dell XPS)
 
-- ArchLinux
-- Fedora
-- TMUX
-- FISH shell
-- WezTerm
-- GNU Stow
+Both run [CachyOS](https://cachyos.org/) (Arch) with niri · waybar · fish · tmux.
+
+Shared config lives in the top-level stow packages; per-host differences (display
+layout, thermal sensor, machine-specific tools/apps) live under
+`hosts/<hostname>/`, which is stowed only on the matching machine.
 
 ## Usage
 
-Having installed at least `git`, `fish`, `tmux`, `stow`, `starship`; you can use the `./stow.sh` inside this folder to create the symlinks with gnu stow.
+Everything is driven by [`just`](https://github.com/casey/just) — run `just` to list recipes.
 
-Check inside the `setup` folder, at least the `*-base` scripts to follow what's needed to install with your package manager.
+**Fresh machine:**
+
+```sh
+just full-auto       # base packages, languages, CLI tools, fish, yazi, fastfetch
+just full-auto-gui   # the above + kitty + the niri/waybar graphical stack
+```
+
+**Day to day:**
+
+| recipe | what it does |
+| --- | --- |
+| `just stow` | symlink base packages + this host's `hosts/<hostname>/` overlay (auto-detected) |
+| `just stow-check` / `just unstow` | dry-run / remove all symlinks |
+| `just services-enable` | enable the expected systemd user services (mpd, niri helpers, …) |
+| `just cli-tools` | install the pacman CLI utilities (eza, zellij, bottom, jaq, …) |
+| `just update` | update everything (paru, mise, fisher, yazi plugins, nvim) |
+| `just doctor` | health check: tools, login shell, services, mise, key symlinks |
+
+Language and tool versions are pinned with [mise](https://mise.jdx.dev/): shared tools
+in `terminal/dot-config/mise/config.toml`, per-host tools in
+`hosts/<hostname>/dot-config/mise/conf.d/<hostname>.toml`. Tools available in the
+pacman repos are installed via `just cli-tools` instead (mise only manages
+version-pinned languages and tools not in the repos).
 
 ## Docs
 
