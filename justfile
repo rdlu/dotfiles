@@ -15,7 +15,7 @@ _echowarning text:
   @echo -e "{{ style("warning") }}{{ text }}{{ NORMAL }}"
 
 # Full auto installation
-full-auto: packages dev-setup fish-shell helix-editor yazi-file-manager fastfetch
+full-auto: packages dev-setup cli-tools fish-shell helix-editor yazi-file-manager fastfetch
 
 # Fuller auto (graphical) installation
 full-auto-gui: full-auto kitty-terminal niri-window-manager
@@ -70,12 +70,18 @@ fastfetch:
   @just _echowarning "\n2) Stowing fastfetch config"
   stow --no-folding --dotfiles -S fastfetch
 
+# Essential CLI tools from the pacman repos (these are NOT managed by mise —
+# mise only handles version-pinned languages + tools not in the repos).
+[group("install-essentials")]
+cli-tools:
+  @just _echowarning "Installing CLI tools via pacman"
+  paru -S --needed eza lazygit jujutsu zellij bottom jaq jnv ttyper monolith lazyjj lazydocker duckdb
+
 # fish shell and plugins
 [group("install-essentials")]
 fish-shell:
   @just _echowarning "1) Installing fish, fish plugin manager, and Starship prompt"
-  paru -S --needed fisher fish starship atuin mise eza lazygit jj tmux zellij stow \
-    bottom jaq jnv ttyper monolith lazyjj lazydocker duckdb
+  paru -S --needed fisher fish starship atuin mise tmux stow
   test -d ~/.tmux/plugins/tpm || git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 
   @just _echowarning "\n2) Stowing fish config"
