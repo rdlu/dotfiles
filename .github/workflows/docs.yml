@@ -24,6 +24,8 @@ jobs:
       - uses: extractions/setup-just@v4
       - uses: typst-community/setup-typst@v5
       - uses: pandoc/actions/setup@v1
+      - name: Install cheatsheet fonts
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq fonts-inter fonts-jetbrains-mono
       - run: pip install zensical
       - name: Regenerate markdown from configs
         run: python3 tools/gen-docs.py
@@ -41,6 +43,14 @@ jobs:
             -o docs/pdf/dotfiles-handbook.pdf \
             --pdf-engine=typst --toc -V papersize=a4 -V mainfont="Libertinus Serif" \
             -M title="rdlu's dotfiles handbook" -M date="$(date -I)"
+      - name: Build cheatsheets
+        run: |
+          for sheet in tmux niri; do
+            typst compile --input sheet=$sheet --input theme=latte \
+              tools/cheatsheets/cheatsheet.typ "docs/pdf/$sheet-cheatsheet.pdf"
+            typst compile --input sheet=$sheet --input theme=mocha \
+              tools/cheatsheets/cheatsheet.typ "docs/pdf/$sheet-cheatsheet-mocha.pdf"
+          done
       - run: zensical build --clean
       - uses: actions/upload-pages-artifact@v5
         with:
