@@ -11,7 +11,9 @@ Repo: [github.com/rdlu/dotfiles](https://github.com/rdlu/dotfiles)
 - **[Setup guide](setup.md)** — bootstrap a fresh machine, stow model, per-host overlays
 - **[Justfile reference](justfile.md)** — every recipe, generated from the live justfile
 - **[tmux shortcuts](shortcuts/tmux.md)** — custom binds (generated from `tmux.conf`) + plugin cheatsheets
+- **[zellij shortcuts](shortcuts/zellij.md)** — generated from `config.kdl` (all modes)
 - **[niri shortcuts](shortcuts/niri.md)** — generated from `binds.kdl`
+- **[shell shortcuts](shortcuts/shell.md)** — fish binds (generated) + atuin/fzf.fish/built-ins
 - **[wl-kbptr](wl-kbptr.md)** — keyboard-driven mouse pointer for niri
 
 ## PDF downloads
@@ -19,11 +21,19 @@ Repo: [github.com/rdlu/dotfiles](https://github.com/rdlu/dotfiles)
 Built alongside the site (`just docs`):
 
 - **Cheatsheets** (landscape A4, Catppuccin) —
-  print (Latte): [tmux](pdf/tmux-cheatsheet.pdf) · [niri](pdf/niri-cheatsheet.pdf) ·
-  dark (Mocha): [tmux](pdf/tmux-cheatsheet-mocha.pdf) · [niri](pdf/niri-cheatsheet-mocha.pdf)
+  print (Latte): [tmux](pdf/tmux-cheatsheet.pdf) ·
+  [zellij](pdf/zellij-cheatsheet.pdf) ·
+  [niri](pdf/niri-cheatsheet.pdf) ·
+  [shell](pdf/shell-cheatsheet.pdf) —
+  dark (Mocha): [tmux](pdf/tmux-cheatsheet-mocha.pdf) ·
+  [zellij](pdf/zellij-cheatsheet-mocha.pdf) ·
+  [niri](pdf/niri-cheatsheet-mocha.pdf) ·
+  [shell](pdf/shell-cheatsheet-mocha.pdf)
 - [Dotfiles handbook (everything)](pdf/dotfiles-handbook.pdf)
 - Reference PDFs: [tmux](pdf/tmux-shortcuts.pdf) ·
+  [zellij](pdf/zellij-shortcuts.pdf) ·
   [niri](pdf/niri-shortcuts.pdf) ·
+  [shell](pdf/shell-shortcuts.pdf) ·
   [justfile](pdf/justfile.pdf) ·
   [setup](pdf/setup.pdf) ·
   [wl-kbptr](pdf/wl-kbptr.pdf)

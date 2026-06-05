@@ -79,7 +79,7 @@ Run from the repo root. `just` with no arguments lists everything.
 | `just docs-cheatsheets` | Landscape cheatsheet PDFs, Catppuccin Latte (print) + Mocha (dark) variants | `docs-update` |
 | `just docs-html` | Build the HTML site into site/ (zensical via uvx) | `docs-update` |
 | `just docs-open` | Open a PDF (default: the combined handbook; e.g. `just docs-open tmux-shortcuts`) | `docs-pdf` |
-| `just docs-pdf` | Build the PDFs (per-page cheatsheets + combined handbook) into docs/pdf/ | `docs-update` |
+| `just docs-pdf` | Build the PDFs (per-page references + combined handbook) into docs/pdf/ | `docs-update` |
 | `just docs-serve` | Live-preview the docs site while editing (opens the browser once it's up) | `docs-update` |
 | `just docs-setup` | One-time install of the docs toolchain (pandoc + typst; uv ships with CachyOS) |  |
 | `just docs-update` | Regenerate the generated markdown blocks from tmux.conf, binds.kdl, and this justfile |  |

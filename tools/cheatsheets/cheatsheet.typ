@@ -57,16 +57,21 @@
   inset: (x: 2.6pt, y: 0pt),
   outset: (y: 1.7pt),
   baseline: 0pt,
-  text(font: "JetBrains Mono", size: base * 0.89, fill: pal.key-text, weight: "medium", k),
+  text(font: "JetBrains Mono", size: base * 0.89, fill: pal.key-text, weight: "medium",
+    k.replace("{plus}", "+")),  // literal "+" keys arrive escaped
 )
 
-#let keyspec(s) = if data.at("split_keys", default: false) {
-  s.split("+").map(keycap).join(
-    h(1pt) + text(fill: pal.subtext, size: base * 0.76, baseline: -0.5pt, sym.plus) + h(1pt))
-} else {
-  // space-separated alternatives ("h j k l") each get their own cap
-  s.split(" ").map(keycap).join(h(2pt))
-}
+// Space-separated alternatives ("h j k l") each get their own cap; on
+// split_keys sheets each alternative is further split into per-key caps
+// joined by "+" ("Mod+T").
+#let keyspec(s) = s.split(" ").map(alt => {
+  if data.at("split_keys", default: false) {
+    alt.split("+").map(keycap).join(
+      h(1pt) + text(fill: pal.subtext, size: base * 0.76, baseline: -0.5pt, sym.plus) + h(1pt))
+  } else {
+    keycap(alt)
+  }
+}).join(h(2pt))
 
 #let desc(r) = if r.at("cmd", default: false) {
   text(font: "JetBrains Mono", size: base * 0.86, fill: pal.subtext, r.desc)

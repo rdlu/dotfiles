@@ -15,7 +15,9 @@ nav = [
   { "Justfile reference" = "justfile.md" },
   { "Shortcuts" = [
     { "tmux" = "shortcuts/tmux.md" },
+    { "zellij" = "shortcuts/zellij.md" },
     { "niri" = "shortcuts/niri.md" },
+    { "shell (fish)" = "shortcuts/shell.md" },
   ] },
   { "wl-kbptr" = "wl-kbptr.md" },
 ]
