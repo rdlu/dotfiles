@@ -281,8 +281,8 @@ def niri_rows() -> dict[str, list]:
 
 def gen_niri() -> str:
     grouped = niri_rows()
-    parts = ["`Mod` is the **Super** key. Press `Mod+Shift+/` for the built-in "
-             "hotkey overlay."]
+    parts = ["`Mod` is the **Super** key. Press `Mod+Shift+/` to open these "
+             "docs as a local web app."]
     for title in NIRI_DISPLAY_ORDER:
         rows = grouped[title]
         if not rows:
@@ -850,7 +850,7 @@ def cheat_data() -> dict:
         },
         "niri": {
             "title": "niri",
-            "subtitle": "Mod = Super · Mod+Shift+/ shows the hotkey overlay",
+            "subtitle": "Mod = Super · Mod+Shift+/ opens the docs web app",
             "cols": 4,
             "size": 7.0,
             "split_keys": True,

@@ -10,6 +10,7 @@ repo_url = "https://github.com/rdlu/dotfiles"
 repo_name = "rdlu/dotfiles"
 
 extra_css = ["stylesheets/extra.css"]
+extra_javascript = ["javascripts/shortcuts.js"]
 
 nav = [
   { "Home" = "index.md" },
