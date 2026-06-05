@@ -19,6 +19,7 @@ binds {
     Mod+Slash hotkey-overlay-title="Run an Application: fuzzel" { spawn "fuzzel"; }
     Super+Alt+L hotkey-overlay-title="Lock the Screen: swaylock" { spawn "swaylock"; }
     Mod+Escape hotkey-overlay-title="Menu Power" { spawn "~/.local/bin/menu-power"; }
+    Mod+Shift+Escape hotkey-overlay-title="Menu Just: dotfiles commands" { spawn "~/.local/bin/menu-just"; }
     Mod+E { spawn-sh "ghostty -e yazi"; }
 
     Mod+G hotkey-overlay-title="Mouse Warp: wl-kbptr" { spawn "wl-kbptr"; }

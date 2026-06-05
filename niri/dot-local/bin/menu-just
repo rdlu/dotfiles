@@ -1,0 +1,60 @@
+#!/usr/bin/fish
+
+function show_just_menu
+    set -l dotfiles ~/.dotfiles
+
+    # `just --list` pads the descriptions into an aligned column, so with a
+    # monospace font in fuzzel the menu reads name-left / description-right.
+    # Each group gets a nerd-font glyph prefix (single-cell in the Mono nerd
+    # font, so the columns stay aligned).
+    # Installation recipes are excluded on purpose: ungrouped recipes
+    # (full-auto, packages, ...) print before the first group header, and the
+    # [install-*] groups are skipped by name. `unstow` is too destructive for
+    # a menu, so it is dropped as well.
+    set -l skip 1
+    set -l icon ' '
+    set -l lines
+    for line in (just --justfile $dotfiles/justfile --list --unsorted \
+            --list-heading '' --list-prefix '')
+        if string match -qr '^\[' -- $line
+            string match -qr '^\[install' -- $line; and set skip 1; or set skip 0
+            switch $line
+                case '[stow]'
+                    set icon '' # link
+                case '[niri-reload]'
+                    set icon '' # refresh
+                case '[services]'
+                    set icon '' # gear
+                case '[docs]'
+                    set icon '' # book
+                case '[maintenance]'
+                    set icon '' # wrench
+                case '*'
+                    set icon ' '
+            end
+            continue
+        end
+        string match -qr '^unstow\b' -- $line; and continue
+        test $skip -eq 0; and test -n "$(string trim -- $line)"; and set -a lines "$icon  $line"
+    end
+
+    set -l selection (printf '%s\n' $lines | fuzzel --dmenu \
+        --prompt='just ' \
+        --font='JetBrainsMono Nerd Font Mono:size=10' \
+        --width=100 --lines=20)
+    test -n "$selection"; or return
+
+    # Drop the icon prefix; the first word after it is the recipe name
+    # (parameters keep their defaults).
+    set -l recipe (string split -f1 ' ' -- "$(string replace -r '^\S*\s+' '' -- $selection)")
+    test -n "$recipe"; or return
+
+    ghostty --title="just $recipe" --class=just-run -e fish -c "
+        cd $dotfiles
+        just $recipe
+        set -l rc \$status
+        echo
+        read -P \"── just $recipe exited \$rc — Enter to close ──\""
+end
+
+show_just_menu

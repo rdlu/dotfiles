@@ -1,48 +1,44 @@
 #!/usr/bin/fish
 
-function show_power_menu
-    set -l menu_options " Lock" \
-        "󰤄 Suspend" \
-        "󰜉 Reboot [Restart]" \
-        "󰐥 Shutdown" \
-        "🚀 Waybar restart" \
-        "󰤨 Wi-Fi" \
-        " Bluetooth" \
-        "🗂️ SMB Shares" \
-        " Sound" \
-        " Microphone" \
-        " System Monitor" \
-        "󰩈 Exit session"
+# Power / system menu for niri (Mod+Escape).
+# One entry per line: '<label>|<command>'. The label is matched exactly on
+# selection, so adding an entry is just adding a line here.
 
-    # set -l selection (printf '%s\n' $menu_options | walker --dmenu)
-    set -l selection (printf '%s\n' $menu_options | fuzzel --dmenu)
-
-    switch "$selection"
-        case "*Lock*"
-            swaylock
-        case "*Suspend*"
-            systemctl suspend
-        case "*Reboot*"
-            systemctl reboot
-        case "*Shutdown*"
-            systemctl poweroff
-        case "*Wi-Fi*"
-            ghostty --title=Impala --class=Impala -e impala
-        case "*Waybar*"
-            systemctl --user restart waybar.service
-        case "*SMB*"
-            ghostty --title="SMB Manager" --class=smb-tui -e ~/.local/bin/smb-tui
-        case "*Sound*"
-            ghostty --title=Wiremix --class=Wiremix -e wiremix -v output
-        case "*Microphone*"
-            ghostty --title=Wiremix --class=Wiremix -e wiremix -v input
-        case "*Bluetooth*"
-            ghostty --title=BlueTUI --class=bluetui -e bluetui
-        case "*System*"
-            ghostty --class=btop --title=btop -e btop
-        case "*Exit*"
-            niri msg action quit
-    end
+# The mute toggles show the live state: the action that WOULD happen
+# (Mute when unmuted, Unmute when muted) plus the current default device.
+function audio_entry -a icon noun flag target
+    set -l action Mute
+    string match -q '*MUTED*' -- (wpctl get-volume $target 2>/dev/null); and set action Unmute
+    set -l name (wpctl inspect $target 2>/dev/null | string match -rg 'node\.nick = "(.+)"')
+    test -n "$name"; or set name (wpctl inspect $target 2>/dev/null | string match -rg 'node\.description = "(.+)"')
+    set -l label "$icon $action $noun"
+    # device name as an aligned right column (monospace font in fuzzel)
+    test -n "$name"; and set label "$(string pad --right --width 22 -- $label)$name[1]"
+    printf '%s\n' "$label|swayosd-client --$flag-volume mute-toggle"
 end
 
-show_power_menu
+set -l entries \
+    ' Lock|swaylock' \
+    '󰤄 Suspend|systemctl suspend' \
+    '󰜉 Reboot [Restart]|systemctl reboot' \
+    '󰐥 Shutdown|systemctl poweroff' \
+    '🚀 Waybar restart|systemctl --user restart waybar.service' \
+    '󰤨 Wi-Fi|ghostty --title=Impala --class=Impala -e impala' \
+    ' Bluetooth|ghostty --title=BlueTUI --class=bluetui -e bluetui' \
+    '🗂️ SMB Shares|ghostty --title="SMB Manager" --class=smb-tui -e ~/.local/bin/smb-tui' \
+    (audio_entry '' speakers output @DEFAULT_AUDIO_SINK@) \
+    (audio_entry '' mic input @DEFAULT_AUDIO_SOURCE@) \
+    ' Sound|ghostty --title=Wiremix --class=Wiremix -e wiremix -v output' \
+    ' Microphone|ghostty --title=Wiremix --class=Wiremix -e wiremix -v input' \
+    ' System Monitor|ghostty --class=btop --title=btop -e btop' \
+    '󰩈 Exit session|niri msg action quit'
+
+set -l selection (string split -f1 '|' -- $entries | fuzzel --dmenu \
+    --font='JetBrainsMono Nerd Font Mono:size=14' --lines=16)
+test -n "$selection"; or exit
+
+for entry in $entries
+    if test "$(string split -m1 -f1 '|' -- $entry)" = "$selection"
+        exec fish -c (string split -m1 -f2 '|' -- $entry)
+    end
+end
