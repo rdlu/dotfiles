@@ -1,5 +1,5 @@
 [default]
-duration = "24h"
+duration = "1h"
 mode = "center"
 # mode = "fit-border-color"
 initial-transition = false
