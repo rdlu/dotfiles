@@ -1,5 +1,11 @@
 .aider*
 
+# Docs build output (just docs): zensical HTML site + pandoc/typst PDFs.
+# The generated markdown blocks in docs/*.md ARE tracked — only binary
+# artifacts are ignored.
+site/
+docs/pdf/
+
 # Claude Code project/session state — not config (at any depth in the tree)
 .claude/
 

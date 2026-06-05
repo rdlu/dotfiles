@@ -1,0 +1,49 @@
+# Build and deploy the docs site (HTML + PDFs) to GitHub Pages.
+# Mirrors `just docs` locally: gen-docs.py -> pandoc/typst PDFs -> zensical.
+name: Documentation
+on:
+  push:
+    branches:
+      - main
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/configure-pages@v6
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.x
+      - uses: extractions/setup-just@v3
+      - uses: typst-community/setup-typst@v4
+      - uses: pandoc/actions/setup@v1
+      - run: pip install zensical
+      - name: Regenerate markdown from configs
+        run: python3 tools/gen-docs.py
+      - name: Build PDFs
+        run: |
+          mkdir -p docs/pdf
+          for page in setup justfile shortcuts/tmux shortcuts/niri wl-kbptr; do
+            out="$(basename "$page")"
+            case "$out" in tmux|niri) out="$out-shortcuts";; esac
+            pandoc "docs/$page.md" -o "docs/pdf/$out.pdf" \
+              --pdf-engine=typst --toc -V papersize=a4 -V mainfont="Libertinus Serif" -M date="$(date -I)"
+          done
+          pandoc docs/setup.md docs/justfile.md docs/shortcuts/tmux.md \
+            docs/shortcuts/niri.md docs/wl-kbptr.md \
+            -o docs/pdf/dotfiles-handbook.pdf \
+            --pdf-engine=typst --toc -V papersize=a4 -V mainfont="Libertinus Serif" \
+            -M title="rdlu's dotfiles handbook" -M date="$(date -I)"
+      - run: zensical build --clean
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+      - uses: actions/deploy-pages@v5
+        id: deployment

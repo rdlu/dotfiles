@@ -238,6 +238,57 @@ services-enable:
   @just _echowarning "\n3) swayosd backend (SYSTEM unit — sudo, NOT --user)"
   -sudo systemctl enable --now swayosd-libinput-backend.service
 
+# Docs pipeline: gen-docs.py rewrites the generated markdown blocks from the
+# live configs; zensical (via uvx, nothing installed) builds the HTML site
+# into site/; pandoc+typst render PDFs into docs/pdf/ (linked by the site,
+# so build PDFs before HTML).
+
+# One-time install of the docs toolchain (pandoc + typst; uv ships with CachyOS)
+[group("docs")]
+docs-setup:
+  paru -S --needed pandoc-cli typst uv
+
+# Regenerate the generated markdown blocks from tmux.conf, binds.kdl, and this justfile
+[group("docs")]
+docs-update:
+  python3 tools/gen-docs.py
+
+# Build the PDFs (per-page cheatsheets + combined handbook) into docs/pdf/
+[group("docs")]
+docs-pdf: docs-update
+  mkdir -p docs/pdf
+  for page in setup justfile shortcuts/tmux shortcuts/niri wl-kbptr; do \
+    out="$(basename "$page")"; \
+    case "$out" in tmux|niri) out="$out-shortcuts";; esac; \
+    pandoc "docs/$page.md" -o "docs/pdf/$out.pdf" \
+      --pdf-engine=typst --toc -V papersize=a4 -V mainfont="Libertinus Serif" -M date="$(date -I)"; \
+  done
+  pandoc docs/setup.md docs/justfile.md docs/shortcuts/tmux.md \
+    docs/shortcuts/niri.md docs/wl-kbptr.md \
+    -o docs/pdf/dotfiles-handbook.pdf \
+    --pdf-engine=typst --toc -V papersize=a4 -V mainfont="Libertinus Serif" \
+    -M title="rdlu's dotfiles handbook" -M date="$(date -I)"
+
+# Build the HTML site into site/ (zensical via uvx)
+[group("docs")]
+docs-html: docs-update
+  uvx zensical build --clean
+
+# Full docs build: regenerate markdown, then PDFs, then the HTML site
+[group("docs")]
+docs: docs-pdf docs-html
+
+# Live-preview the docs site while editing (opens the browser once it's up)
+[group("docs")]
+docs-serve: docs-update
+  (sleep 1 && xdg-open http://localhost:8000) &
+  uvx zensical serve
+
+# Open a PDF (default: the combined handbook; e.g. `just docs-open tmux-shortcuts`)
+[group("docs")]
+docs-open pdf="dotfiles-handbook": docs-pdf
+  xdg-open "docs/pdf/{{ pdf }}.pdf"
+
 # Bring an existing machine fully up to date (each step best-effort)
 [group("maintenance")]
 update:
