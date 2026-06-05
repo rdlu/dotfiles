@@ -14,6 +14,7 @@ binds see also the [wl-kbptr guide](../wl-kbptr.md).
 
 | Keys | Action |
 | --- | --- |
+| `Mod+Shift+Slash` | Dotfiles Docs (local) |
 | `Mod+T` | Open a Terminal: ghostty |
 | `Mod+D` | Run an Application: fuzzel |
 | `Mod+Slash` | Run an Application: fuzzel |
@@ -198,7 +199,6 @@ binds see also the [wl-kbptr guide](../wl-kbptr.md).
 
 | Keys | Action |
 | --- | --- |
-| `Mod+Shift+Slash` | Show hotkey overlay |
 | `Mod+O` | Toggle overview *(no key-repeat)* |
 | `Mod+Q` | Close window |
 | `Mod+Alt+Escape` | Toggle keyboard shortcuts inhibit *(never inhibited)* |
