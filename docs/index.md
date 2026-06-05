@@ -18,8 +18,11 @@ Repo: [github.com/rdlu/dotfiles](https://github.com/rdlu/dotfiles)
 
 Built alongside the site (`just docs`):
 
+- **Cheatsheets** (landscape A4, Catppuccin) —
+  print (Latte): [tmux](pdf/tmux-cheatsheet.pdf) · [niri](pdf/niri-cheatsheet.pdf) ·
+  dark (Mocha): [tmux](pdf/tmux-cheatsheet-mocha.pdf) · [niri](pdf/niri-cheatsheet-mocha.pdf)
 - [Dotfiles handbook (everything)](pdf/dotfiles-handbook.pdf)
-- Cheatsheets: [tmux](pdf/tmux-shortcuts.pdf) ·
+- Reference PDFs: [tmux](pdf/tmux-shortcuts.pdf) ·
   [niri](pdf/niri-shortcuts.pdf) ·
   [justfile](pdf/justfile.pdf) ·
   [setup](pdf/setup.pdf) ·

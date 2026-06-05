@@ -269,14 +269,25 @@ docs-pdf: docs-update
     --pdf-engine=typst --toc -V papersize=a4 -V mainfont="Libertinus Serif" \
     -M title="rdlu's dotfiles handbook" -M date="$(date -I)"
 
+# Landscape cheatsheet PDFs, Catppuccin Latte (print) + Mocha (dark) variants
+[group("docs")]
+docs-cheatsheets: docs-update
+  mkdir -p docs/pdf
+  for sheet in tmux niri; do \
+    typst compile --input sheet=$sheet --input theme=latte \
+      tools/cheatsheets/cheatsheet.typ "docs/pdf/$sheet-cheatsheet.pdf"; \
+    typst compile --input sheet=$sheet --input theme=mocha \
+      tools/cheatsheets/cheatsheet.typ "docs/pdf/$sheet-cheatsheet-mocha.pdf"; \
+  done
+
 # Build the HTML site into site/ (zensical via uvx)
 [group("docs")]
 docs-html: docs-update
   uvx zensical build --clean
 
-# Full docs build: regenerate markdown, then PDFs, then the HTML site
+# Full docs build: regenerate markdown, then PDFs + cheatsheets, then the HTML site
 [group("docs")]
-docs: docs-pdf docs-html
+docs: docs-pdf docs-cheatsheets docs-html
 
 # Live-preview the docs site while editing (opens the browser once it's up)
 [group("docs")]

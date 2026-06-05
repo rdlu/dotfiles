@@ -5,6 +5,7 @@
 # artifacts are ignored.
 site/
 docs/pdf/
+tools/cheatsheets/data.json
 
 # Claude Code project/session state — not config (at any depth in the tree)
 .claude/

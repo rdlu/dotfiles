@@ -238,48 +238,56 @@ def parse_niri(path: Path):
     return binds
 
 
-def gen_niri() -> str:
-    binds = parse_niri(NIRI_BINDS)
-    grouped: dict[str, list] = {title: [] for title, _ in NIRI_CATEGORIES}
-    for keys, props, action in binds:
-        for title, match in NIRI_CATEGORIES:
-            if match(keys, action):
-                grouped[title].append((keys, props, action))
-                break
+NIRI_DISPLAY_ORDER = [
+    "Apps & launchers", "Mouse warp (wl-kbptr)",
+    "Media, volume & brightness", "Focus", "Moving windows & columns",
+    "Workspaces", "Monitors", "Layout & sizing",
+    "Screenshots & screencasting", "Session & misc",
+]
 
-    display_order = [
-        "Apps & launchers", "Mouse warp (wl-kbptr)",
-        "Media, volume & brightness", "Focus", "Moving windows & columns",
-        "Workspaces", "Monitors", "Layout & sizing",
-        "Screenshots & screencasting", "Session & misc",
-    ]
+
+def niri_rows() -> dict[str, list]:
+    """Categorized plain-data rows: {category: [(keys, desc, is_cmd, notes)]}.
+
+    `desc` is plain text (no markdown); `is_cmd` marks spawn command lines.
+    """
+    grouped: dict[str, list] = {title: [] for title, _ in NIRI_CATEGORIES}
+    for keys, props, action in parse_niri(NIRI_BINDS):
+        title = next(t for t, match in NIRI_CATEGORIES if match(keys, action))
+        desc, is_cmd = props.get("hotkey-overlay-title", ""), False
+        if desc in ("", "null"):
+            if action.startswith(("spawn ", "spawn-sh ")):
+                desc, is_cmd = shorten(spawn_command(action), 56), True
+            else:
+                desc = humanize(action)
+        notes = []
+        if props.get("allow-when-locked") == "true":
+            notes.append("works on lock screen")
+        if props.get("allow-inhibiting") == "false":
+            notes.append("never inhibited")
+        if "cooldown-ms" in props:
+            notes.append(f"cooldown {props['cooldown-ms']}ms")
+        if props.get("repeat") == "false":
+            notes.append("no key-repeat")
+        grouped[title].append((keys, desc, is_cmd, notes))
+    return grouped
+
+
+def gen_niri() -> str:
+    grouped = niri_rows()
     parts = ["`Mod` is the **Super** key. Press `Mod+Shift+/` for the built-in "
              "hotkey overlay."]
-    for title in display_order:
+    for title in NIRI_DISPLAY_ORDER:
         rows = grouped[title]
         if not rows:
             continue
         parts.append(f"### {title}")
         body = []
-        for keys, props, action in rows:
-            desc = props.get("hotkey-overlay-title", "")
-            if desc in ("", "null"):
-                if action.startswith(("spawn ", "spawn-sh ")):
-                    desc = "Run " + code(md_escape(shorten(spawn_command(action), 56)))
-                else:
-                    desc = humanize(action)
-            notes = []
-            if props.get("allow-when-locked") == "true":
-                notes.append("works on lock screen")
-            if props.get("allow-inhibiting") == "false":
-                notes.append("never inhibited")
-            if "cooldown-ms" in props:
-                notes.append(f"cooldown {props['cooldown-ms']}ms")
-            if props.get("repeat") == "false":
-                notes.append("no key-repeat")
+        for keys, desc, is_cmd, notes in rows:
+            desc = "Run " + code(md_escape(desc)) if is_cmd else md_escape(desc)
             if notes:
                 desc += f" *({', '.join(notes)})*"
-            body.append([code(md_escape(keys)), md_escape(desc) if desc.startswith("Run ") is False else desc])
+            body.append([code(md_escape(keys)), desc])
         parts.append(table(["Keys", "Action"], body))
     return "\n\n".join(parts)
 
@@ -337,6 +345,169 @@ def gen_just() -> str:
 
 
 # --------------------------------------------------------------------------
+# cheatsheet data (consumed by tools/cheatsheets/cheatsheet.typ)
+# --------------------------------------------------------------------------
+
+CHEAT_DATA = Path(__file__).resolve().parent / "cheatsheets" / "data.json"
+
+# Plugin/default bindings aren't in tmux.conf — curated by hand, same as the
+# tables in docs/shortcuts/tmux.md.
+TMUX_CHEAT_EXTRAS = [
+    ("Defaults worth remembering", [
+        ("c", "New window (tab)"), ("1-9", "Go to window #"),
+        ("!", "Promote pane to window"), (",", "Rename window"),
+        ("w", "List windows"), ("f", "Find window"),
+        ("&", "Kill window"), ("$", "Rename session"),
+        ("d", "Detach"), ("z", "Zoom pane"),
+    ]),
+    ("pain-control — panes", [
+        ("|", "Split horizontally"), ("-", "Split vertically"),
+        ("h j k l", "Select pane ← ↓ ↑ →"),
+        ("H J K L", "Resize pane ← ↓ ↑ →"),
+        ("< >", "Swap window left / right"),
+    ]),
+    ("sessionist / sessionx", [
+        ("g", "Switch session by name"), ("C", "Create named session"),
+        ("X", "Kill session, stay attached"), ("S", "Last session"),
+        ("@", "Promote pane to session"), ("o", "sessionx picker (zoxide)"),
+    ]),
+    ("copy & search plugins", [
+        ("/", "copycat: regex search"), ("n N", "copycat: next / prev match"),
+        ("y", "yank: copy to clipboard"), ("Tab", "extrakto: fuzzy pick text"),
+        ("Space", "thumbs: hint-copy text"), ("o", "open selection (copy mode)"),
+        ("Ctrl+o", "open selection in $EDITOR"),
+    ]),
+    ("resurrect / logging / tpm", [
+        ("Ctrl+s", "Save session layout"), ("Ctrl+r", "Restore session layout"),
+        ("P", "Start/stop logging"), ("Alt+p", "Log visible screen"),
+        ("I", "Install plugins"), ("U", "Update plugins"),
+        ("F", "tmux-fzf menu"),
+    ]),
+]
+
+
+# Display-only abbreviations for the cheatsheet keycaps (the markdown pages
+# keep the real XKB names).
+NIRI_KEY_SHORT = {
+    "WheelScrollDown": "Wheel↓", "WheelScrollUp": "Wheel↑",
+    "WheelScrollLeft": "Wheel←", "WheelScrollRight": "Wheel→",
+    "Page_Down": "PgDn", "Page_Up": "PgUp",
+    "BracketLeft": "[", "BracketRight": "]",
+    "Comma": ",", "Period": ".", "Minus": "-", "Equal": "=",
+    "Slash": "/", "Escape": "Esc", "Delete": "Del",
+    "XF86AudioRaiseVolume": "Vol↑", "XF86AudioLowerVolume": "Vol↓",
+    "XF86AudioMute": "Mute", "XF86AudioMicMute": "MicMute",
+    "XF86MonBrightnessUp": "Brt↑", "XF86MonBrightnessDown": "Brt↓",
+    "XF86AudioNext": "Next", "XF86AudioPause": "Pause",
+    "XF86AudioPlay": "Play", "XF86AudioPrev": "Prev",
+}
+
+# Friendlier cheatsheet descriptions for binds whose generated description is
+# a raw command line, keyed by the original key combo.
+CHEAT_NIRI_DESC = {
+    "XF86AudioRaiseVolume": "Volume up (OSD)",
+    "XF86AudioLowerVolume": "Volume down (OSD)",
+    "XF86AudioMute": "Toggle mute (OSD)",
+    "XF86AudioMicMute": "Toggle mic mute (OSD)",
+    "XF86MonBrightnessUp": "Brightness up (OSD)",
+    "XF86MonBrightnessDown": "Brightness down (OSD)",
+    "XF86AudioNext": "Next track",
+    "XF86AudioPause": "Play / pause",
+    "XF86AudioPlay": "Play / pause",
+    "XF86AudioPrev": "Previous track",
+}
+
+
+def shorten_keys(keys: str) -> str:
+    return "+".join(NIRI_KEY_SHORT.get(t, t) for t in keys.split("+"))
+
+
+def collapse_runs(rows: list[dict]) -> list[dict]:
+    """Merge runs of rows that differ only by a trailing digit (Mod+1..Mod+9)."""
+    out, i = [], 0
+    while i < len(rows):
+        row, run = rows[i], [rows[i]]
+        m = re.fullmatch(r"(.*?)(\d)", row["keys"])
+        if m and not row.get("cmd"):
+            base, start = m.group(1), int(m.group(2))
+            for nxt in rows[i + 1:]:
+                m2 = re.fullmatch(re.escape(base) + r"(\d)", nxt["keys"])
+                if (m2 and int(m2.group(1)) == start + len(run)
+                        and nxt["desc"].replace(m2.group(1), "#")
+                        == row["desc"].replace(m.group(2), "#")):
+                    run.append(nxt)
+                else:
+                    break
+        if len(run) >= 3:
+            lo, hi = row["keys"][-1], run[-1]["keys"][-1]
+            out.append({"keys": f"{row['keys'][:-1]}{lo}…{hi}",
+                        "desc": re.sub(rf"{lo}$", f"{lo}…{hi}", row["desc"])})
+        else:
+            out.extend(run)
+        i += len(run)
+    return out
+
+
+def strip_md(text: str) -> str:
+    return text.replace("**", "").replace("`", "")
+
+
+def cheat_data() -> dict:
+    prefix, binds = parse_tmux(TMUX_CONF)
+    by_table: dict[str, list] = {}
+    for key_table, key, command in binds:
+        by_table.setdefault(key_table, []).append((key, command))
+
+    tmux_sections = []
+    for key_table in ("prefix", "root", "copy-mode-vi", "off"):
+        rows = []
+        for key, cmd in by_table.get(key_table, []):
+            desc = TMUX_DESCRIPTIONS.get((key_table, key))
+            rows.append(
+                {"keys": key, "desc": strip_md(desc)} if desc else
+                {"keys": key, "desc": shorten(cmd, 48), "cmd": True})
+        title, _ = TMUX_TABLE_TITLES[key_table]
+        tmux_sections.append({"title": title, "rows": rows})
+    tmux_sections[1:1] = [
+        {"title": title, "rows": [{"keys": k, "desc": d} for k, d in rows]}
+        for title, rows in TMUX_CHEAT_EXTRAS
+    ]
+
+    grouped = niri_rows()
+    niri_sections = []
+    for title in NIRI_DISPLAY_ORDER:
+        rows = []
+        for keys, desc, is_cmd, notes in grouped[title]:
+            if keys in CHEAT_NIRI_DESC:
+                desc, is_cmd, notes = CHEAT_NIRI_DESC[keys], False, []
+            if notes:
+                desc += f" ({', '.join(notes)})"
+            rows.append({"keys": shorten_keys(keys), "desc": desc,
+                         **({"cmd": True} if is_cmd else {})})
+        if rows:
+            niri_sections.append({"title": title, "rows": collapse_runs(rows)})
+
+    return {
+        "tmux": {
+            "title": "tmux",
+            "subtitle": f"prefix {prefix} (Ctrl+a) · open with mux / mux1",
+            "cols": 2,
+            "size": 8.2,
+            "split_keys": False,
+            "sections": tmux_sections,
+        },
+        "niri": {
+            "title": "niri",
+            "subtitle": "Mod = Super · Mod+Shift+/ shows the hotkey overlay",
+            "cols": 4,
+            "size": 7.0,
+            "split_keys": True,
+            "sections": niri_sections,
+        },
+    }
+
+
+# --------------------------------------------------------------------------
 # marker replacement
 # --------------------------------------------------------------------------
 
@@ -368,6 +539,9 @@ def main() -> None:
             print(f"updated  {path.relative_to(REPO)}")
         else:
             print(f"current  {path.relative_to(REPO)}")
+    CHEAT_DATA.parent.mkdir(exist_ok=True)
+    CHEAT_DATA.write_text(json.dumps(cheat_data(), indent=1) + "\n")
+    print(f"written  {CHEAT_DATA.relative_to(REPO)}")
     print(f"done ({changed} file(s) changed)")
 
 

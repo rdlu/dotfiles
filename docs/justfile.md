@@ -75,7 +75,8 @@ Run from the repo root. `just` with no arguments lists everything.
 
 | Recipe | Description | Runs |
 | --- | --- | --- |
-| `just docs` | Full docs build: regenerate markdown, then PDFs, then the HTML site | `docs-pdf`, `docs-html` |
+| `just docs` | Full docs build: regenerate markdown, then PDFs + cheatsheets, then the HTML site | `docs-pdf`, `docs-cheatsheets`, `docs-html` |
+| `just docs-cheatsheets` | Landscape cheatsheet PDFs, Catppuccin Latte (print) + Mocha (dark) variants | `docs-update` |
 | `just docs-html` | Build the HTML site into site/ (zensical via uvx) | `docs-update` |
 | `just docs-open` | Open a PDF (default: the combined handbook; e.g. `just docs-open tmux-shortcuts`) | `docs-pdf` |
 | `just docs-pdf` | Build the PDFs (per-page cheatsheets + combined handbook) into docs/pdf/ | `docs-update` |
