@@ -18,25 +18,63 @@ Repo: [github.com/rdlu/dotfiles](https://github.com/rdlu/dotfiles)
 
 ## PDF downloads
 
-Built alongside the site (`just docs`):
+Single-page landscape cheatsheets (A4, Catppuccin — **Latte** for print,
+**Mocha** for screens), rebuilt from the live configs on every push:
 
-- **Cheatsheets** (landscape A4, Catppuccin) —
-  print (Latte): [tmux](pdf/tmux-cheatsheet.pdf) ·
-  [zellij](pdf/zellij-cheatsheet.pdf) ·
-  [niri](pdf/niri-cheatsheet.pdf) ·
-  [shell](pdf/shell-cheatsheet.pdf) —
-  dark (Mocha): [tmux](pdf/tmux-cheatsheet-mocha.pdf) ·
-  [zellij](pdf/zellij-cheatsheet-mocha.pdf) ·
-  [niri](pdf/niri-cheatsheet-mocha.pdf) ·
-  [shell](pdf/shell-cheatsheet-mocha.pdf)
-- [Dotfiles handbook (everything)](pdf/dotfiles-handbook.pdf)
-- Reference PDFs: [tmux](pdf/tmux-shortcuts.pdf) ·
-  [zellij](pdf/zellij-shortcuts.pdf) ·
-  [niri](pdf/niri-shortcuts.pdf) ·
-  [shell](pdf/shell-shortcuts.pdf) ·
-  [justfile](pdf/justfile.pdf) ·
-  [setup](pdf/setup.pdf) ·
-  [wl-kbptr](pdf/wl-kbptr.pdf)
+<div class="pdf-grid">
+  <div class="pdf-card tmux">
+    <span class="pdf-title"><span class="pdf-icon">🖥️</span> tmux</span>
+    <span class="pdf-sub">prefix Ctrl+a · plugins included</span>
+    <span class="pdf-links">
+      <a href="pdf/tmux-cheatsheet.pdf">Latte</a>
+      <a href="pdf/tmux-cheatsheet-mocha.pdf">Mocha</a>
+    </span>
+  </div>
+  <div class="pdf-card zellij">
+    <span class="pdf-title"><span class="pdf-icon">🧩</span> zellij</span>
+    <span class="pdf-sub">every mode, complete map</span>
+    <span class="pdf-links">
+      <a href="pdf/zellij-cheatsheet.pdf">Latte</a>
+      <a href="pdf/zellij-cheatsheet-mocha.pdf">Mocha</a>
+    </span>
+  </div>
+  <div class="pdf-card niri">
+    <span class="pdf-title"><span class="pdf-icon">🪟</span> niri</span>
+    <span class="pdf-sub">all 145 compositor binds</span>
+    <span class="pdf-links">
+      <a href="pdf/niri-cheatsheet.pdf">Latte</a>
+      <a href="pdf/niri-cheatsheet-mocha.pdf">Mocha</a>
+    </span>
+  </div>
+  <div class="pdf-card shell">
+    <span class="pdf-title"><span class="pdf-icon">🐟</span> shell</span>
+    <span class="pdf-sub">fish · atuin · fzf.fish</span>
+    <span class="pdf-links">
+      <a href="pdf/shell-cheatsheet.pdf">Latte</a>
+      <a href="pdf/shell-cheatsheet-mocha.pdf">Mocha</a>
+    </span>
+  </div>
+  <div class="pdf-card handbook wide">
+    <span class="pdf-title"><span class="pdf-icon">📖</span> Dotfiles handbook</span>
+    <span class="pdf-sub">everything in one PDF — setup guide, justfile reference, all shortcut pages</span>
+    <span class="pdf-links">
+      <a href="pdf/dotfiles-handbook.pdf">Download</a>
+    </span>
+  </div>
+  <div class="pdf-card refs wide">
+    <span class="pdf-title"><span class="pdf-icon">📄</span> Reference PDFs</span>
+    <span class="pdf-sub">portrait per-page exports of the site content</span>
+    <span class="pdf-links">
+      <a href="pdf/tmux-shortcuts.pdf">tmux</a>
+      <a href="pdf/zellij-shortcuts.pdf">zellij</a>
+      <a href="pdf/niri-shortcuts.pdf">niri</a>
+      <a href="pdf/shell-shortcuts.pdf">shell</a>
+      <a href="pdf/justfile.pdf">justfile</a>
+      <a href="pdf/setup.pdf">setup</a>
+      <a href="pdf/wl-kbptr.pdf">wl-kbptr</a>
+    </span>
+  </div>
+</div>
 
 ## How these docs work
 

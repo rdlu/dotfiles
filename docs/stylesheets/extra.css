@@ -1,0 +1,84 @@
+/* PDF download cards on the home page (docs/index.md).
+   Accents follow Catppuccin Latte; the slate scheme switches to Mocha. */
+
+.pdf-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.8rem;
+  margin: 1em 0;
+}
+
+.pdf-card {
+  border-radius: 0.4rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--pdf-accent) 35%, transparent);
+  border-left: 0.3rem solid var(--pdf-accent);
+  background: color-mix(in srgb, var(--pdf-accent) 7%, var(--md-default-bg-color));
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+
+.pdf-card:hover {
+  box-shadow: 0 0.2rem 0.8rem color-mix(in srgb, var(--pdf-accent) 30%, transparent);
+  transform: translateY(-2px);
+}
+
+.pdf-card.wide {
+  grid-column: 1 / -1;
+}
+
+.pdf-card .pdf-title {
+  display: block;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--md-default-fg-color);
+  margin-bottom: 0.1rem;
+}
+
+.pdf-card .pdf-icon {
+  font-size: 1rem;
+  margin-right: 0.25rem;
+}
+
+.pdf-card .pdf-sub {
+  display: block;
+  font-size: 0.62rem;
+  color: var(--md-default-fg-color--light);
+  margin-bottom: 0.55rem;
+}
+
+.pdf-card .pdf-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.pdf-card .pdf-links a {
+  display: inline-block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 0.18rem 0.6rem;
+  border-radius: 1rem;
+  color: var(--pdf-accent);
+  border: 1px solid var(--pdf-accent);
+}
+
+.pdf-card .pdf-links a:hover {
+  color: var(--md-default-bg-color);
+  background: var(--pdf-accent);
+}
+
+/* Catppuccin Latte accents (light scheme) */
+.pdf-card.tmux     { --pdf-accent: #40a02b; }  /* green */
+.pdf-card.zellij   { --pdf-accent: #df8e1d; }  /* yellow */
+.pdf-card.niri     { --pdf-accent: #1e66f5; }  /* blue */
+.pdf-card.shell    { --pdf-accent: #8839ef; }  /* mauve */
+.pdf-card.handbook { --pdf-accent: #d20f39; }  /* red */
+.pdf-card.refs     { --pdf-accent: #179299; }  /* teal */
+
+/* Catppuccin Mocha accents (dark scheme) */
+[data-md-color-scheme="slate"] .pdf-card.tmux     { --pdf-accent: #a6e3a1; }
+[data-md-color-scheme="slate"] .pdf-card.zellij   { --pdf-accent: #f9e2af; }
+[data-md-color-scheme="slate"] .pdf-card.niri     { --pdf-accent: #89b4fa; }
+[data-md-color-scheme="slate"] .pdf-card.shell    { --pdf-accent: #cba6f7; }
+[data-md-color-scheme="slate"] .pdf-card.handbook { --pdf-accent: #f38ba8; }
+[data-md-color-scheme="slate"] .pdf-card.refs     { --pdf-accent: #94e2d5; }

@@ -651,6 +651,10 @@ FISH_CHEAT_EXTRAS = [
         ("Ctrl+r", "Search history (atuin)"),
         ("?", "Ask atuin AI (empty prompt)"),
     ]),
+    ("thefuck — fix the last command", [
+        ("Esc Esc Ctrl+f", "Correct the previous command"),
+        ("fuck", "Same, typed out"),
+    ]),
     ("fzf.fish pickers", [
         ("Ctrl+Alt+f", "Search directory (files)"),
         ("Ctrl+Alt+l", "Git log"),
