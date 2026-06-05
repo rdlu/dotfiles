@@ -1,0 +1,24 @@
+#!/usr/bin/fish
+
+# Open the dotfiles docs site (built by `just docs-html`) as a local web app.
+# Bound to Mod+Shift+Slash in niri.
+
+set -l dotfiles ~/.dotfiles
+set -l site $dotfiles/site
+set -l port 8911
+
+# Build the site on first use.
+if not test -f $site/index.html
+    notify-send -a dotfiles-docs "Dotfiles docs" "Building the site (first run)…"
+    if not just --justfile $dotfiles/justfile docs-html
+        notify-send -u critical -a dotfiles-docs "Dotfiles docs" "Build failed — run 'just docs-html'"
+        exit 1
+    end
+end
+
+# Serve site/ on localhost; zensical uses directory URLs, so file:// won't do.
+if not ss -ltn 2>/dev/null | string match -q "*:$port *"
+    setsid -f python3 -m http.server $port --bind 127.0.0.1 --directory $site >/dev/null 2>&1
+end
+
+exec chromium --app=http://127.0.0.1:$port/
