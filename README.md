@@ -47,7 +47,9 @@ HTML site + PDFs ([rdlu.github.io/dotfiles](https://rdlu.github.io/dotfiles/)):
 - [Setup guide](./docs/setup.md) — fresh machine, stow model, services
 - [Justfile reference](./docs/justfile.md) — generated from the live justfile
 - [tmux shortcuts](./docs/shortcuts/tmux.md) — generated from `tmux.conf` + plugin cheatsheets
+- [zellij shortcuts](./docs/shortcuts/zellij.md) — generated from `config.kdl` (all modes)
 - [niri shortcuts](./docs/shortcuts/niri.md) — generated from `binds.kdl`
+- [shell shortcuts](./docs/shortcuts/shell.md) — fish binds (generated) + atuin/fzf.fish
 - [wl-kbptr](./docs/wl-kbptr.md) — keyboard-driven mouse pointer for niri
 
 The shortcut tables are **generated from the real configs** by
