@@ -8,7 +8,7 @@ by `tools/gen-docs.py` — run `just docs-update` to refresh. For the mouse-warp
 binds see also the [wl-kbptr guide](../wl-kbptr.md).
 
 <!-- gen:niri-binds -->
-`Mod` is the **Super** key. Press `Mod+Shift+/` for the built-in hotkey overlay.
+`Mod` is the **Super** key. Press `Mod+Shift+/` to open these docs as a local web app.
 
 ### Apps & launchers
 

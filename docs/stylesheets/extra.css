@@ -82,3 +82,75 @@
 [data-md-color-scheme="slate"] .pdf-card.shell    { --pdf-accent: #cba6f7; }
 [data-md-color-scheme="slate"] .pdf-card.handbook { --pdf-accent: #f38ba8; }
 [data-md-color-scheme="slate"] .pdf-card.refs     { --pdf-accent: #94e2d5; }
+
+/* ------------------------------------------------------------------ */
+/* Cheatsheet-style tables: accent header, zebra rows, keycaps.
+   The page accent is set by docs/javascripts/shortcuts.js via
+   body[data-page] — same Catppuccin mapping as the PDF cards above.
+   Catppuccin Latte (light scheme): */
+
+body { --page-accent: #179299; --page-accent-fg: #ffffff; }  /* teal default */
+body[data-page="tmux"]     { --page-accent: #40a02b; }
+body[data-page="zellij"]   { --page-accent: #df8e1d; }
+body[data-page="niri"]     { --page-accent: #1e66f5; }
+body[data-page="shell"]    { --page-accent: #8839ef; }
+body[data-page="justfile"] { --page-accent: #d20f39; }
+
+/* Catppuccin Mocha (dark scheme): pastel accents, dark header text */
+body[data-md-color-scheme="slate"]                    { --page-accent: #94e2d5; --page-accent-fg: #11111b; }
+body[data-md-color-scheme="slate"][data-page="tmux"]     { --page-accent: #a6e3a1; }
+body[data-md-color-scheme="slate"][data-page="zellij"]   { --page-accent: #f9e2af; }
+body[data-md-color-scheme="slate"][data-page="niri"]     { --page-accent: #89b4fa; }
+body[data-md-color-scheme="slate"][data-page="shell"]    { --page-accent: #cba6f7; }
+body[data-md-color-scheme="slate"][data-page="justfile"] { --page-accent: #f38ba8; }
+
+/* Content tables: accent header block + rounded corners, echoing the
+   cheatsheet section cards */
+.md-typeset table:not([class]) {
+  border: 1px solid color-mix(in srgb, var(--page-accent) 35%, transparent);
+  border-radius: 0.4rem;
+  overflow: hidden;
+}
+
+.md-typeset table:not([class]) th {
+  background: var(--page-accent);
+  color: var(--page-accent-fg);
+  font-weight: 700;
+}
+
+.md-typeset table:not([class]) th code,
+.md-typeset table:not([class]) th a {
+  color: inherit;
+  background: transparent;
+}
+
+/* zebra + hover rows, tinted with the page accent */
+.md-typeset table:not([class]) tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--page-accent) 6%, transparent);
+}
+
+.md-typeset table:not([class]) tbody tr:hover {
+  background: color-mix(in srgb, var(--page-accent) 14%, transparent);
+}
+
+/* Keycaps — shortcuts.js converts the key column's code spans to kbd */
+.md-typeset .keyseq {
+  white-space: nowrap;
+}
+
+.md-typeset .keyseq kbd {
+  display: inline-block;
+  padding: 0.05rem 0.35rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  border-radius: 0.25rem;
+  color: var(--md-default-fg-color);
+  background: var(--md-default-bg-color);
+  border: 1px solid color-mix(in srgb, var(--page-accent) 55%, transparent);
+  border-bottom-width: 3px;
+  box-shadow: none;
+}
+
+table[data-shortcuts] td:first-child {
+  white-space: nowrap;
+}
