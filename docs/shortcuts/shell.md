@@ -17,6 +17,16 @@ Generated from the `bind` lines in `fish/` by `tools/gen-docs.py` — run
 | `Ctrl+e` | Neovim config picker (default / nvim-lazy / nvim-full) | `fish/conf.d/nvim-switcher.fish` |
 <!-- /gen:fish-binds -->
 
+## thefuck — fix the last command
+
+Bound inside `fish_user_key_bindings` (`fish/conf.d/thefuck.fish`), so they
+only appear in interactive shells.
+
+| Keys | Action |
+| --- | --- |
+| `Esc Esc` or `Ctrl+f` | Correct the previous command (thefuck) |
+| `fuck` (typed) | Same, as a function |
+
 ## History — atuin
 
 `atuin init fish --disable-up-arrow` (in `config.fish`), so the up arrow
