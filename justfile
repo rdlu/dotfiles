@@ -183,20 +183,21 @@ yazi-file-manager:
 
 
 # --no-folding lets base + host overlay both populate shared dirs
-# (~/.config/mise, ~/.local/share/applications) without tree-folding conflicts.
-# The leading fold-aware `-D` clears any OLD folded symlinks first (e.g. a
-# previously folded ~/.config/mise) so the `-S --no-folding` rebuild as real
-# dirs never conflicts. `-` tolerates a first run where nothing is stowed yet.
+# (~/.config/waybar, ~/.config/mise) without tree-folding conflicts.
+# CRITICAL: the -D lines need --no-folding too — unstowing WITHOUT it re-folds
+# a shared dir around the other stow root's remaining links (e.g. waybar around
+# hosts/daisy's host.jsonc), and the next -S dies parsing that cross-root link.
+# `-` tolerates a first run where nothing is stowed yet.
 
 # Stow base packages + this host's overlay (hosts/$hostname/), auto-detected
 [group("stow")]
 stow:
-  -stow -D --dotfiles -t ~ {{base_packages}}
+  -stow -D --no-folding --dotfiles -t ~ {{base_packages}}
   stow -S --no-folding --dotfiles -t ~ {{base_packages}}
   @host="$(hostname)"; \
   if [ -d "hosts/$host" ]; then \
     just _echowarning "Stowing host overlay: hosts/$host"; \
-    stow -D --dotfiles -d hosts -t ~ "$host" 2>/dev/null || true; \
+    stow -D --no-folding --dotfiles -d hosts -t ~ "$host" 2>/dev/null || true; \
     stow -S --no-folding --dotfiles -d hosts -t ~ "$host"; \
   else \
     just _echowarning "No host overlay for '$host' (hosts/$host absent) -- skipping"; \
@@ -216,9 +217,9 @@ stow-check:
 unstow:
   @host="$(hostname)"; \
   if [ -d "hosts/$host" ]; then \
-    stow -D --dotfiles -d hosts -t ~ "$host"; \
+    stow -D --no-folding --dotfiles -d hosts -t ~ "$host"; \
   fi
-  stow -D --dotfiles -t ~ {{base_packages}}
+  stow -D --no-folding --dotfiles -t ~ {{base_packages}}
 
 # Enables the systemd services for some essential niri helpers
 systemd-niri-config: systemd-niri-config-install wpaper-reload mako-reload waybar-reload swayidle-reload
