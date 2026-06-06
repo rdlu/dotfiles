@@ -1,0 +1,378 @@
+# Categorized manifest of ALL intentionally-installed pacman/AUR packages.
+# Every package name lives here — justfile recipes pull their list from a
+# category via `just _pkgs <category>` instead of hardcoding names.
+#
+# Source: the justfile recipe lists plus a pacman.log analysis on daisy
+# (2026-06-06) — packages explicitly installed AFTER the day-0 CachyOS
+# install. Individual nerd fonts are omitted: the `nerd-fonts` group in
+# the niri-wm category pulls all of them.
+#
+#   just pkg-install              # install every category (paru -S --needed)
+#   just pkg-install music-media  # install one category
+#   just pkg-categories           # list categories with package counts
+#   just pkg-drift                # show installed-but-not-captured packages
+#
+# Format: top-level keys are categories, values are flat package lists.
+# (Parsed by awk in the justfile — keep it to `category:` + `  - pkg` lines.)
+
+# --- Categories consumed by specific justfile recipes -----------------------
+
+bootstrap-flatpak: # `packages` step 1 (plain pacman — paru doesn't exist yet)
+  - flatpak
+  - flatpak-xdg-utils
+
+bootstrap-mirrors: # `packages` step 2
+  - reflector
+
+bootstrap-aur-helper: # `packages` step 4 (prebuilt from chaotic-aur)
+  - paru
+
+languages: # dev-setup
+  - elixir
+  - erlang
+  - nodejs
+  - npm
+  - python3
+  - rustup
+  - zig
+
+cli-essentials: # cli-tools
+  - bottom
+  - duckdb
+  - eza
+  - jaq
+  - jnv
+  - lazydocker
+  - lazygit
+  - lazyjj
+  - jujutsu
+  - monolith
+  - ttyper
+  - zellij
+
+fish-shell: # fish-shell
+  - atuin
+  - fish
+  - fisher
+  - mise
+  - starship
+  - stow
+  - tmux
+
+helix-editor: # helix-editor
+  - bash-language-server
+  - clang
+  - fish-lsp
+  - helix
+  - just-lsp
+  - marksman
+  - python-lsp-server
+  - shfmt
+  - taplo-cli
+  - typescript-language-server
+  - vscode-css-languageserver
+  - vscode-html-languageserver
+  - vscode-json-languageserver
+  - yaml-language-server
+  - zls
+
+kitty-terminal: # kitty-terminal
+  - imagemagick
+  - kitty
+  - python-pygments
+  - ttf-firacode-nerd
+
+niri-wm: # niri-window-manager (nerd-fonts is a group: pulls all nerd fonts)
+  - bluetui
+  - brightnessctl
+  - cliphist
+  - fuzzel
+  - gdm
+  - gnome-keyring
+  - inter-font
+  - jq
+  - mako
+  - mate-polkit
+  - nerd-fonts
+  - niri
+  - noto-fonts
+  - noto-fonts-cjk
+  - noto-fonts-emoji
+  - noto-fonts-extra
+  - swayidle
+  - swaylock
+  - ttf-font-awesome
+  - ttf-jetbrains-mono
+  - udiskie
+  - waybar
+  - wl-clipboard
+  - wl-kbptr
+  - wlsunset
+  - wpaperd
+  - xdg-desktop-portal-gnome
+  - xwayland-satellite
+
+syncthing: # syncthing-file-sync
+  - syncthing
+
+yazi: # yazi-file-manager
+  - 7zip
+  - fd
+  - ffmpeg
+  - fzf
+  - imagemagick
+  - jq
+  - poppler
+  - resvg
+  - ripgrep
+  - wl-clipboard
+  - yazi
+  - zoxide
+
+fastfetch: # fastfetch
+  - fastfetch
+  - imagemagick
+
+docs-toolchain: # docs-setup
+  - pandoc-cli
+  - typst
+  - uv
+
+# --- Everything else (installed by `just pkg-install [category]`) -----------
+
+fonts:
+  - adobe-source-code-pro-fonts
+  - otf-font-awesome
+  - otf-libertinus # docs PDFs use Libertinus Serif as mainfont
+  - otf-takao
+  - ttf-ms-fonts
+
+python:
+  - python-duckdb
+  - python-fsspec
+  - python-mutagen
+  - python-pandas
+  - python-pip
+  - python-playwright
+  - python-pyarrow
+  - python-pyelftools
+  - python-west # zephyr/zmk meta-tool
+  - python-xattr
+
+dev:
+  - bun-bin
+  - claude-code
+  - dfu-util
+  - dtc
+  - erlang-wx
+  - ghc
+  - git-delta
+  - github-cli
+  - gleam
+  - googleworkspace-cli
+  - gum
+  - ipython
+  - just
+  - php
+  - php-fpm
+  - pnpm
+  - podlet
+  - rebar3
+  - ruby
+  - strace
+  - usage
+
+containers:
+  - podman-compose
+  - podman-docker
+
+editors:
+  - apostrophe
+  - evil-helix-bin
+  - harper
+  - neovim
+  - obsidian
+  - tinymist
+  - typstyle
+
+emacs:
+  - emacs-wayland
+  - semi
+  - wanderlust
+
+terminals:
+  - ghostty
+  - ghostty-shell-integration
+  - ghostty-terminfo
+  - wezterm
+
+cli-tools:
+  - ed
+  - fasd
+  - htop
+  - qrcodegencpp-cmake
+  - skim
+  - ueberzugpp
+
+docs-wiki:
+  - arch-wiki-lite
+  - d2
+  - local-arch-wiki
+  - mdbook-mermaid
+  - mermaid-cli
+  - navi
+  - wikiman
+
+network:
+  - aria2
+  - bandwhich
+  - impala
+  - localsend
+  - mosh
+  - nmap
+  - openbsd-netcat
+  - rclone
+  - socat
+  - sshfs
+  - tigervnc
+  - vncdotool
+  - websocat
+
+security:
+  - age-plugin-yubikey
+  - keybase-bin
+  - libfido2
+  - rage-encryption
+  - secrets
+  - veracrypt
+  - yubico-authenticator-bin
+  - yubico-pam
+  - yubikey-manager
+  - yubikey-oath-dmenu
+
+system:
+  - firewall-config
+  - firewalld
+  - fuse-overlayfs
+  - fuse-zip
+  - fuse2
+  - fuse2fs
+  - fuseiso
+  - fwupd
+  - gpart
+  - gparted
+  - iptables
+  - ntfs-3g
+  - samba
+  - solaar
+  - squashfuse
+  - udftools
+  - ventoy-bin
+  - wsdd-native
+
+desktop:
+  - alacarte
+  - bemoji
+  - dex
+  - dgop
+  - gnome-epub-thumbnailer
+  - gnome-shell-extension-appindicator
+  - hyprpicker
+  - matugen
+  - nirius
+  - polkit-kde-agent
+  - quickshell
+  - selectdefaultapplication-fork-git
+  - swaybg
+  - swayosd
+  - syncthing-appmenu
+  - wev
+  - wtype
+
+input-method:
+  - fcitx5
+  - fcitx5-configtool
+  - fcitx5-gtk
+  - fcitx5-mozc
+  - fcitx5-nord
+  - fcitx5-qt
+
+audio-production:
+  - calf
+  - easyeffects
+  - haskell-hosc
+  - haskell-microspec
+  - haskell-mwc-random
+  - haskell-tidal
+  - lsp-plugins-lv2
+  - qjackctl
+  - realtime-privileges
+  - sc3-plugins
+  - supercollider
+  - zam-plugins
+
+obs-streaming:
+  - cef-minimal-obs-bin
+  - obs-cmd
+  - obs-gstreamer
+  - obs-plugin-input-overlay-bin
+  - obs-plugin-waveform-bin
+  - obs-vaapi
+  - obs-vkcapture
+
+music-media:
+  - amberol
+  - atomicparsley
+  - cava
+  - celluloid
+  - euphonica
+  - gapless
+  - juk
+  - mpc
+  - mpd
+  - mpd-mpris
+  - mpv
+  - mpv-mpris
+  - picard
+  - rmpc
+  - vlc
+  - wavegain
+  - wiremix
+  - yt-dlp
+  - yt-dlp-ejs
+
+office-reading:
+  - arianna
+  - calibre
+  - foliate
+  - korganizer
+  - okular
+  - onlyoffice-bin
+  - papers
+  - thunderbird
+  - wps-office
+  - wps-office-mime
+
+graphics:
+  - aseprite
+  - qaseprite
+
+gaming:
+  - gamemode
+  - prismlauncher
+  - proton-cachyos-slr
+  - protonup-qt
+  - vkd3d
+  - wine-gecko
+  - wine-mono
+
+apps:
+  - chromium
+  - transmission-gtk
+
+printing:
+  - epson-inkjet-printer-escpr
+
+keyboard-firmware:
+  - vial-appimage
+  - zmk-studio-bin

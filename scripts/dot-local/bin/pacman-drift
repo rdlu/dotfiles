@@ -1,0 +1,36 @@
+#!/bin/bash
+# Show packages you explicitly installed (after the day-0 distro install)
+# that the dotfiles don't capture yet: neither in setup/packages.yaml nor
+# in any `paru/pacman -S` line of the justfile / setup scripts.
+# Pacman groups named in recipes (e.g. nerd-fonts) are expanded to members.
+set -euo pipefail
+
+dotfiles="${DOTFILES:-$HOME/.dotfiles}"
+
+# Day 0 = date of the first pacman.log line (the distro installer run)
+day0=$(sed -n '1s/^\[\([0-9-]*\)T.*/\1/p' /var/log/pacman.log)
+
+# Explicitly-installed packages whose FIRST install came after day 0
+intentional=$(
+  grep -P '\[ALPM\] installed ' /var/log/pacman.log |
+    sed -E 's/^\[([0-9-]+)T[^]]+\] \[ALPM\] installed ([^ ]+) .*/\1 \2/' |
+    sort -k2,2 -k1,1 | awk '!seen[$2]++' |
+    awk -v d0="$day0" '$1 != d0 {print $2}' |
+    sort | comm -12 - <(pacman -Qqe | sort)
+)
+
+# Everything the dotfiles already install: the yaml manifest holds ALL names
+# (justfile recipes resolve their lists from it via `just _pkgs`); legacy
+# setup/*.fish scripts still carry inline -S lines, so grep those too.
+captured=$(
+  {
+    awk '/^  - /{print $2}' "$dotfiles/setup/packages.yaml"
+    grep -hoP '(?:paru|pacman) -S\S*\s+(?:--needed\s+)?\K.*' \
+      "$dotfiles"/setup/*.fish 2>/dev/null |
+      tr ' ' '\n' | grep -v '^-\|^$\|^http'
+  } | sort -u
+)
+# ...with pacman groups expanded to their member packages
+captured=$({ echo "$captured"; pacman -Sgq $captured 2>/dev/null || true; } | sort -u)
+
+comm -23 <(echo "$intentional") <(echo "$captured")
