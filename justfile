@@ -113,8 +113,8 @@ helix-editor:
 
 [group("install-graphical")]
 kitty-terminal:
-  @just _echowarning "1) Installing Kitty and dependencies"
-  paru -S --needed $(just _pkgs kitty-terminal)
+  @just _echowarning "1) Installing the terminal emulators (kitty, ghostty, wezterm) and dependencies"
+  paru -S --needed $(just _pkgs terminals)
 
   @just _echowarning "\n2) Stowing Kitty config"
   stow --no-folding --dotfiles -S terminal
@@ -130,6 +130,16 @@ niri-window-manager:
 
   # @just _echowarning "\n3) Enabling GNOME display manager service"
   # sudo systemctl enable gdm
+
+# Import the Keybase PGP key into GPG and expose it for SSH auth
+[group("install-other")]
+keybase-ssh:
+  paru -S --needed $(just _pkgs keybase)
+  keybase pgp export --secret | gpg --allow-secret-key-import --import
+  keybase pgp pull-private --all
+  ls ~/.gnupg/private-keys-v1.d/ | sed s/.key// >> ~/.gnupg/sshcontrol
+  @just _echowarning "Keys loaded for SSH:"
+  ssh-add -L
 
 [group("install-other")]
 syncthing-file-sync:
