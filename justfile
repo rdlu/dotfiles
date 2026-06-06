@@ -169,6 +169,11 @@ pkg-categories:
 pkg-drift:
   scripts/dot-local/bin/pacman-drift
 
+# Interactive manifest manager: browse categories, install/remove/audit (fzf TUI)
+[group("maintenance")]
+pkg-tui:
+  scripts/dot-local/bin/pkg-tui
+
 # Yazi terminal file manager and plugins
 [group("install-essentials")]
 yazi-file-manager:

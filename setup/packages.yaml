@@ -105,13 +105,13 @@ niri-wm: # niri-window-manager (nerd-fonts is a group: pulls all nerd fonts)
   - noto-fonts-extra
   - swayidle
   - swaylock
-  - ttf-font-awesome
   - ttf-jetbrains-mono
   - udiskie
   - waybar
   - wl-clipboard
   - wl-kbptr
   - wlsunset
+  - woff2-font-awesome
   - wpaperd
   - xdg-desktop-portal-gnome
   - xwayland-satellite

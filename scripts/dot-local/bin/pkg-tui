@@ -1,0 +1,266 @@
+#!/usr/bin/env fish
+
+# pkg-tui - Interactive TUI for managing the package manifest
+#           (setup/packages.yaml) with fzf.
+#
+# Category view:  every category with installed/total counts, plus
+#                 [all] (whole manifest) and [drift] (installed but
+#                 not captured in the manifest, via pacman-drift).
+# Package view:   TAB multi-select, live pacman info preview.
+#
+# Package view keys:
+#   enter   action menu for the selection
+#   ctrl-i  install missing        ctrl-e  reinstall
+#   ctrl-r  remove from system     ctrl-d  remove from manifest
+#   ctrl-a  add to a category (drift view)
+#   esc     back / quit
+
+set -g DOTFILES (set -q DOTFILES; and echo $DOTFILES; or echo $HOME/.dotfiles)
+set -g MANIFEST $DOTFILES/setup/packages.yaml
+set -g SELF (status filename)
+set -g TMPDIR_TUI (mktemp -d /tmp/pkg-tui.XXXXXX)
+set -g INSTALLED $TMPDIR_TUI/installed
+
+function _cleanup --on-event fish_exit
+    test -d "$TMPDIR_TUI"; and rm -rf $TMPDIR_TUI
+end
+
+function _die
+    echo "pkg-tui: $argv" >&2
+    exit 1
+end
+
+function refresh_installed
+    pacman -Qq | sort >$INSTALLED
+end
+
+# --- manifest helpers --------------------------------------------------------
+
+function manifest_categories
+    awk '/^[a-z0-9][a-z0-9-]*:/ { sub(":.*", "", $1); print $1 }' $MANIFEST
+end
+
+# packages of one category (empty arg = whole manifest)
+function manifest_pkgs
+    awk -v cat="$argv[1]" '
+        /^[a-z0-9][a-z0-9-]*:/ { c = $1; sub(":.*", "", c) }
+        $1 == "-" { if (cat == "" || c == cat) print $2 }
+    ' $MANIFEST
+end
+
+# categories that contain a package
+function pkg_categories
+    awk -v p="$argv[1]" '
+        /^[a-z0-9][a-z0-9-]*:/ { c = $1; sub(":.*", "", c) }
+        $1 == "-" && $2 == p { print c }
+    ' $MANIFEST
+end
+
+# insert a package into a category, alphabetically
+function manifest_add --argument-names pkg cat
+    awk -v pkg="$pkg" -v cat="$cat" '
+        /^[a-z0-9][a-z0-9-]*:/ {
+            c = $1; sub(":.*", "", c)
+            incat = (c == cat)
+        }
+        incat && !done && $1 == "-" && pkg < $2 { print "  - " pkg; done = 1 }
+        incat && !done && $0 == ""              { print "  - " pkg; done = 1 }
+        { print }
+        END { if (incat && !done) print "  - " pkg }
+    ' $MANIFEST >$TMPDIR_TUI/manifest; and mv $TMPDIR_TUI/manifest $MANIFEST
+end
+
+# drop a package from a category (empty cat = from every category)
+function manifest_del --argument-names pkg cat
+    awk -v pkg="$pkg" -v cat="$cat" '
+        /^[a-z0-9][a-z0-9-]*:/ { c = $1; sub(":.*", "", c) }
+        $1 == "-" && $2 == pkg && (cat == "" || c == cat) { next }
+        { print }
+    ' $MANIFEST >$TMPDIR_TUI/manifest; and mv $TMPDIR_TUI/manifest $MANIFEST
+end
+
+# --- view line builders ------------------------------------------------------
+
+function pkg_lines --argument-names cat # ✓/✗ status per manifest package
+    manifest_pkgs $cat | sort -u >$TMPDIR_TUI/pkgs
+    begin
+        comm -12 $TMPDIR_TUI/pkgs $INSTALLED | sed 's/^/\x1b[32m✓\x1b[0m /'
+        comm -23 $TMPDIR_TUI/pkgs $INSTALLED | sed 's/^/\x1b[31m✗\x1b[0m /'
+    end | sort -k2
+end
+
+function drift_lines # installed but uncaptured
+    pacman-drift | sed 's/^/\x1b[36m+\x1b[0m /'
+end
+
+function category_lines
+    set -l drift_count (pacman-drift | count)
+    set -l all_total (manifest_pkgs | sort -u | wc -l)
+    set -l all_inst (manifest_pkgs | sort -u | comm -12 - $INSTALLED | wc -l)
+    printf '%-22s \x1b[36m%s\x1b[0m\n' '[all]' "$all_inst/$all_total installed"
+    printf '%-22s \x1b[36m%s\x1b[0m\n' '[drift]' "$drift_count uncaptured"
+    for c in (manifest_categories)
+        manifest_pkgs $c | sort -u >$TMPDIR_TUI/pkgs
+        set -l total (wc -l <$TMPDIR_TUI/pkgs | string trim)
+        set -l inst (comm -12 $TMPDIR_TUI/pkgs $INSTALLED | wc -l)
+        if test $inst -eq $total
+            printf '%-22s \x1b[32m%s\x1b[0m\n' $c "$inst/$total"
+        else
+            printf '%-22s \x1b[33m%s\x1b[0m\n' $c "$inst/$total"
+        end
+    end
+end
+
+# --- preview (invoked by fzf as: pkg-tui __preview <pkg>) --------------------
+
+function preview --argument-names pkg
+    set_color cyan
+    echo "manifest: "(pkg_categories $pkg | string join ', ' | string collect; or echo '(not in manifest)')
+    set_color normal
+    echo
+    pacman -Qi $pkg 2>/dev/null; or pacman -Si $pkg 2>/dev/null
+    or begin
+        echo "(not in repos — AUR info via paru)"
+        paru -Si $pkg 2>/dev/null
+    end
+end
+
+# --- actions -----------------------------------------------------------------
+
+function pause
+    read -P (set_color -d)'-- enter to continue --'(set_color normal) >/dev/null
+end
+
+function pick_category
+    manifest_categories | fzf --prompt 'add to category> ' --height 40% --reverse
+end
+
+function add_to_manifest # pkgs...
+    set -l cat (pick_category)
+    test -z "$cat"; and return
+    for p in $argv
+        manifest_del $p # avoid duplicates if re-categorizing
+        manifest_add $p $cat
+    end
+    echo "added to '$cat': $argv"
+    pause
+end
+
+function run_action --argument-names key cat
+    set -l pkgs $argv[3..-1]
+    test (count $pkgs) -eq 0; and return
+    switch $key
+        case ctrl-i
+            paru -S --needed -- $pkgs; pause
+        case ctrl-e
+            paru -S -- $pkgs; pause
+        case ctrl-r
+            paru -Rns -- $pkgs; pause
+        case ctrl-d
+            for p in $pkgs
+                manifest_del $p $cat
+            end
+            echo "removed from manifest: $pkgs"
+            pause
+        case ctrl-a
+            add_to_manifest $pkgs
+    end
+    refresh_installed
+end
+
+function action_menu --argument-names cat
+    set -l pkgs $argv[2..-1]
+    set -l menu 'install missing' reinstall 'remove from system' \
+        'remove from manifest' 'add/move to a category' cancel
+    set -l choice (printf '%s\n' $menu | fzf --prompt "action for: $pkgs> " --height 40% --reverse)
+    switch "$choice"
+        case 'install missing'; run_action ctrl-i "$cat" $pkgs
+        case reinstall;         run_action ctrl-e "$cat" $pkgs
+        case 'remove from system'; run_action ctrl-r "$cat" $pkgs
+        case 'remove from manifest'; run_action ctrl-d "$cat" $pkgs
+        case 'add/move to a category'; run_action ctrl-a "$cat" $pkgs
+    end
+end
+
+# --- views -------------------------------------------------------------------
+
+function package_view --argument-names cat
+    while true
+        switch $cat
+            case '[drift]'
+                set lines (drift_lines)
+                set hdr 'DRIFT: installed but not in the manifest | TAB select | ctrl-a add to category | ctrl-r remove from system | esc back'
+            case '[all]'
+                set lines (pkg_lines)
+                set hdr 'TAB select | enter menu | ^i install ^e reinstall ^r remove ^d un-manifest ^a re-categorize | esc back'
+            case '*'
+                set lines (pkg_lines $cat)
+                set hdr "$cat | TAB select | enter menu | ^i install ^e reinstall ^r remove ^d un-manifest | esc back"
+        end
+        test (count $lines) -eq 0; and return
+
+        set -l out (printf '%s\n' $lines | fzf --ansi --multi --reverse \
+            --expect=ctrl-i,ctrl-e,ctrl-r,ctrl-d,ctrl-a \
+            --header "$hdr" --prompt "$cat> " \
+            --preview "$SELF __preview {2}" --preview-window 'right:55%:wrap')
+        test (count $out) -lt 2; and return
+
+        set -l key $out[1]
+        set -l pkgs
+        for line in $out[2..-1]
+            set -a pkgs (string split -m1 ' ' -- $line)[2]
+        end
+        # yaml-scoped deletes only make sense inside a real category
+        set -l scope (string match -rv '^\[' -- $cat; or echo '')
+
+        if test -z "$key"
+            action_menu "$scope" $pkgs
+        else
+            run_action $key "$scope" $pkgs
+        end
+    end
+end
+
+function main
+    command -v fzf >/dev/null; or _die "fzf is required"
+    test -r $MANIFEST; or _die "manifest not found: $MANIFEST"
+    refresh_installed
+    while true
+        set -l out (category_lines | fzf --ansi --reverse \
+            --header 'enter: browse category | esc: quit' --prompt 'category> ' \
+            --preview "$SELF __catpreview {1}" --preview-window 'right:50%')
+        test -z "$out"; and break
+        package_view (string split -m1 ' ' -- $out)[1]
+    end
+end
+
+# category preview: its packages with status
+function catpreview --argument-names cat
+    switch $cat
+        case '[all]'
+            pkg_lines
+        case '[drift]'
+            drift_lines
+        case '*'
+            pkg_lines $cat
+    end
+end
+
+# --- entrypoint --------------------------------------------------------------
+
+switch "$argv[1]"
+    case __preview
+        refresh_installed
+        preview $argv[2]
+    case __catpreview
+        refresh_installed
+        catpreview $argv[2]
+    case __add # pkg-tui __add <pkg> <category>
+        manifest_add $argv[2] $argv[3]
+    case __del # pkg-tui __del <pkg> [category]
+        manifest_del $argv[2] $argv[3]
+    case ''
+        main
+    case '*'
+        _die "unknown argument: $argv[1]"
+end
