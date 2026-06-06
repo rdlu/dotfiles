@@ -73,6 +73,7 @@ Run from the repo root. `just` with no arguments lists everything.
 | --- | --- | --- |
 | `just doctor` | Health check: tools present, shell, host overlay, services, mise, key symlinks |  |
 | `just pkg-drift` | Explicit installs (post day-0) not yet in the manifest or any recipe |  |
+| `just pkg-tui` | Interactive manifest manager: browse categories, install/remove/audit (fzf TUI) |  |
 | `just update` | Bring an existing machine fully up to date (each step best-effort) |  |
 
 ### Docs (this site)
