@@ -39,6 +39,8 @@ Run from the repo root. `just` with no arguments lists everything.
 | Recipe | Description | Runs |
 | --- | --- | --- |
 | `just fastfetch` |  |  |
+| `just pkg-categories` | List the manifest categories with their package counts |  |
+| `just pkg-install` | Install the package manifest (all of setup/packages.yaml, or one category) |  |
 | `just syncthing-file-sync` |  |  |
 
 ### Stow (symlink management)
@@ -69,6 +71,7 @@ Run from the repo root. `just` with no arguments lists everything.
 | Recipe | Description | Runs |
 | --- | --- | --- |
 | `just doctor` | Health check: tools present, shell, host overlay, services, mise, key symlinks |  |
+| `just pkg-drift` | Explicit installs (post day-0) not yet in the manifest or any recipe |  |
 | `just update` | Bring an existing machine fully up to date (each step best-effort) |  |
 
 ### Docs (this site)

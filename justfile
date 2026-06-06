@@ -14,6 +14,14 @@ _echoerror text:
 _echowarning text:
   @echo -e "{{ style("warning") }}{{ text }}{{ NORMAL }}"
 
+# ALL package names live in setup/packages.yaml — recipes resolve their list
+# from a category here; never hardcode package names in this justfile.
+
+# Print the packages of one manifest category (empty category = all)
+[private]
+_pkgs category="":
+  @awk -v cat="{{ category }}" '/^[a-z0-9][a-z0-9-]*:/ { c = substr($1, 1, length($1) - 1) } /^  - / { if (cat == "" || c == cat) print $2 }' setup/packages.yaml
+
 # Full auto installation
 full-auto: packages dev-setup cli-tools fish-shell helix-editor yazi-file-manager fastfetch
 
@@ -23,11 +31,11 @@ full-auto-gui: full-auto kitty-terminal niri-window-manager
 # (Run first unless running full-auto) Setup Flatpak, pacman mirrors, Chaotic AUR, and paru AUR helper
 packages:
   @just _echowarning "1) Installing Flatpak and adding Flathub repository"
-  sudo pacman -S flatpak flatpak-xdg-utils
+  sudo pacman -S --needed $(just _pkgs bootstrap-flatpak)
   flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
   @just _echowarning "\n2) Installing reflector (automatic mirror configuration)"
-  sudo pacman -S reflector
+  sudo pacman -S --needed $(just _pkgs bootstrap-mirrors)
 
   @just _echoerror "\n\n----- IMPORTANT -----\nPlease modify /etc/xdg/reflector/reflector.conf before continuing\n---------------------"
   @read -p "Press enter to continue"
@@ -45,13 +53,13 @@ packages:
   @read -p "Press enter to continue"
 
   @just _echowarning "\n4) Installing paru AUR helper"
-  sudo pacman -Sy paru
+  sudo pacman -Sy --needed $(just _pkgs bootstrap-aur-helper)
 
 # Programming languages, runtimes, toolchains, and git
 [group("install-essentials")]
 dev-setup:
   @just _echowarning "1) Installing languages, runtimes, and toolchains"
-  paru -S --needed nodejs npm python3 rustup zig erlang elixir
+  paru -S --needed $(just _pkgs languages)
 
   @just _echowarning "\n2) Installing Rust language"
   rustup default stable
@@ -65,7 +73,7 @@ dev-setup:
 [group("install-other")]
 fastfetch:
   @just _echowarning "1) Installing fastfetch and dependencies"
-  paru -S fastfetch imagemagick
+  paru -S --needed $(just _pkgs fastfetch)
 
   @just _echowarning "\n2) Stowing fastfetch config"
   stow --no-folding --dotfiles -S fastfetch
@@ -77,13 +85,13 @@ fastfetch:
 [group("install-essentials")]
 cli-tools:
   @just _echowarning "Installing CLI tools via pacman"
-  paru -S --needed eza lazygit jujutsu zellij bottom jaq jnv ttyper monolith lazyjj lazydocker duckdb
+  paru -S --needed $(just _pkgs cli-essentials)
 
 # fish shell and plugins
 [group("install-essentials")]
 fish-shell:
   @just _echowarning "1) Installing fish, fish plugin manager, and Starship prompt"
-  paru -S --needed fisher fish starship atuin mise tmux stow
+  paru -S --needed $(just _pkgs fish-shell)
   test -d ~/.tmux/plugins/tpm || git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 
   @just _echowarning "\n2) Stowing fish config"
@@ -98,7 +106,7 @@ fish-shell:
 [group("install-essentials")]
 helix-editor:
   @just _echowarning "1) Installing Helix and dependencies"
-  paru -S --needed bash-language-server clang fish-lsp helix just-lsp marksman python-lsp-server shfmt taplo-cli typescript-language-server vscode-css-languageserver vscode-html-languageserver vscode-json-languageserver yaml-language-server zls
+  paru -S --needed $(just _pkgs helix-editor)
 
   @just _echowarning "\n2) Stowing Helix config"
   stow --no-folding --dotfiles -S helix
@@ -106,7 +114,7 @@ helix-editor:
 [group("install-graphical")]
 kitty-terminal:
   @just _echowarning "1) Installing Kitty and dependencies"
-  paru -S --needed imagemagick kitty python-pygments ttf-firacode-nerd
+  paru -S --needed $(just _pkgs kitty-terminal)
 
   @just _echowarning "\n2) Stowing Kitty config"
   stow --no-folding --dotfiles -S terminal
@@ -115,7 +123,7 @@ kitty-terminal:
 [group("install-graphical")]
 niri-window-manager:
   @just _echowarning "1) Installing niri and related tools"
-  paru -S --needed bluetui brightnessctl udiskie cliphist fuzzel gdm gnome-keyring inter-font jq mako niri-git nerd-fonts noto-fonts noto-fonts-cjk noto-fonts-emoji noto-fonts-extra mate-polkit swayidle swaylock ttf-font-awesome ttf-jetbrains-mono waybar wl-clipboard wl-kbptr wlsunset wpaperd xdg-desktop-portal-gnome xwayland-satellite
+  paru -S --needed $(just _pkgs niri-wm)
 
   @just _echowarning "\n2) Stowing niri config"
   stow --no-folding --dotfiles -S niri
@@ -126,16 +134,36 @@ niri-window-manager:
 [group("install-other")]
 syncthing-file-sync:
   @just _echowarning "1) Installing Syncthing"
-  paru -S syncthing
+  paru -S --needed $(just _pkgs syncthing)
 
   @just _echowarning "\n2) Enabling and starting Syncthing user service"
   systemctl enable --now --user syncthing
+
+# setup/packages.yaml is the categorized manifest of everything intentionally
+# installed beyond the recipes above (built from pacman.log: explicit installs
+# after the day-0 CachyOS run). pkg-drift reports new intentional installs
+# that aren't captured yet — add them to the yaml to keep it current.
+
+# Install the package manifest (all of setup/packages.yaml, or one category)
+[group("install-other")]
+pkg-install category="":
+  just _pkgs "{{ category }}" | sort -u | paru -S --needed -
+
+# List the manifest categories with their package counts
+[group("install-other")]
+pkg-categories:
+  @awk '/^[a-z][a-z0-9-]*:/ { if (c) print c, n; c = substr($1, 1, length($1) - 1); n = 0 } /^  - / { n++ } END { print c, n }' setup/packages.yaml | column -t
+
+# Explicit installs (post day-0) not yet in the manifest or any recipe
+[group("maintenance")]
+pkg-drift:
+  scripts/dot-local/bin/pacman-drift
 
 # Yazi terminal file manager and plugins
 [group("install-essentials")]
 yazi-file-manager:
   @just _echowarning "1) Installing Yazi and dependencies"
-  paru -S --needed 7zip fd ffmpeg fzf imagemagick jq poppler resvg ripgrep wl-clipboard yazi zoxide
+  paru -S --needed $(just _pkgs yazi)
 
   @just _echowarning "\n2) Stowing Yazi config"
   stow --no-folding --dotfiles -S terminal
@@ -246,7 +274,7 @@ services-enable:
 # One-time install of the docs toolchain (pandoc + typst; uv ships with CachyOS)
 [group("docs")]
 docs-setup:
-  paru -S --needed pandoc-cli typst uv
+  paru -S --needed $(just _pkgs docs-toolchain)
 
 # Regenerate the generated markdown blocks from tmux.conf, binds.kdl, and this justfile
 [group("docs")]
