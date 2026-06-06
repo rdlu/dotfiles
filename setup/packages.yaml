@@ -76,11 +76,15 @@ helix-editor: # helix-editor
   - yaml-language-server
   - zls
 
-kitty-terminal: # kitty-terminal
+terminals: # kitty-terminal recipe installs this (kitty + the other emulators)
+  - ghostty
+  - ghostty-shell-integration
+  - ghostty-terminfo
   - imagemagick
   - kitty
   - python-pygments
   - ttf-firacode-nerd
+  - wezterm
 
 niri-wm: # niri-window-manager (nerd-fonts is a group: pulls all nerd fonts)
   - bluetui
@@ -200,16 +204,11 @@ emacs:
   - semi
   - wanderlust
 
-terminals:
-  - ghostty
-  - ghostty-shell-integration
-  - ghostty-terminfo
-  - wezterm
-
 cli-tools:
   - ed
   - fasd
   - htop
+  - thefuck
   - qrcodegencpp-cmake
   - skim
   - ueberzugpp
@@ -238,9 +237,11 @@ network:
   - vncdotool
   - websocat
 
+keybase: # keybase-ssh recipe installs this (keybase-bin provides keybase + kbfs)
+  - keybase-bin
+
 security:
   - age-plugin-yubikey
-  - keybase-bin
   - libfido2
   - rage-encryption
   - secrets
@@ -262,6 +263,7 @@ system:
   - gpart
   - gparted
   - iptables
+  - nfs-utils
   - ntfs-3g
   - samba
   - solaar
@@ -369,6 +371,7 @@ gaming:
 apps:
   - chromium
   - transmission-gtk
+  - zen-browser-bin
 
 printing:
   - epson-inkjet-printer-escpr
