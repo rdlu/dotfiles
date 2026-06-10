@@ -1,3 +1,8 @@
+# Scrub PYTHONHOME/PYTHONPATH leaked by the Tidewave AppImage (breaks system python).
+# Conditional on the /tmp/.mount_* signature: no-op without Tidewave, preserves a real
+# PYTHONHOME. Must run before the non-interactive guard so `bash -c` shells get cleaned too.
+case "$PYTHONHOME" in /tmp/.mount_*) unset PYTHONHOME PYTHONPATH ;; esac
+
 # If not running interactively, don't do anything
 [[ $- != *i* ]] && return
 
