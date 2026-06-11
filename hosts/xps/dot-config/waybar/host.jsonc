@@ -1,7 +1,11 @@
 {
-  // xps (Dell XPS, Intel i7) — exposes the CPU package temp at thermal-zone 8
+  // xps (Dell XPS, Intel i7) — read the CPU package temp from coretemp's
+  // "Package id 0" sensor (temp1_input). thermal-zone numbers shuffle across
+  // reboots (zone 8 was actually iwlwifi, the WiFi card, reporting ~41°C), so
+  // we pin the stable device path instead and let waybar resolve hwmonN.
   "temperature": {
-    "thermal-zone": 8,
+    "hwmon-path-abs": "/sys/devices/platform/coretemp.0/hwmon",
+    "input-filename": "temp1_input",
     "critical-threshold": 90,
     "format": "󰔏 {temperatureC}°C"
   }
