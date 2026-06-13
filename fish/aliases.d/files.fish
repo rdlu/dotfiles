@@ -17,11 +17,11 @@ if test (uname) != Darwin
 end
 
 if type -q eza; and status is-interactive
-    alias ls "eza -al --time-style long-iso --color=auto --group-directories-first --icons"
-    alias la 'eza -a --color=always --group-directories-first --icons'  # all files and dirs
-    alias ll 'eza -l --color=always --group-directories-first --icons'  # long format
-    alias lt 'eza -aT --color=always --group-directories-first --icons' # tree listing
-    alias l. "eza -a | grep -e '^\.'"                                     # show only dotfiles
+    alias ls "eza -l --time-style long-iso --color=auto --group-directories-first --icons"
+    alias la 'eza -a --color=always --group-directories-first --icons' # all files and dirs
+    alias ll 'eza -l --color=always --group-directories-first --icons' # long format
+    alias lt 'eza -T --color=always --group-directories-first --icons' # tree listing
+    alias l. "eza -a | grep -e '^\.'" # show only dotfiles
 else
     alias l "ls --color=auto -F"
     alias ll "l -Ahl"
