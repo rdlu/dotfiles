@@ -687,6 +687,84 @@ FISH_CHEAT_EXTRAS = [
 ]
 
 
+# Neovim plugin keymaps live in lua, not a parseable config — curated by hand
+# from the tables in docs/neovim-plugins.md (nvim-light profile). leader = Space
+# (shown as "Spc"); localleader = "\".
+NEOVIM_CHEAT = [
+    ("Find & search — fff.nvim", [
+        ("Spc sf", "Find files"),
+        ("Spc sg", "Live grep"),
+        ("Spc sz", "Live grep — fuzzy + plain"),
+        ("Spc sw", "Grep word under cursor"),
+        ("Spc sr", "Project search & replace (grug-far)"),
+    ]),
+    ("Move — leap.nvim", [
+        ("s", "Leap forward — then 2 chars"),
+        ("S", "Leap backward — then 2 chars"),
+        ("gs", "Leap across windows — then 2 chars"),
+    ]),
+    ("Yank ring — yanky.nvim", [
+        ("Spc p", "Yank-history picker"),
+        ("[y ]y", "Cycle ring after a paste"),
+        ("gp gP", "Put after / before selection"),
+        ("]p [p", "Put with the current indent"),
+    ]),
+    ("Surround — mini.surround (gz)", [
+        ("gza", "Add — then textobject + char"),
+        ("gzd", "Delete surrounding"),
+        ("gzr", "Replace surrounding"),
+        ("gzf gzF", "Find next / prev surrounding"),
+        ('gzaiw"', "Quote a word (example)"),
+    ]),
+    ("Format & LSP", [
+        ("Spc cf", "Format buffer (conform)"),
+        ("Spc cF", "Format injected languages"),
+        ("Spc cm", "Open Mason"),
+        ("Spc cr", "LSP rename symbol"),
+        ("Spc ca", "LSP code actions"),
+    ]),
+    ("Claude — claudecode.nvim", [
+        ("Spc ac", "Toggle Claude terminal"),
+        ("Spc af", "Focus Claude"),
+        ("Spc ar Spc aC", "Resume / continue session"),
+        ("Spc ab", "Add current buffer to context"),
+        ("Spc as", "Send selection / add file"),
+        ("Spc aa Spc ad", "Accept / deny diff"),
+    ]),
+    ("Git & utility — snacks.nvim", [
+        ("Spc gg", "Lazygit (root) — gG for cwd"),
+        ("Spc gb", "Git blame line"),
+        ("Spc gB", "Open line in browser"),
+        ("Spc .", "Toggle scratch buffer"),
+        ("Spc n", "Notification history"),
+        ("Ctrl+/", "Toggle terminal"),
+        ("Spc cR", "Rename file (updates imports)"),
+    ]),
+    ("Notes — obsidian / dotmd", [
+        (":Obsidian today", "Daily note (tomorrow / yesterday)"),
+        (":Obsidian new", "New note"),
+        (":Obsidian search", "Grep / quick-switch notes"),
+        (":Obsidian backlinks", "Find references / tags"),
+        ("Spc zc Spc zt", "dotmd note / today's todo"),
+        ("Spc zj Spc zi", "dotmd journal / inbox"),
+    ]),
+    ("Sessions, numbers & prose", [
+        ("Spc qs", "Restore this dir's session"),
+        ("Spc ql", "Restore the last session"),
+        ("Spc qS Spc qd", "Pick / stop session"),
+        ("Ctrl+a Ctrl+x", "Increment / decrement (dial)"),
+        ("Spc um", "Toggle markdown render"),
+        ("Spc cp", "Browser markdown preview"),
+    ]),
+    ("LaTeX — vimtex (localleader \\)", [
+        ("\\ll", "Start / stop compilation"),
+        ("\\lv", "Forward-search to PDF viewer"),
+        ("\\lt \\le", "Table of contents / errors"),
+        ("\\lc", "Clean aux files"),
+    ]),
+]
+
+
 # Display-only abbreviations for the cheatsheet keycaps (the markdown pages
 # keep the real XKB names).
 NIRI_KEY_SHORT = {
@@ -848,6 +926,18 @@ def cheat_data() -> dict:
             "size": 9.6,
             "split_keys": True,
             "sections": shell_sections,
+        },
+        "neovim": {
+            "title": "neovim",
+            "subtitle": "LazyVim · leader = Space (Spc) · profile nvim-light",
+            "cols": 3,
+            "size": 7.6,
+            "split_keys": False,
+            "sections": [
+                {"title": title,
+                 "rows": [{"keys": k, "desc": d} for k, d in rows]}
+                for title, rows in NEOVIM_CHEAT
+            ],
         },
         "niri": {
             "title": "niri",

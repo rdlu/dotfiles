@@ -11,6 +11,7 @@ Repo: [github.com/rdlu/dotfiles](https://github.com/rdlu/dotfiles)
 - **[Setup guide](setup.md)** — bootstrap a fresh machine, stow model, per-host overlays
 - **[Justfile reference](justfile.md)** — every recipe, generated from the live justfile
 - **[File transfer](file-transfer.md)** — LocalSend + rsync-over-ssh, temporary firewall openings, install recipe
+- **[Neovim plugins](neovim-plugins.md)** — the day-to-day LazyVim plugins and keymaps as wired on `nvim-light`
 - **[tmux shortcuts](shortcuts/tmux.md)** — custom binds (generated from `tmux.conf`) + plugin cheatsheets
 - **[zellij shortcuts](shortcuts/zellij.md)** — generated from `config.kdl` (all modes)
 - **[niri shortcuts](shortcuts/niri.md)** — generated from `binds.kdl`
@@ -55,6 +56,14 @@ Single-page landscape cheatsheets (A4, Catppuccin — **Latte** for print,
       <a href="pdf/shell-cheatsheet-mocha.pdf">Mocha</a>
     </span>
   </div>
+  <div class="pdf-card neovim">
+    <span class="pdf-title"><span class="pdf-icon">💤</span> neovim</span>
+    <span class="pdf-sub">LazyVim plugins · nvim-light</span>
+    <span class="pdf-links">
+      <a href="pdf/neovim-cheatsheet.pdf">Latte</a>
+      <a href="pdf/neovim-cheatsheet-mocha.pdf">Mocha</a>
+    </span>
+  </div>
   <div class="pdf-card handbook wide">
     <span class="pdf-title"><span class="pdf-icon">📖</span> Dotfiles handbook</span>
     <span class="pdf-sub">everything in one PDF — setup guide, justfile reference, all shortcut pages</span>
@@ -70,6 +79,7 @@ Single-page landscape cheatsheets (A4, Catppuccin — **Latte** for print,
       <a href="pdf/zellij-shortcuts.pdf">zellij</a>
       <a href="pdf/niri-shortcuts.pdf">niri</a>
       <a href="pdf/shell-shortcuts.pdf">shell</a>
+      <a href="pdf/neovim-plugins.pdf">neovim</a>
       <a href="pdf/justfile.pdf">justfile</a>
       <a href="pdf/setup.pdf">setup</a>
       <a href="pdf/file-transfer.pdf">file transfer</a>

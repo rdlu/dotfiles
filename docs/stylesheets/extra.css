@@ -72,6 +72,7 @@
 .pdf-card.zellij   { --pdf-accent: #df8e1d; }  /* yellow */
 .pdf-card.niri     { --pdf-accent: #1e66f5; }  /* blue */
 .pdf-card.shell    { --pdf-accent: #8839ef; }  /* mauve */
+.pdf-card.neovim   { --pdf-accent: #209fb5; }  /* sapphire */
 .pdf-card.handbook { --pdf-accent: #d20f39; }  /* red */
 .pdf-card.refs     { --pdf-accent: #179299; }  /* teal */
 
@@ -80,6 +81,7 @@
 [data-md-color-scheme="slate"] .pdf-card.zellij   { --pdf-accent: #f9e2af; }
 [data-md-color-scheme="slate"] .pdf-card.niri     { --pdf-accent: #89b4fa; }
 [data-md-color-scheme="slate"] .pdf-card.shell    { --pdf-accent: #cba6f7; }
+[data-md-color-scheme="slate"] .pdf-card.neovim   { --pdf-accent: #74c7ec; }
 [data-md-color-scheme="slate"] .pdf-card.handbook { --pdf-accent: #f38ba8; }
 [data-md-color-scheme="slate"] .pdf-card.refs     { --pdf-accent: #94e2d5; }
 
