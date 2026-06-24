@@ -16,6 +16,7 @@ nav = [
   { "Home" = "index.md" },
   { "Setup guide" = "setup.md" },
   { "File transfer" = "file-transfer.md" },
+  { "Neovim plugins" = "neovim-plugins.md" },
   { "Justfile reference" = "justfile.md" },
   { "Shortcuts" = [
     { "tmux" = "shortcuts/tmux.md" },
