@@ -756,6 +756,15 @@ NEOVIM_CHEAT = [
         ("Spc um", "Toggle markdown render"),
         ("Spc cp", "Browser markdown preview"),
     ]),
+    ("Tips & combos", [
+        ("Spc", "…then wait — which-key shows follow-ups"),
+        ("ciw cif", "mini.ai: change inside word / function"),
+        ("daa vai", "mini.ai: delete an arg / select indent"),
+        ("g Ctrl+a", "Visual: make a column count 1, 2, 3…"),
+        ("gzaiwt", "Wrap word in an HTML tag (then type it)"),
+        ("gzaiwf", "Wrap word in a function call"),
+        (":PencilToggle", "Soft-wrap prose mode"),
+    ]),
     ("LaTeX — vimtex (localleader \\)", [
         ("\\ll", "Start / stop compilation"),
         ("\\lv", "Forward-search to PDF viewer"),
