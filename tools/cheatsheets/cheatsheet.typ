@@ -57,7 +57,10 @@
   inset: (x: 2.6pt, y: 0pt),
   outset: (y: 1.7pt),
   baseline: 0pt,
-  text(font: "JetBrainsMono Nerd Font", size: base * 0.89, fill: pal.key-text, weight: "medium",
+  // typst reads this nerd font's family as "JetBrainsMono NF" (not the
+  // fontconfig alias "JetBrainsMono Nerd Font"); fall back to plain JetBrains
+  // Mono where only that is installed (e.g. CI). See `just docs-cheatsheets`.
+  text(font: ("JetBrainsMono NF", "JetBrains Mono"), size: base * 0.89, fill: pal.key-text, weight: "medium",
     k.replace("{plus}", "+")),  // literal "+" keys arrive escaped
 )
 
@@ -74,7 +77,7 @@
 }).join(h(2pt))
 
 #let desc(r) = if r.at("cmd", default: false) {
-  text(font: "JetBrainsMono Nerd Font", size: base * 0.86, fill: pal.subtext, r.desc)
+  text(font: ("JetBrainsMono NF", "JetBrains Mono"), size: base * 0.86, fill: pal.subtext, r.desc)
 } else {
   r.desc
 }

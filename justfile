@@ -4,6 +4,12 @@ set shell := ["bash", "-uc"]
 # Host-specific bits live in hosts/<hostname>/ (see the `stow` recipe).
 base_packages := "home git idea scripts terminal lazyvim vim systemd niri"
 
+# Where the cheatsheet keycap font (JetBrainsMono Nerd Font) lives. typst's
+# default scan misses /usr/share/fonts/TTF on CachyOS, so point it there
+# explicitly. Harmless if the dir is absent (e.g. CI), where cheatsheet.typ
+# falls back to plain "JetBrains Mono".
+cheat_font_path := "/usr/share/fonts/TTF"
+
 [private]
 default:
   @just --list
@@ -337,9 +343,9 @@ docs-pdf: docs-update
 docs-cheatsheets: docs-update
   mkdir -p docs/pdf
   for sheet in tmux zellij niri shell neovim; do \
-    typst compile --input sheet=$sheet --input theme=latte \
+    typst compile --font-path "{{ cheat_font_path }}" --input sheet=$sheet --input theme=latte \
       tools/cheatsheets/cheatsheet.typ "docs/pdf/$sheet-cheatsheet.pdf"; \
-    typst compile --input sheet=$sheet --input theme=mocha \
+    typst compile --font-path "{{ cheat_font_path }}" --input sheet=$sheet --input theme=mocha \
       tools/cheatsheets/cheatsheet.typ "docs/pdf/$sheet-cheatsheet-mocha.pdf"; \
   done
 

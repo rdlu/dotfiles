@@ -27,31 +27,12 @@ jobs:
       - name: Install cheatsheet fonts
         run: sudo apt-get update -qq && sudo apt-get install -y -qq fonts-inter fonts-jetbrains-mono
       - run: pip install zensical
-      - name: Regenerate markdown from configs
-        run: python3 tools/gen-docs.py
-      - name: Build PDFs
-        run: |
-          mkdir -p docs/pdf
-          for page in setup justfile shortcuts/tmux shortcuts/zellij shortcuts/niri shortcuts/shell wl-kbptr; do
-            out="$(basename "$page")"
-            case "$out" in tmux|zellij|niri|shell) out="$out-shortcuts";; esac
-            pandoc "docs/$page.md" -o "docs/pdf/$out.pdf" \
-              --pdf-engine=typst --toc -V papersize=a4 -V mainfont="Libertinus Serif" -M date="$(date -I)"
-          done
-          pandoc docs/setup.md docs/justfile.md docs/shortcuts/tmux.md \
-            docs/shortcuts/zellij.md docs/shortcuts/niri.md docs/shortcuts/shell.md \
-            docs/wl-kbptr.md \
-            -o docs/pdf/dotfiles-handbook.pdf \
-            --pdf-engine=typst --toc -V papersize=a4 -V mainfont="Libertinus Serif" \
-            -M title="rdlu's dotfiles handbook" -M date="$(date -I)"
-      - name: Build cheatsheets
-        run: |
-          for sheet in tmux zellij niri shell; do
-            typst compile --input sheet=$sheet --input theme=latte \
-              tools/cheatsheets/cheatsheet.typ "docs/pdf/$sheet-cheatsheet.pdf"
-            typst compile --input sheet=$sheet --input theme=mocha \
-              tools/cheatsheets/cheatsheet.typ "docs/pdf/$sheet-cheatsheet-mocha.pdf"
-          done
+      # Build via the justfile so CI can't drift from `just docs` (pages,
+      # cheatsheets and the handbook concat all live there). On Ubuntu the
+      # nerd font dir is absent, so cheatsheet keycaps fall back to the
+      # fonts-jetbrains-mono family installed above.
+      - name: Build PDFs + cheatsheets
+        run: just cheat_font_path=/usr/share/fonts/truetype/jetbrains-mono docs-pdf docs-cheatsheets
       - run: zensical build --clean
       - uses: actions/upload-pages-artifact@v5
         with:
