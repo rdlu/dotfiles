@@ -26,6 +26,10 @@ set -l entries \
     '󰤨 Wi-Fi|ghostty --title=Impala --class=Impala -e impala' \
     ' Bluetooth|ghostty --title=BlueTUI --class=bluetui -e bluetui' \
     '🗂️ SMB Shares|ghostty --title="SMB Manager" --class=smb-tui -e ~/.local/bin/smb-tui' \
+    '📤 LocalSend share (temp)|localsend-here on' \
+    '🔒 LocalSend close|localsend-here off' \
+    '🔑 SSH/rsync in (temp)|ssh-here on' \
+    '🔒 SSH/rsync close|ssh-here off' \
     (audio_entry '' speakers output @DEFAULT_AUDIO_SINK@) \
     (audio_entry '' mic input @DEFAULT_AUDIO_SOURCE@) \
     ' Sound|ghostty --title=Wiremix --class=Wiremix -e wiremix -v output' \
@@ -34,7 +38,7 @@ set -l entries \
     '󰩈 Exit session|niri msg action quit'
 
 set -l selection (string split -f1 '|' -- $entries | fuzzel --dmenu \
-    --font='JetBrainsMono Nerd Font Mono:size=14' --lines=16)
+    --font='JetBrainsMono Nerd Font Mono:size=14' --lines=18)
 test -n "$selection"; or exit
 
 for entry in $entries

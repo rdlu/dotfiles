@@ -1,0 +1,60 @@
+#!/usr/bin/fish
+
+# localsend-here — temporarily allow LocalSend on the CURRENT network's zone,
+# then launch the app. The opening is RUNTIME-ONLY with an auto-expiry, so it
+# reverts on its own (and on any reboot/reload) and is never persisted. Meant
+# for untrusted/roaming networks (conference Wi-Fi, hotels) where LocalSend is
+# not permanently allowed — at home you're already covered by the `home` zone.
+#
+# Usage:
+#   localsend-here [on]    open ports (timed) + launch LocalSend   (default)
+#   localsend-here off     close the ports now
+#   localsend-here status  report whether the ports are currently open
+
+set -l port 53317
+set -l ttl 30m   # auto-close window; just re-run to extend
+
+# Which zone handles the network we're actually using? Follow the default route
+# (works when both the dock ethernet and Wi-Fi are up — picks the real egress).
+set -l iface (ip route get 1.1.1.1 2>/dev/null | string match -rg 'dev (\S+)')
+test -n "$iface"; or set iface (ip route get 8.8.8.8 2>/dev/null | string match -rg 'dev (\S+)')
+set -l zone (firewall-cmd --get-zone-of-interface=$iface 2>/dev/null)
+test -n "$zone"; or set zone (firewall-cmd --get-default-zone 2>/dev/null)
+
+# Privileged firewall-cmd: root → direct; graphical session → polkit prompt via
+# pkexec (mate-polkit); plain terminal → sudo.
+function _fw
+    if test (id -u) -eq 0
+        firewall-cmd $argv
+    else if set -q WAYLAND_DISPLAY; or set -q DISPLAY
+        pkexec firewall-cmd $argv
+    else
+        sudo firewall-cmd $argv
+    end
+end
+
+function _notify -a msg
+    command -q notify-send; and notify-send -a LocalSend 'LocalSend firewall' "$msg"
+end
+
+switch "$argv[1]"
+    case '' on open
+        if not _fw --zone=$zone --add-port=$port/tcp --add-port=$port/udp --timeout=$ttl
+            _notify "Could not open $port on '$zone'"
+            exit 1
+        end
+        _notify "Open on '$zone' for $ttl — starting LocalSend"
+        pgrep -x localsend >/dev/null; or setsid -f localsend >/dev/null 2>&1
+    case off close
+        _fw --zone=$zone --remove-port=$port/tcp --remove-port=$port/udp
+        _notify "Closed $port on '$zone'"
+    case status
+        if firewall-cmd --zone=$zone --query-port=$port/tcp 2>/dev/null | string match -q yes
+            echo "LocalSend: OPEN on '$zone'"
+        else
+            echo "LocalSend: closed on '$zone'"
+        end
+    case '*'
+        echo "usage: localsend-here [on|off|status]" >&2
+        exit 2
+end
