@@ -1,8 +1,7 @@
 # Shell shortcuts (fish)
 
 Interactive-shell bindings: custom `bind` lines from this repo, plus the
-bindings injected by [atuin](https://atuin.sh),
-[fzf.fish](https://github.com/PatrickF1/fzf.fish), and fish itself.
+bindings injected by [atuin](https://atuin.sh) and fish itself.
 
 ## Custom bindings
 
@@ -13,6 +12,13 @@ Generated from the `bind` lines in `fish/` by `tools/gen-docs.py` — run
 | Keys | Action | Defined in |
 | --- | --- | --- |
 | `Alt+f` | Open the yazi file manager | `fish/aliases.d/files.fish` |
+| `Ctrl+t` | Insert file path(s) (fzf) | `fish/aliases.d/fzf-pickers.fish` |
+| `Ctrl+Alt+d` | Insert a directory path (fzf) | `fish/aliases.d/fzf-pickers.fish` |
+| `Ctrl+Alt+g` | Insert pacman package(s) (fzf) | `fish/aliases.d/fzf-pickers.fish` |
+| `Ctrl+Alt+l` | Insert a commit SHA (fzf) | `fish/aliases.d/fzf-pickers.fish` |
+| `Ctrl+Alt+s` | Insert changed file path(s) (fzf) | `fish/aliases.d/fzf-pickers.fish` |
+| `Ctrl+Alt+p` | Insert a PID (fzf) | `fish/aliases.d/fzf-pickers.fish` |
+| `Ctrl+v` | Insert a shell variable name (fzf) | `fish/aliases.d/fzf-pickers.fish` |
 | `Ctrl+h` | Delete the word left of the cursor | `fish/aliases.d/keybinds.fish` |
 | `Ctrl+e` | Neovim config picker (default / nvim-lazy / nvim-full) | `fish/conf.d/nvim-switcher.fish` |
 <!-- /gen:fish-binds -->
@@ -36,16 +42,6 @@ keeps plain fish history.
 | --- | --- |
 | `Ctrl+r` | Fuzzy-search shell history (atuin) |
 | `?` | Ask atuin AI (on an empty prompt) |
-
-## fzf.fish pickers
-
-| Keys | Action | Alias |
-| --- | --- | --- |
-| `Ctrl+Alt+f` | Search directory (files; `Ctrl+d`/`Ctrl+f` reload dirs/files) | `fsd` |
-| `Ctrl+Alt+l` | Git log | `fsgl` |
-| `Ctrl+Alt+s` | Git status (changed files) | |
-| `Ctrl+Alt+p` | Processes | `fsp` |
-| `Ctrl+v` | Shell variables | |
 
 ## fish built-ins worth remembering
 
@@ -72,7 +68,6 @@ plugin reminds you of these when you type the long form.
 | `mux` / `mux1` | open or re-attach tmux session `mux0` / `mux1` |
 | `nvims` | fzf picker for neovim configs (default / nvim-lazy / nvim-full) |
 | `nv` / `lvi` | neovim with the light / lazy config |
-| `fsd` / `fsgl` / `fsp` | fzf search: directory / git log / processes |
 | `z` / `zi` | zoxide: jump to dir / interactive picker |
 | `b` | back to the previous directory and list it |
 | `mcd` | `mkdir -p` + `cd` into it |

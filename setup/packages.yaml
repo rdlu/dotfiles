@@ -141,6 +141,8 @@ docs-toolchain: # docs-setup
   - pandoc-cli
   - typst
   - uv
+  - ttf-jetbrains-mono-nerd # cheatsheet keycaps/labels (JetBrainsMono Nerd Font)
+  - inter-font # cheatsheet body text (Inter)
 
 # --- Everything else (installed by `just pkg-install [category]`) -----------
 

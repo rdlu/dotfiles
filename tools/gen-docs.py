@@ -82,7 +82,9 @@ TMUX_DESCRIPTIONS = {
     ("prefix", "m"): "Mouse mode **OFF**",
     ("prefix", "C-l"): "Send a literal `Ctrl+L` (clear screen) to the pane",
     ("prefix", "u"): "Capture pane and pick a URL to open (urlview popup window)",
-    ("prefix", "C-f"): "Popup fuzzy **file picker** (`pick-files`)",
+    ("root", "C-t"): "Unified **file finder** — passed through in fish/editors, "
+                     "else a popup that injects paths into the pane's TUI "
+                     "(`pick-files`)",
     ("prefix", "C-t"): "Popup **terminal** in the current pane's path",
 }
 
@@ -505,7 +507,7 @@ def gen_zellij() -> str:
 
 # Top-level `bind` lines in these globs are the custom shell bindings.
 # Indented binds (inside functions, e.g. the inactive thefuck example) and
-# tool-injected bindings (atuin/fzf.fish, documented statically in
+# tool-injected bindings (atuin, documented statically in
 # docs/shortcuts/shell.md) are not picked up.
 FISH_GLOBS = ["fish/**/*.fish", "terminal/dot-config/fish/**/*.fish"]
 
@@ -513,6 +515,13 @@ FISH_BIND_DESC = {
     "nvims .": "Neovim config picker (default / nvim-lazy / nvim-full)",
     "yazi": "Open the yazi file manager",
     "backward-kill-word": "Delete the word left of the cursor",
+    "_pick_files": "Insert file path(s) (fzf)",
+    "_pick_dirs": "Insert a directory path (fzf)",
+    "_pick_pacman": "Insert pacman package(s) (fzf)",
+    "_pick_git_log": "Insert a commit SHA (fzf)",
+    "_pick_git_status": "Insert changed file path(s) (fzf)",
+    "_pick_procs": "Insert a PID (fzf)",
+    "_pick_vars": "Insert a shell variable name (fzf)",
 }
 
 
@@ -655,13 +664,6 @@ FISH_CHEAT_EXTRAS = [
         ("Esc Esc Ctrl+f", "Correct the previous command"),
         ("fuck", "Same, typed out"),
     ]),
-    ("fzf.fish pickers", [
-        ("Ctrl+Alt+f", "Search directory (files)"),
-        ("Ctrl+Alt+l", "Git log"),
-        ("Ctrl+Alt+s", "Git status (changed files)"),
-        ("Ctrl+Alt+p", "Processes"),
-        ("Ctrl+v", "Shell variables"),
-    ]),
     ("fish built-ins worth remembering", [
         ("Alt+e", "Edit command line in $EDITOR"),
         ("Alt+s", "Prepend sudo to (last) command"),
@@ -677,7 +679,6 @@ FISH_CHEAT_EXTRAS = [
     ("Handy abbreviations & functions", [
         ("mux mux1", "Open/attach tmux session 0 / 1"),
         ("nvims nv lvi", "Pick / light / lazy neovim config"),
-        ("fsd fsgl fsp", "fzf: dirs · git log · processes"),
         ("z zi", "zoxide jump / interactive"),
         ("b", "Back to previous dir + list"),
         ("mcd", "mkdir -p + cd"),
@@ -842,7 +843,7 @@ def cheat_data() -> dict:
         },
         "shell": {
             "title": "shell",
-            "subtitle": "fish · atuin · fzf.fish · zoxide",
+            "subtitle": "fish · atuin · fzf · zoxide",
             "cols": 2,
             "size": 9.6,
             "split_keys": True,

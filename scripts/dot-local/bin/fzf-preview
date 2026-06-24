@@ -1,0 +1,56 @@
+#!/usr/bin/env fish
+
+# fzf-preview <path> — content-aware preview for fzf --preview.
+#   dir      -> eza tree
+#   image    -> chafa (sized to the preview window)
+#   text     -> bat (numbers, syntax)
+#   binary   -> file(1) identity + a short bat fallback
+#   symlink  -> resolve, then preview the target
+# Linux-only on purpose: assumes GNU coreutils + file/eza/bat/chafa.
+
+set -l target (string join ' ' -- $argv)
+test -z "$target"; and exit 0
+
+# follow a symlink to its target (announce it first)
+if test -L "$target"
+    set_color yellow
+    echo "↪ symlink → "(realpath -- "$target" 2>/dev/null)
+    set_color normal
+    set target (realpath -- "$target" 2>/dev/null)
+end
+
+if test -d "$target"
+    eza --tree --level=2 --color=always --icons --group-directories-first -- "$target"
+    exit
+end
+test -e "$target"; or begin
+    echo "no such path: $target"
+    exit 0
+end
+
+set -l mime (file --brief --mime-type -- "$target" 2>/dev/null)
+set -l cols (test -n "$FZF_PREVIEW_COLUMNS"; and echo $FZF_PREVIEW_COLUMNS; or echo 80)
+set -l rows (test -n "$FZF_PREVIEW_LINES"; and echo $FZF_PREVIEW_LINES; or echo 40)
+
+switch $mime
+    case 'image/*'
+        if command -q chafa
+            chafa --format symbols --size "$cols"x"$rows" -- "$target" 2>/dev/null
+        else
+            file --brief -- "$target"
+        end
+    case 'inode/x-empty'
+        set_color brblack
+        echo '(empty file)'
+        set_color normal
+    case 'text/*' 'application/json' 'application/javascript' 'application/xml' \
+        'application/x-shellscript' 'application/x-yaml' 'application/toml' 'application/x-desktop'
+        bat --color=always --style=numbers --line-range=:500 -- "$target"
+    case '*'
+        # unknown / binary: identify it, then try a short bat pass in case it's text
+        set_color cyan
+        file --brief -- "$target"
+        set_color normal
+        echo
+        bat --color=always --style=plain --line-range=:40 -- "$target" 2>/dev/null
+end

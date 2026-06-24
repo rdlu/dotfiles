@@ -57,7 +57,7 @@
   inset: (x: 2.6pt, y: 0pt),
   outset: (y: 1.7pt),
   baseline: 0pt,
-  text(font: "JetBrains Mono", size: base * 0.89, fill: pal.key-text, weight: "medium",
+  text(font: "JetBrainsMono Nerd Font", size: base * 0.89, fill: pal.key-text, weight: "medium",
     k.replace("{plus}", "+")),  // literal "+" keys arrive escaped
 )
 
@@ -74,7 +74,7 @@
 }).join(h(2pt))
 
 #let desc(r) = if r.at("cmd", default: false) {
-  text(font: "JetBrains Mono", size: base * 0.86, fill: pal.subtext, r.desc)
+  text(font: "JetBrainsMono Nerd Font", size: base * 0.86, fill: pal.subtext, r.desc)
 } else {
   r.desc
 }
