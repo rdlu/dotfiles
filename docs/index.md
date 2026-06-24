@@ -10,6 +10,7 @@ Repo: [github.com/rdlu/dotfiles](https://github.com/rdlu/dotfiles)
 
 - **[Setup guide](setup.md)** — bootstrap a fresh machine, stow model, per-host overlays
 - **[Justfile reference](justfile.md)** — every recipe, generated from the live justfile
+- **[File transfer](file-transfer.md)** — LocalSend + rsync-over-ssh, temporary firewall openings, install recipe
 - **[tmux shortcuts](shortcuts/tmux.md)** — custom binds (generated from `tmux.conf`) + plugin cheatsheets
 - **[zellij shortcuts](shortcuts/zellij.md)** — generated from `config.kdl` (all modes)
 - **[niri shortcuts](shortcuts/niri.md)** — generated from `binds.kdl`
@@ -71,6 +72,7 @@ Single-page landscape cheatsheets (A4, Catppuccin — **Latte** for print,
       <a href="pdf/shell-shortcuts.pdf">shell</a>
       <a href="pdf/justfile.pdf">justfile</a>
       <a href="pdf/setup.pdf">setup</a>
+      <a href="pdf/file-transfer.pdf">file transfer</a>
       <a href="pdf/wl-kbptr.pdf">wl-kbptr</a>
     </span>
   </div>
