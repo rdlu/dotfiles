@@ -33,6 +33,7 @@ gleam = "1.14.0"
 "pipx:llm" = "latest"
 "pipx:xxh-xxh" = "latest"
 "pipx:epy-reader" = "latest"
+usage = "latest"
 
 # Removed from mise — now installed via pacman (see justfile fish-shell recipe):
 #   bottom, zellij, jaq, jnv, ttyper, monolith, jujutsu(jj), lazyjj, lazydocker, duckdb
