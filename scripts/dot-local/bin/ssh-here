@@ -1,0 +1,66 @@
+#!/usr/bin/fish
+
+# ssh-here — temporarily allow INBOUND SSH (rsync-over-ssh / scp / sftp TO this
+# machine) on the CURRENT network's zone, then shut it back off. Runtime-only +
+# auto-expiry on the firewall, and sshd is *started* (never `enable`d), so a
+# reboot reverts everything too.
+#
+# Only needed when ANOTHER device connects IN to this machine. If YOU run rsync
+# OUT to a remote, you need none of this — outbound SSH already works.
+#
+# Note: on the `home` zone, ssh is open permanently anyway, so this matters on
+# roaming/untrusted zones. `off` drops the runtime rule; reboot/reload restores
+# the permanent home rule.
+#
+#   ssh-here [on]    start sshd + open ssh (timed)   (default)
+#   ssh-here off     close ssh + stop sshd
+#   ssh-here status
+
+set -l ttl 30m
+
+set -l iface (ip route get 1.1.1.1 2>/dev/null | string match -rg 'dev (\S+)')
+test -n "$iface"; or set iface (ip route get 8.8.8.8 2>/dev/null | string match -rg 'dev (\S+)')
+set -l zone (firewall-cmd --get-zone-of-interface=$iface 2>/dev/null)
+test -n "$zone"; or set zone (firewall-cmd --get-default-zone 2>/dev/null)
+set -l myip (ip -4 -br addr show $iface 2>/dev/null | string match -rg '(\d+\.\d+\.\d+\.\d+)')
+
+# root → direct; graphical session → polkit (pkexec); plain terminal → sudo.
+function _root
+    if test (id -u) -eq 0
+        $argv
+    else if set -q WAYLAND_DISPLAY; or set -q DISPLAY
+        pkexec $argv
+    else
+        sudo $argv
+    end
+end
+
+function _notify -a urgency msg
+    command -q notify-send; and notify-send -u $urgency -a SSH 'SSH for rsync' "$msg"
+end
+
+switch "$argv[1]"
+    case '' on open
+        # Loud warning if login would be password-only on an untrusted network.
+        test -s ~/.ssh/authorized_keys
+        or _notify critical 'No authorized_keys → login is PASSWORD-ONLY. Set up a key before exposing SSH on untrusted Wi-Fi.'
+        if not _root systemctl start sshd
+            _notify critical 'Could not start sshd'
+            exit 1
+        end
+        _root firewall-cmd --zone=$zone --add-service=ssh --timeout=$ttl
+        _notify normal "sshd up + ssh open on '$zone' for $ttl"
+        echo "rsync target:  $USER@$myip   (open $ttl on zone '$zone')"
+    case off close
+        _root firewall-cmd --zone=$zone --remove-service=ssh
+        _root systemctl stop sshd
+        _notify normal 'ssh closed + sshd stopped'
+    case status
+        set -l d (systemctl is-active sshd 2>/dev/null)
+        set -l f closed
+        firewall-cmd --zone=$zone --query-service=ssh 2>/dev/null | string match -q yes; and set f open
+        echo "sshd: $d   firewall ssh on '$zone': $f"
+    case '*'
+        echo "usage: ssh-here [on|off|status]" >&2
+        exit 2
+end

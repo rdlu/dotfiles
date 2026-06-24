@@ -1,0 +1,58 @@
+#!/usr/bin/fish
+
+# add-rsync-key — authorize a public key for rsync-ONLY access into one folder.
+# The key is installed with a forced command (rrsync) + `restrict`, so it can do
+# nothing but rsync inside that folder: no shell, no port/agent forwarding, no
+# other commands — even if the private key leaks.
+#
+# Usage:
+#   add-rsync-key [--ro | --wo] [--dir PATH] '<ssh public key line>'
+#
+# Defaults: --wo (the remote may only UPLOAD) into ~/Downloads/Transfers.
+#   --ro        remote may only DOWNLOAD from the folder
+#   --dir PATH  lock to ~/PATH instead of ~/Downloads/Transfers
+#
+# Example (run once you have the pubkey from the other device):
+#   add-rsync-key 'ssh-ed25519 AAAAC3Nz... you@laptop'
+
+argparse 'r/ro' 'w/wo' 'd/dir=' -- $argv
+or exit 2
+
+set -l mode -wo
+set -q _flag_ro; and set mode -ro
+
+# Upload-only keys also get -no-del, so a sender can't delete existing files.
+set -l rrsync_opts $mode
+test "$mode" = -wo; and set -a rrsync_opts -no-del
+
+set -l reldir Downloads/Transfers
+set -q _flag_dir; and set reldir $_flag_dir
+
+set -l key (string trim -- "$argv[1]")
+if test -z "$key"; or not string match -qr '^(ssh-|ecdsa-|sk-)' -- "$key"
+    echo "error: pass the PUBLIC key as one quoted argument, e.g." >&2
+    echo "  add-rsync-key 'ssh-ed25519 AAAA... you@laptop'" >&2
+    exit 2
+end
+
+mkdir -p ~/$reldir
+mkdir -m 700 -p ~/.ssh
+set -l ak ~/.ssh/authorized_keys
+set -l line "restrict,command=\"/usr/bin/rrsync $rrsync_opts $reldir\" $key"
+
+# De-dupe on the key body (2nd field), so re-running is safe.
+set -l body (string split ' ' -- $key)[2]
+if test -e $ak; and grep -qF -- "$body" $ak
+    echo "That key is already authorized in $ak — nothing to do."
+    exit 0
+end
+
+echo $line >> $ak
+chmod 600 $ak
+
+set -l host (hostname)
+echo "✓ Authorized rsync-only ($mode) into ~/$reldir:"
+echo "    $line"
+echo
+echo "From the other device:"
+echo "    rsync -av ./stuff/ $USER@$host:        # dest is relative to ~/$reldir"
