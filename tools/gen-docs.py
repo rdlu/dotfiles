@@ -714,6 +714,7 @@ NEOVIM_CHEAT = [
         ("gzd", "Delete surrounding"),
         ("gzr", "Replace surrounding"),
         ("gzf gzF", "Find next / prev surrounding"),
+        ("gzh", "Highlight surrounding"),
         ('gzaiw"', "Quote a word (example)"),
     ]),
     ("Format & LSP", [
@@ -735,8 +736,8 @@ NEOVIM_CHEAT = [
         ("Spc gg", "Lazygit (root) — gG for cwd"),
         ("Spc gb", "Git blame line"),
         ("Spc gB", "Open line in browser"),
-        ("Spc .", "Toggle scratch buffer"),
-        ("Spc n", "Notification history"),
+        ("Spc . Spc S", "Toggle / select scratch buffer"),
+        ("Spc n Spc un", "Notifications: history / dismiss all"),
         ("Ctrl+/", "Toggle terminal"),
         ("Spc cR", "Rename file (updates imports)"),
     ]),
@@ -747,6 +748,7 @@ NEOVIM_CHEAT = [
         (":Obsidian backlinks", "Find references / tags"),
         ("Spc zc Spc zt", "dotmd note / today's todo"),
         ("Spc zj Spc zi", "dotmd journal / inbox"),
+        ("Spc zs", "dotmd search notes"),
     ]),
     ("Sessions, numbers & prose", [
         ("Spc qs", "Restore this dir's session"),
@@ -770,6 +772,7 @@ NEOVIM_CHEAT = [
         ("\\lv", "Forward-search to PDF viewer"),
         ("\\lt \\le", "Table of contents / errors"),
         ("\\lc", "Clean aux files"),
+        ("Spc K", "Package docs under cursor"),
     ]),
 ]
 
