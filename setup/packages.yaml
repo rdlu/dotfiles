@@ -237,6 +237,13 @@ network:
   - vncdotool
   - websocat
 
+# Consumed by the `file-transfer` recipe (LocalSend + rsync-over-ssh receiving).
+# localsend also lives under `network:`; repeated here so the recipe is standalone.
+file-transfer:
+  - localsend
+  - rsync
+  - openssh
+
 keybase: # keybase-ssh recipe installs this (keybase-bin provides keybase + kbfs)
   - keybase-bin
 

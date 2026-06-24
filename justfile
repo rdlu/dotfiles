@@ -149,6 +149,23 @@ syncthing-file-sync:
   @just _echowarning "\n2) Enabling and starting Syncthing user service"
   systemctl enable --now --user syncthing
 
+# Set up LocalSend + rsync-over-ssh receiving (packages, firewall, folder, docs)
+[group("file-transfer")]
+file-transfer:
+  @just _echowarning "1) Installing transfer tools (LocalSend, rsync, openssh)"
+  paru -S --needed $(just _pkgs file-transfer)
+
+  @just _echowarning "\n2) Stowing helper scripts + niri menu entries"
+  stow --no-folding --dotfiles -S scripts niri
+
+  @just _echowarning "\n3) Firewall + transfer folder + docs"
+  scripts/dot-local/bin/setup-file-transfer
+
+# Harden a receiving machine: inbound SSH key-only + LLMNR off (disables passwords!)
+[group("file-transfer")]
+file-transfer-harden:
+  scripts/dot-local/bin/harden-file-transfer-ssh
+
 # setup/packages.yaml is the categorized manifest of everything intentionally
 # installed beyond the recipes above (built from pacman.log: explicit installs
 # after the day-0 CachyOS run). pkg-drift reports new intentional installs
