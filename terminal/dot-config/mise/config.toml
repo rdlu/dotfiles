@@ -26,6 +26,10 @@ gleam = "1.14.0"
 "cargo:gittype" = "latest"
 "cargo:jiq" = "latest"
 "cargo:scooter" = "latest"
+# fff-mcp: backs the `fff` MCP server in Claude Code. Not on crates.io, so use
+# the github backend to pull the prebuilt release binary (the musl static-pie
+# asset). Replaces a hand-placed ~/.local/bin/fff-mcp.
+"github:dmtrKovalenko/fff" = { version = "latest", bin = "fff-mcp", matching_regex = "fff-mcp-.*-musl$" }
 "pipx:llm" = "latest"
 "pipx:xxh-xxh" = "latest"
 "pipx:epy-reader" = "latest"
