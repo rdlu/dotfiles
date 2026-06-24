@@ -1,0 +1,16 @@
+#!/usr/bin/env fish
+
+# fzf-var-preview <name> <dumpfile> — show one fish variable's scope + value(s).
+#
+# <dumpfile> is a `set --show` capture taken by the _pick_vars picker in the
+# *calling* shell, so the preview reflects real, possibly-unexported globals and
+# universals — which an fzf preview subprocess could never read on its own.
+
+set -l name $argv[1]
+set -l dump $argv[2]
+test -n "$name"; and test -f "$dump"; or exit 0
+
+# Print the block whose lines start with `$name:` or `$name[` — index(...)==1
+# means "begins at column 1", so $PATH never matches $MANPATH. Variable names
+# are [A-Za-z0-9_] only, so a literal index() match is exact and safe.
+awk -v v="$name" 'index($0, "$" v ":") == 1 || index($0, "$" v "[") == 1' "$dump"

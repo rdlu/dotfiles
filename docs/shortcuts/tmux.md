@@ -26,7 +26,6 @@ Press the prefix first, then the key.
 | `M` | Mouse mode **ON** | `set -g mouse on \; display 'Mouse: ON'` |
 | `m` | Mouse mode **OFF** | `set -g mouse off \; display 'Mouse: OFF'` |
 | `u` | Capture pane and pick a URL to open (urlview popup window) | `capture-pane \; save-buffer /tmp/tmux-buffer \; new-window -n "urlview"…` |
-| `C-f` | Popup fuzzy **file picker** (`pick-files`) | `display-popup -E -h 70% -w 70% "/home/rdlu/.local/bin/pick-files"` |
 | `C-t` | Popup **terminal** in the current pane's path | `display-popup -E -h 70% -w 70% -d "#{pane_current_path}"` |
 
 ### No prefix (root table)
@@ -36,6 +35,7 @@ Active anywhere, no prefix needed.
 | Key | Description | Command |
 | --- | --- | --- |
 | `F12` | Toggle **OFF mode** for nested/remote tmux — all keys (incl. the prefix) pass through to the pane; status bar turns red | `set prefix None \; set key-table off \; set status-style "fg=colour245,…` |
+| `C-t` | Unified **file finder** — passed through in fish/editors, else a popup that injects paths into the pane's TUI (`pick-files`) | `if-shell "case '#{pane_current_command}' in fish\|nvim\|vim\|hx) exit 0 ;;…` |
 
 ### Copy mode (vi keys)
 

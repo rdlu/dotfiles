@@ -14,7 +14,7 @@ Repo: [github.com/rdlu/dotfiles](https://github.com/rdlu/dotfiles)
 - **[tmux shortcuts](shortcuts/tmux.md)** — custom binds (generated from `tmux.conf`) + plugin cheatsheets
 - **[zellij shortcuts](shortcuts/zellij.md)** — generated from `config.kdl` (all modes)
 - **[niri shortcuts](shortcuts/niri.md)** — generated from `binds.kdl`
-- **[shell shortcuts](shortcuts/shell.md)** — fish binds (generated) + atuin/fzf.fish/built-ins
+- **[shell shortcuts](shortcuts/shell.md)** — fish binds (generated) + atuin/fzf/built-ins
 - **[wl-kbptr](wl-kbptr.md)** — keyboard-driven mouse pointer for niri
 
 ## PDF downloads
@@ -49,7 +49,7 @@ Single-page landscape cheatsheets (A4, Catppuccin — **Latte** for print,
   </div>
   <div class="pdf-card shell">
     <span class="pdf-title"><span class="pdf-icon">🐟</span> shell</span>
-    <span class="pdf-sub">fish · atuin · fzf.fish</span>
+    <span class="pdf-sub">fish · atuin · fzf</span>
     <span class="pdf-links">
       <a href="pdf/shell-cheatsheet.pdf">Latte</a>
       <a href="pdf/shell-cheatsheet-mocha.pdf">Mocha</a>

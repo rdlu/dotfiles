@@ -88,4 +88,11 @@ Run from the repo root. `just` with no arguments lists everything.
 | `just docs-serve` | Live-preview the docs site while editing (opens the browser once it's up) | `docs-update` |
 | `just docs-setup` | One-time install of the docs toolchain (pandoc + typst; uv ships with CachyOS) |  |
 | `just docs-update` | Regenerate the generated markdown blocks from tmux.conf, binds.kdl, and this justfile |  |
+
+### file-transfer
+
+| Recipe | Description | Runs |
+| --- | --- | --- |
+| `just file-transfer` | Set up LocalSend + rsync-over-ssh receiving (packages, firewall, folder, docs) |  |
+| `just file-transfer-harden` | Harden a receiving machine: inbound SSH key-only + LLMNR off (disables passwords!) |  |
 <!-- /gen:just-recipes -->

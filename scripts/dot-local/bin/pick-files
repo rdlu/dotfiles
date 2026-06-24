@@ -1,34 +1,25 @@
 #!/usr/bin/env fish
 
-set pane_dir (tmux display-message -p '#{pane_current_path}')
-set pane_id (tmux display-message -p '#{pane_id}')
-cd "$pane_dir" || exit
-set git_root (git rev-parse --show-toplevel)
+# pick-files — fuzzy-pick files in the current tmux pane's directory and inject
+# their (cwd-relative) paths into whatever program is running in that pane, via
+# `tmux send-keys`. Built for TUIs/REPLs with no file picker of their own —
+# claude, aider, a python/psql REPL, an editor's :terminal, etc.
+#
+# Triggered from tmux: prefix + C-f (display-popup, see dot-tmux.conf).
+# Linux-only. Content-aware preview (fzf-preview) + the shared tokyonight theme.
 
-# gnu coreutils realpath is needed to make the paths relative to the currently active
-# tmux pane relative to the git repo root, because aider always wants paths relative
-# to the repo root, even if you are in a subdirectory
-if string match -q 'darwin*' "$OSTYPE"
-    if not command -v grealpath >/dev/null 2>&1
-        echo "grealpath not found. Install with: brew install coreutils" >&2
-        exit 1
-    end
-    set realpath_cmd grealpath
-else
-    set realpath_cmd realpath
-end
+source $HOME/.dotfiles/fish/fzf-theme.fish
 
-set selected_files (
-    fd --type f |
-        fzf --multi \
-            --reverse \
-            --preview 'bat --style=numbers --color=always {}' |
-        while read -l file
-            "$realpath_cmd" --relative-to="$git_root" "$pane_dir/$file"
-        end
+set -l pane_dir (tmux display-message -p '#{pane_current_path}')
+set -l pane_id (tmux display-message -p '#{pane_id}')
+cd "$pane_dir"; or exit
+
+# --height=100% fills the tmux popup (overrides the theme's inline 60%).
+set -l selected (
+    fd --type f --hidden --exclude .git \
+        | fzf --multi --height=100% --reverse --preview 'fzf-preview {}'
 )
+test -z "$selected"; and exit
 
-if test -n "$selected_files"
-    set files_oneline (string join ' ' $selected_files)
-    tmux send-keys -t "$pane_id" "$files_oneline"
-end
+# space-joined, with a trailing space so you can keep typing in the TUI
+tmux send-keys -t "$pane_id" (string join ' ' -- $selected)' '
