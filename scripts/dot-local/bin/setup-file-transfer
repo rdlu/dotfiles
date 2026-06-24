@@ -1,0 +1,57 @@
+#!/usr/bin/fish
+
+# setup-file-transfer — make THIS machine ready to receive files via LocalSend
+# and rsync-over-ssh. Idempotent; safe to re-run. Normally invoked by
+# `just file-transfer` (which installs packages + stows first).
+#
+# Does NOT touch sshd / LLMNR — that's `just file-transfer-harden` (separate,
+# because making SSH key-only could lock out a machine still using passwords).
+
+set -l port 53317
+set -l xfer ~/Downloads/Transfers
+set -l tpl ~/.local/share/file-transfer
+
+echo "== file-transfer setup on "(hostname)" =="
+
+# 1) firewalld must be present + running; drop ufw if it's fighting it.
+if not command -q firewall-cmd
+    echo "firewalld not installed — run `just file-transfer` first (it installs the tools)." >&2
+    exit 1
+end
+sudo systemctl enable --now firewalld
+if systemctl is-enabled ufw &>/dev/null; or systemctl is-active ufw &>/dev/null
+    echo "Removing conflicting ufw…"
+    sudo systemctl disable --now ufw 2>/dev/null
+    sudo pacman -Rns --noconfirm ufw 2>/dev/null
+end
+
+# 2) Open LocalSend on whatever zone(s) hold this machine's real interfaces
+#    (machine-agnostic: could be `home`, `public`, …; `trusted` already allows all).
+set -l zones (sudo firewall-cmd --get-active-zones 2>/dev/null | grep -vE '^[[:space:]]|[Nn]o zones')
+for z in $zones
+    test "$z" = trusted; and continue
+    echo "Opening $port tcp/udp permanently on zone '$z'"
+    sudo firewall-cmd --permanent --zone=$z --add-port=$port/tcp --add-port=$port/udp
+end
+sudo firewall-cmd --reload
+
+# 3) Transfer folder + per-host rendered docs (won't clobber existing ones).
+mkdir -p $xfer
+set -l host (hostname)
+set -l ip (ip route get 1.1.1.1 2>/dev/null | string match -rg 'src (\S+)')
+test -n "$ip"; or set ip "this machine's IP"
+for f in README.md How-to-send-me-files.md
+    if test -e $xfer/$f
+        echo "doc present, leaving as-is: $xfer/$f"
+    else if test -e $tpl/$f
+        sed -e "s/@HOST@/$host/g" -e "s|@IP@|$ip|g" $tpl/$f >$xfer/$f
+        echo "wrote $xfer/$f"
+    else
+        echo "template missing ($tpl/$f) — run `just stow` to deploy it" >&2
+    end
+end
+
+echo
+echo "✓ Receiving is set up. LocalSend works now on this network."
+echo "  • Roaming nets: menu → 📤 LocalSend share (temp)  ·  or `localsend-here on`"
+echo "  • Inbound rsync: `just file-transfer-harden`, then `add-rsync-key '<pubkey>'`"

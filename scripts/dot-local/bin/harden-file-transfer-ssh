@@ -1,0 +1,33 @@
+#!/bin/sh
+# harden-file-transfer-ssh — for machines that will RECEIVE rsync-over-ssh:
+# make inbound SSH public-key only and disable LLMNR. Idempotent.
+#
+# WARNING: this disables SSH password login. Make sure you can log in by KEY
+# (or are sitting at the machine) before relying on remote SSH afterwards.
+# sshd is left DISABLED — `ssh-here` starts it on demand.
+set -e
+
+echo "== Hardening inbound SSH to key-only + disabling LLMNR on $(hostname) =="
+
+# Host keys may be absent (sshd never started here) — generate any missing ones
+# so validation passes and the first `ssh-here on` is instant. Idempotent.
+sudo ssh-keygen -A >/dev/null 2>&1 || true
+
+sudo install -d -m 755 /etc/ssh/sshd_config.d
+sudo tee /etc/ssh/sshd_config.d/10-hardening.conf >/dev/null <<'EOF'
+# Inbound SSH: public-key only. Per-key rsync/sftp limits live in
+# ~/.ssh/authorized_keys via  restrict,command="rrsync ..."  (see: add-rsync-key)
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitRootLogin no
+AuthenticationMethods publickey
+EOF
+
+sudo install -d -m 755 /etc/systemd/resolved.conf.d
+printf '[Resolve]\nLLMNR=no\n' | sudo tee /etc/systemd/resolved.conf.d/no-llmnr.conf >/dev/null
+
+sudo sshd -t
+sudo systemctl restart systemd-resolved 2>/dev/null || true
+
+echo "✓ Inbound SSH is key-only (no key installed = no inbound login = safe). LLMNR off."
+echo "  Authorize a transfer key:  add-rsync-key '<ssh public key>'"
