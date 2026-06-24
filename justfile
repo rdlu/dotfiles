@@ -318,13 +318,14 @@ docs-update:
 [group("docs")]
 docs-pdf: docs-update
   mkdir -p docs/pdf
-  for page in setup file-transfer justfile shortcuts/tmux shortcuts/zellij shortcuts/niri shortcuts/shell wl-kbptr; do \
+  for page in setup file-transfer neovim-plugins justfile shortcuts/tmux shortcuts/zellij shortcuts/niri shortcuts/shell wl-kbptr; do \
     out="$(basename "$page")"; \
     case "$out" in tmux|zellij|niri|shell) out="$out-shortcuts";; esac; \
     pandoc "docs/$page.md" -o "docs/pdf/$out.pdf" \
       --pdf-engine=typst --toc -V papersize=a4 -V mainfont="Libertinus Serif" -M date="$(date -I)"; \
   done
-  pandoc docs/setup.md docs/file-transfer.md docs/justfile.md docs/shortcuts/tmux.md \
+  pandoc docs/setup.md docs/file-transfer.md docs/neovim-plugins.md docs/justfile.md \
+    docs/shortcuts/tmux.md \
     docs/shortcuts/zellij.md docs/shortcuts/niri.md docs/shortcuts/shell.md \
     docs/wl-kbptr.md \
     -o docs/pdf/dotfiles-handbook.pdf \
@@ -335,7 +336,7 @@ docs-pdf: docs-update
 [group("docs")]
 docs-cheatsheets: docs-update
   mkdir -p docs/pdf
-  for sheet in tmux zellij niri shell; do \
+  for sheet in tmux zellij niri shell neovim; do \
     typst compile --input sheet=$sheet --input theme=latte \
       tools/cheatsheets/cheatsheet.typ "docs/pdf/$sheet-cheatsheet.pdf"; \
     typst compile --input sheet=$sheet --input theme=mocha \
