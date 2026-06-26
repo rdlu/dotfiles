@@ -7,6 +7,7 @@ IPs, UUIDs, numeric IDs, words), fuzzy-picks one or many with fzf, then:
     Enter    copy to clipboard (wl-copy)
     Ctrl-O   open with xdg-open (URLs / paths)
     Ctrl-Y   insert into the triggering pane (herdr pane send-text)
+    Ctrl-G   open the selected GitHub issue/PR in ghzinga (gzg), if installed
 
 Wired as a herdr custom command (type = "pane"): prefix + u. herdr exports
 HERDR_ACTIVE_PANE_ID for the pane that was focused when the binding fired.
@@ -14,6 +15,7 @@ Self-contained: needs only fzf, wl-copy, xdg-open (no urlview / extrakto).
 """
 import os
 import re
+import shutil
 import subprocess
 import sys
 
@@ -53,8 +55,9 @@ if not tokens:
 # 3. Pick.
 fzf = subprocess.run(
     ["fzf", "--multi", "--reverse", "--height=100%",
-     "--expect=ctrl-o,ctrl-y",
-     "--header=Enter: copy  ·  Ctrl-O: open  ·  Ctrl-Y: insert  ·  Tab: multi"],
+     "--expect=ctrl-o,ctrl-y,ctrl-g",
+     "--header=Enter: copy  ·  Ctrl-O: open  ·  Ctrl-Y: insert  ·  "
+     "Ctrl-G: ghzinga  ·  Tab: multi"],
     input="\n".join(tokens), capture_output=True, text=True,
 )
 out = fzf.stdout.splitlines()
@@ -72,5 +75,14 @@ if key == "ctrl-o":
                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 elif key == "ctrl-y":
     subprocess.run([herdr, "pane", "send-text", pane, joined + " "])
+elif key == "ctrl-g":
+    # Open the first pick in ghzinga. gzg accepts a full GitHub URL,
+    # owner/repo#N, or bare #N. exec replaces this temp pane with the viewer,
+    # which closes when you quit gzg. Fall back to xdg-open if gzg is absent.
+    target = picks[0]
+    if shutil.which("gzg"):
+        os.execvp("gzg", ["gzg", target])
+    subprocess.Popen(["xdg-open", target],
+                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 else:  # Enter -> clipboard
     subprocess.run(["wl-copy"], input=joined, text=True)

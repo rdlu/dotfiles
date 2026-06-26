@@ -36,9 +36,9 @@ prefix = "f12"
 split_vertical = ["prefix+=", "prefix+v"]
 
 # Everything else stays default on purpose, notably:
-#   resize_mode   = prefix+r        (I keep herdr's r, not tmux's reload-on-r)
-#   reload_config = prefix+shift+r
-#   copy_mode     = prefix+[
+#   resize_mode     = prefix+r      (I keep herdr's r, not tmux's reload-on-r)
+#   reload_config   = prefix+shift+r
+#   edit_scrollback = prefix+e      (scrollback/copy; herdr ships no prefix+[ copy-mode)
 #   new_tab c / close_pane x / zoom z / switch_tab 1..9 / focus_pane h j k l
 
 # --- Custom commands (rebuilt tmux bindings) -------------------------------
@@ -69,3 +69,22 @@ command = "pick-files-herdr"
 key = "prefix+u"
 type = "pane"
 command = "herdr-extract"
+
+# --- Native plugins (herdr plugin install …) -------------------------------
+# herdr-plus (cloudmanic/herdr-plus): project workspace templates + a fuzzy
+# quick-action launcher. Register with `just herdr-plugins`.
+[[keys.command]]
+key = "prefix+up"
+type = "plugin_action"
+command = "cloudmanic.herdr-plus.projects"
+description = "herdr-plus: projects"
+
+[[keys.command]]
+key = "prefix+down"
+type = "plugin_action"
+command = "cloudmanic.herdr-plus.quick-actions"
+description = "herdr-plus: quick actions"
+
+# ghzinga (dutifuldev/ghzinga) needs no binding here: its plugin auto-registers
+# a link handler (Ctrl-click a GitHub issue/PR URL → side viewer pane). For a
+# keyboard path, herdr-extract opens the selected GitHub ref in ghzinga (Ctrl-G).

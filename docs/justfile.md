@@ -39,6 +39,7 @@ Run from the repo root. `just` with no arguments lists everything.
 | Recipe | Description | Runs |
 | --- | --- | --- |
 | `just fastfetch` |  |  |
+| `just herdr-plugins` | ghzinga's viewer binary `gzg` comes from mise (cargo:ghzinga). |  |
 | `just keybase-ssh` | Import the Keybase PGP key into GPG and expose it for SSH auth |  |
 | `just pkg-categories` | List the manifest categories with their package counts |  |
 | `just pkg-install` | Install the package manifest (all of setup/packages.yaml, or one category) |  |
