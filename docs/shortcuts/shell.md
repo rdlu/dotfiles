@@ -11,7 +11,7 @@ Generated from the `bind` lines in `fish/` by `tools/gen-docs.py` — run
 <!-- gen:fish-binds -->
 | Keys | Action | Defined in |
 | --- | --- | --- |
-| `Alt+f` | Open the yazi file manager | `fish/aliases.d/files.fish` |
+| `Alt+y` | Open the yazi file manager | `fish/aliases.d/files.fish` |
 | `Ctrl+t` | Insert file path(s) (fzf) | `fish/aliases.d/fzf-pickers.fish` |
 | `Ctrl+Alt+d` | Insert a directory path (fzf) | `fish/aliases.d/fzf-pickers.fish` |
 | `Ctrl+Alt+g` | Insert pacman package(s) (fzf) | `fish/aliases.d/fzf-pickers.fish` |
@@ -61,8 +61,8 @@ keeps plain fish history.
 **Inside herdr:** `Alt+h/j/k/l` are intercepted by
 [vim-herdr-navigation](herdr.md) for pane/split movement, so fish's `Alt+h`
 (man page) and `Alt+l` (list dir) only fire in a bare terminal — use `F1` for
-the man page inside herdr. `Alt+f`'s fish default (`nextd`) is rebound to the
-yazi launcher (see [Custom bindings](#custom-bindings) above).
+the man page inside herdr. (`Alt+y` is rebound to the yazi launcher — see
+[Custom bindings](#custom-bindings) above — which shadows fish's `yank-pop`.)
 
 ## Handy abbreviations & functions
 
