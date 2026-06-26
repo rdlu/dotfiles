@@ -1,0 +1,76 @@
+#!/usr/bin/env python3
+"""herdr-extract — extrakto + urlview replacement for herdr.
+
+Tokenises the *triggering* pane's recent scrollback (URLs, paths, git SHAs,
+IPs, UUIDs, numeric IDs, words), fuzzy-picks one or many with fzf, then:
+
+    Enter    copy to clipboard (wl-copy)
+    Ctrl-O   open with xdg-open (URLs / paths)
+    Ctrl-Y   insert into the triggering pane (herdr pane send-text)
+
+Wired as a herdr custom command (type = "pane"): prefix + u. herdr exports
+HERDR_ACTIVE_PANE_ID for the pane that was focused when the binding fired.
+Self-contained: needs only fzf, wl-copy, xdg-open (no urlview / extrakto).
+"""
+import os
+import re
+import subprocess
+import sys
+
+pane = os.environ.get("HERDR_ACTIVE_PANE_ID")
+herdr = os.environ.get("HERDR_BIN_PATH") or "herdr"
+if not pane:
+    sys.exit("herdr-extract: no HERDR_ACTIVE_PANE_ID in environment")
+
+# 1. Capture the triggering pane's scrollback.
+raw = subprocess.run(
+    [herdr, "pane", "read", pane, "--source", "recent",
+     "--lines", "5000", "--format", "text"],
+    capture_output=True, text=True,
+).stdout
+
+# 2. Tokenise. Most-specific patterns first; first match per substring wins.
+patterns = [
+    r'(?:https?|ssh|git|ftp|file)://[^\s"\'<>)\]}]+',  # URLs
+    r'(?:[~]|\.{1,2})?/[^\s"\':<>|()\[\]{}]+',          # unix paths
+    r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b',               # IPv4
+    r'\b[0-9a-f]{7,40}\b',                              # hex / git SHA
+    r'\b[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}\b',  # UUID
+    r'\b\d{3,}\b',                                       # numeric IDs
+    r'[A-Za-z0-9_][\w.@:/+-]{2,}',                       # general words
+]
+seen, tokens = set(), []
+for line in reversed(raw.splitlines()):  # most-recent first, like extrakto
+    for pat in patterns:
+        for match in re.findall(pat, line):
+            tok = match.strip(".,;:'\"()[]{}")
+            if tok and tok not in seen:
+                seen.add(tok)
+                tokens.append(tok)
+if not tokens:
+    sys.exit(0)
+
+# 3. Pick.
+fzf = subprocess.run(
+    ["fzf", "--multi", "--reverse", "--height=100%",
+     "--expect=ctrl-o,ctrl-y",
+     "--header=Enter: copy  ·  Ctrl-O: open  ·  Ctrl-Y: insert  ·  Tab: multi"],
+    input="\n".join(tokens), capture_output=True, text=True,
+)
+out = fzf.stdout.splitlines()
+if not out:  # cancelled (Esc / Ctrl-C)
+    sys.exit(0)
+key, picks = out[0], [line for line in out[1:] if line]
+if not picks:
+    sys.exit(0)
+joined = " ".join(picks)
+
+# 4. Act on the chosen key.
+if key == "ctrl-o":
+    for target in picks:
+        subprocess.Popen(["xdg-open", target],
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+elif key == "ctrl-y":
+    subprocess.run([herdr, "pane", "send-text", pane, joined + " "])
+else:  # Enter -> clipboard
+    subprocess.run(["wl-copy"], input=joined, text=True)

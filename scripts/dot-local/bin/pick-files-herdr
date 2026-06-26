@@ -1,0 +1,36 @@
+#!/usr/bin/env fish
+
+# pick-files-herdr — herdr port of `pick-files`. Fuzzy-pick files in the
+# triggering pane's directory and inject their (cwd-relative) paths into
+# whatever program is running there, via `herdr pane send-text` (literal text,
+# no Enter — just like the tmux `send-keys` version).
+#
+# Wired as a herdr custom command (type = "pane"): prefix + f. herdr exports
+# HERDR_ACTIVE_PANE_ID / HERDR_ACTIVE_PANE_CWD for the pane that was focused
+# when the binding fired — that's the pane we read the dir from and inject into.
+# Note: the tmux smart-passthrough (skip in fish/nvim) can't be replicated, so
+# this is the prefix-gated picker only. Linux-only.
+
+source $HOME/.dotfiles/fish/fzf-theme.fish
+
+set -l pane_id $HERDR_ACTIVE_PANE_ID
+set -l pane_dir $HERDR_ACTIVE_PANE_CWD
+if test -z "$pane_id"
+    echo "pick-files-herdr: no HERDR_ACTIVE_PANE_ID in environment" >&2
+    exit 1
+end
+test -z "$pane_dir"; and set pane_dir $PWD
+cd "$pane_dir"; or exit
+
+set -l herdr_bin herdr
+test -n "$HERDR_BIN_PATH"; and set herdr_bin $HERDR_BIN_PATH
+
+# --height=100% fills the temp pane (overrides the theme's inline 60%).
+set -l selected (
+    fd --type f --hidden --exclude .git \
+        | fzf --multi --height=100% --reverse --preview 'fzf-preview {}'
+)
+test -z "$selected"; and exit
+
+# space-joined, with a trailing space so you can keep typing in the TUI.
+$herdr_bin pane send-text "$pane_id" (string join ' ' -- $selected)' '
