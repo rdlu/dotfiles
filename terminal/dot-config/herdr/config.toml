@@ -96,19 +96,6 @@ description = "herdr-plus: quick actions"
 # a link handler (Ctrl-click a GitHub issue/PR URL → side viewer pane). For a
 # keyboard path, herdr-extract opens the selected GitHub ref in ghzinga (Ctrl-G).
 
-# sessionizer (andrewchng): fuzzy-open projects / worktrees into a workspace.
-[[keys.command]]
-key = "prefix+shift+s"
-type = "plugin_action"
-command = "sessionizer.open"
-description = "sessionizer: open a project"
-
-[[keys.command]]
-key = "prefix+shift+o"
-type = "plugin_action"
-command = "sessionizer.worktree-open"
-description = "sessionizer: open a worktree"
-
 # reviewr (persiyanov): toggle the code-review sidebar (also auto-opens on a new
 # worktree). The pane reviews the focused agent's changes and sends line comments.
 [[keys.command]]
