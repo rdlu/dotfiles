@@ -47,16 +47,22 @@ keeps plain fish history.
 
 | Keys | Action |
 | --- | --- |
-| `Alt+e` | Edit the command line in `$EDITOR` |
-| `Alt+s` | Prepend `sudo` to the current (or last) command |
-| `Alt+←` `Alt+→` | Previous / next working directory (`prevd` / `nextd`) |
-| `Alt+↑` `Alt+↓` | Recall arguments from previous commands |
+| `Alt+e` `Alt+v` | Edit the command line in `$EDITOR` |
+| `Alt+s` | Prepend `sudo` (or `doas`) to the current (or last) command |
+| `Alt+b` | Previous directory (`prevd`) on an empty line, else back one word |
+| `Alt+↑` `Alt+↓` | Search history for the token under the cursor |
 | `Alt+l` | List the directory of the token under the cursor |
 | `Alt+p` | Append `&| less` (paginate output) |
-| `Alt+h` | Man page for the current command |
-| `Alt+w` | One-line description of the current command |
+| `Alt+h` `F1` | Man page for the command under the cursor |
+| `Alt+w` | One-line description of the command under the cursor |
 | `Ctrl+w` | Delete one path component to the left |
 | `Ctrl+z` | Undo last edit |
+
+**Inside herdr:** `Alt+h/j/k/l` are intercepted by
+[vim-herdr-navigation](herdr.md) for pane/split movement, so fish's `Alt+h`
+(man page) and `Alt+l` (list dir) only fire in a bare terminal — use `F1` for
+the man page inside herdr. `Alt+f`'s fish default (`nextd`) is rebound to the
+yazi launcher (see [Custom bindings](#custom-bindings) above).
 
 ## Handy abbreviations & functions
 
