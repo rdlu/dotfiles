@@ -1,0 +1,39 @@
+#!/usr/bin/env fish
+
+# pick-files-yazi — herdr file picker using yazi's full file-manager UI (preview,
+# nav, multi-select) instead of the fd+fzf flow in `pick-files-herdr`. Opens yazi
+# at the triggering pane's directory; on confirm, the selected files'
+# (cwd-relative where possible) paths are injected into that pane via
+# `herdr pane send-text` — no Enter, so you keep typing in the TUI.
+#
+# Wired as a herdr custom command (type = "pane"): prefix + y. Sibling of
+# pick-files-herdr (prefix + f), which stays on fd+fzf. Linux-only.
+#
+# In yazi: navigate, Space to (multi-)select, Enter to confirm. With nothing
+# explicitly selected, Enter picks the hovered file.
+
+set -l pane_id $HERDR_ACTIVE_PANE_ID
+set -l pane_dir $HERDR_ACTIVE_PANE_CWD
+if test -z "$pane_id"
+    echo "pick-files-yazi: no HERDR_ACTIVE_PANE_ID in environment" >&2
+    exit 1
+end
+test -z "$pane_dir"; and set pane_dir $PWD
+
+set -l herdr_bin herdr
+test -n "$HERDR_BIN_PATH"; and set herdr_bin $HERDR_BIN_PATH
+
+set -l chooser (mktemp)
+yazi --chooser-file=$chooser "$pane_dir"
+set -l selected (cat $chooser)
+rm -f $chooser
+test -z "$selected"; and exit
+
+# yazi writes absolute paths; trim the pane dir prefix so they read like the
+# fd-based picker (relative), leaving out-of-tree paths absolute.
+set -l rel
+for f in $selected
+    set -a rel (string replace -- "$pane_dir/" "" $f)
+end
+
+$herdr_bin pane send-text "$pane_id" (string join ' ' -- $rel)' '

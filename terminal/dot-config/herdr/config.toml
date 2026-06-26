@@ -61,6 +61,13 @@ key = "prefix+f"
 type = "pane"
 command = "pick-files-herdr"
 
+# Same idea as prefix+f but with yazi's full file-manager UI (preview, nav,
+# multi-select) instead of fd+fzf. Both pickers inject paths into the pane.
+[[keys.command]]
+key = "prefix+y"
+type = "pane"
+command = "pick-files-yazi"
+
 # Extract & grab from the triggering pane's scrollback — replaces BOTH tmux
 # urlview (`prefix + u`) and extrakto (`prefix + Tab`). Fuzzy-pick URLs / paths
 # / IDs / words, then Enter=copy, Ctrl-O=open, Ctrl-Y=insert. Self-contained
@@ -88,3 +95,49 @@ description = "herdr-plus: quick actions"
 # ghzinga (dutifuldev/ghzinga) needs no binding here: its plugin auto-registers
 # a link handler (Ctrl-click a GitHub issue/PR URL → side viewer pane). For a
 # keyboard path, herdr-extract opens the selected GitHub ref in ghzinga (Ctrl-G).
+
+# sessionizer (andrewchng): fuzzy-open projects / worktrees into a workspace.
+[[keys.command]]
+key = "prefix+shift+s"
+type = "plugin_action"
+command = "sessionizer.open"
+description = "sessionizer: open a project"
+
+[[keys.command]]
+key = "prefix+shift+o"
+type = "plugin_action"
+command = "sessionizer.worktree-open"
+description = "sessionizer: open a worktree"
+
+# reviewr (persiyanov): toggle the code-review sidebar (also auto-opens on a new
+# worktree). The pane reviews the focused agent's changes and sends line comments.
+[[keys.command]]
+key = "prefix+shift+v"
+type = "plugin_action"
+command = "persiyanov.reviewr.toggle"
+description = "reviewr: toggle review sidebar"
+
+# vim-herdr-navigation (paulbkim-dev): seamless DIRECT (no-prefix) Alt-h/j/k/l
+# across herdr panes and Neovim splits. Alt keys are free in my fish; this keeps
+# readline Ctrl-L/K/H intact. navigate.sh forwards Ctrl chords to nvim when it's
+# focused, so the Neovim side maps <C-h/j/k/l> (see lazyvim .../config/keymaps.lua).
+# Requires jq.
+[[keys.command]]
+key = "alt+h"
+type = "plugin_action"
+command = "vim-herdr-navigation.left"
+
+[[keys.command]]
+key = "alt+j"
+type = "plugin_action"
+command = "vim-herdr-navigation.down"
+
+[[keys.command]]
+key = "alt+k"
+type = "plugin_action"
+command = "vim-herdr-navigation.up"
+
+[[keys.command]]
+key = "alt+l"
+type = "plugin_action"
+command = "vim-herdr-navigation.right"

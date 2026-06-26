@@ -72,8 +72,21 @@ The prefix is `F12` — press it, release, then the key; every `F12 X` below mea
 | Key | Action |
 | --- | --- |
 | `F12 t` | Scratch shell (disposable temp pane) |
-| `F12 f` | Pick files → inject paths into the pane |
+| `F12 f` | Pick files (fd+fzf) → inject paths into the pane |
+| `F12 y` | Pick files (yazi UI) → inject paths into the pane |
 | `F12 u` | Grab URLs / paths / IDs from scrollback (copy / open / insert) |
 | `F12 Up` | herdr-plus: project workspace templates |
 | `F12 Down` | herdr-plus: quick-action launcher |
+| `F12 Shift+s` | sessionizer: fuzzy-open a project |
+| `F12 Shift+o` | sessionizer: fuzzy-open a worktree |
+| `F12 Shift+v` | reviewr: toggle code-review sidebar |
+
+### Direct keys (no prefix)
+
+| Key | Action |
+| --- | --- |
+| `Alt+h` | vim-nav: focus split / pane left |
+| `Alt+j` | vim-nav: focus split / pane down |
+| `Alt+k` | vim-nav: focus split / pane up |
+| `Alt+l` | vim-nav: focus split / pane right |
 <!-- /gen:herdr-binds -->

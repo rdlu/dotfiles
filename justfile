@@ -203,6 +203,9 @@ pkg-tui:
 herdr-plugins:
   herdr plugin install cloudmanic/herdr-plus --yes
   herdr plugin install dutifuldev/ghzinga/plugins/herdr --yes
+  herdr plugin install andrewchng/herdr-sessionizer --yes
+  herdr plugin install persiyanov/herdr-reviewr --yes
+  herdr plugin install paulbkim-dev/vim-herdr-navigation --yes
   herdr server reload-config
 
 # Yazi terminal file manager and plugins
