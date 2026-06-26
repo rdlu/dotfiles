@@ -1,0 +1,71 @@
+# herdr configuration — stowed to ~/.config/herdr/config.toml
+# Only the keys I deliberately change from herdr's defaults live here; every
+# unspecified action keeps its built-in default (see `herdr --default-config`).
+#
+# Migrated from tmux (terminal/dot-tmux.conf). Notes on what carried over:
+#   - Persistent sessions, catppuccin theme, pane nav (h/j/k/l), copy mode and
+#     session/workspace pickers are all built in — they replace my TPM plugins.
+#   - No plugin system: tmux-thumbs / copycat / tmux-open / logging have no
+#     herdr equivalent and are dropped. extrakto + urlview are both rebuilt as
+#     the `herdr-extract` custom command below (prefix + u).
+#   - F12 (not Ctrl-a/Ctrl-b) is the prefix so both Ctrl-a and Ctrl-b stay free
+#     as readline/agent keys inside panes — important in an agent multiplexer.
+
+[theme]
+# Chosen during herdr onboarding. (Built-ins also include catppuccin, which is
+# what my old tmux used — swap `name` if I want that look back.)
+name = "kanagawa"
+auto_switch = false
+
+[ui]
+# Show detected agent labels (claude, codex, …) in split pane borders.
+show_agent_labels_on_pane_borders = true
+
+[ui.toast]
+# Route herdr notifications to the OS notification service.
+delivery = "system"
+
+[keys]
+# Prefix on F12 — easy reach on the Soffle, and it leaves Ctrl-a/Ctrl-b alone.
+prefix = "f12"
+
+# Splits: match my tmux muscle memory.
+#   `=` => side-by-side (herdr "split right" / split_vertical)
+#   `-` => stacked      (herdr "split down"  / split_horizontal) — already the default
+# prefix+v kept as an alias so the herdr default still works.
+split_vertical = ["prefix+=", "prefix+v"]
+
+# Everything else stays default on purpose, notably:
+#   resize_mode   = prefix+r        (I keep herdr's r, not tmux's reload-on-r)
+#   reload_config = prefix+shift+r
+#   copy_mode     = prefix+[
+#   new_tab c / close_pane x / zoom z / switch_tab 1..9 / focus_pane h j k l
+
+# --- Custom commands (rebuilt tmux bindings) -------------------------------
+# type = "pane" opens a temporary pane and closes it when the command exits.
+# herdr exports HERDR_ACTIVE_PANE_ID / HERDR_ACTIVE_PANE_CWD for the pane that
+# was focused when the binding fired; the helper scripts use them.
+
+# Scratch shell (was tmux `prefix + C-t` display-popup). herdr has no floating
+# popups, so this is a disposable split that closes when you exit the shell.
+[[keys.command]]
+key = "prefix+t"
+type = "pane"
+command = "exec $SHELL"
+
+# Pick files and inject their paths into the triggering pane (was root C-t /
+# `prefix + C-f`). The tmux smart-passthrough (fish/nvim) can't be replicated;
+# this is the prefix-gated picker only.
+[[keys.command]]
+key = "prefix+f"
+type = "pane"
+command = "pick-files-herdr"
+
+# Extract & grab from the triggering pane's scrollback — replaces BOTH tmux
+# urlview (`prefix + u`) and extrakto (`prefix + Tab`). Fuzzy-pick URLs / paths
+# / IDs / words, then Enter=copy, Ctrl-O=open, Ctrl-Y=insert. Self-contained
+# (fzf + wl-copy + xdg-open); no urlview/extrakto needed.
+[[keys.command]]
+key = "prefix+u"
+type = "pane"
+command = "herdr-extract"
