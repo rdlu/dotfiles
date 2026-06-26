@@ -174,6 +174,135 @@ def gen_tmux() -> str:
 
 
 # --------------------------------------------------------------------------
+# herdr
+# --------------------------------------------------------------------------
+
+HERDR_CONF = REPO / "terminal" / "dot-config" / "herdr" / "config.toml"
+
+# herdr ships a fixed binding set (no TPM-style plugins), so the post-prefix
+# chords below are baked from `herdr --default-config` (v0.7.x) with this repo's
+# config.toml choices folded in (e.g. the `=` split). CI has no herdr binary, so
+# only the volatile bits — the prefix and the custom [[keys.command]] entries —
+# are read live from config.toml.
+HERDR_SECTIONS = [
+    ("Tabs", [
+        ("c", "New tab"),
+        ("Shift+t", "Rename tab"),
+        ("n", "Next tab"),
+        ("p", "Previous tab"),
+        ("1-9", "Jump to tab 1–9"),
+        ("Shift+x", "Close tab"),
+    ]),
+    ("Panes", [
+        ("h j k l", "Focus pane ← ↓ ↑ →"),
+        ("=", "Split side-by-side"),
+        ("-", "Split stacked"),
+        ("v", "Split side-by-side (alias)"),
+        ("z", "Zoom / fullscreen pane"),
+        ("r", "Resize mode (then arrows / hjkl)"),
+        ("x", "Close pane"),
+        ("Tab", "Cycle to next pane"),
+        ("Shift+Tab", "Cycle to previous pane"),
+        ("Shift+p", "Rename pane"),
+    ]),
+    ("Workspaces & sessions", [
+        ("w", "Workspace picker"),
+        ("Shift+n", "New workspace"),
+        ("Shift+w", "Rename workspace"),
+        ("Shift+d", "Close workspace (confirm)"),
+        ("Shift+g", "New git-worktree workspace"),
+        ("g", "Goto / jump prompt"),
+        ("q", "Detach session"),
+    ]),
+    ("Scrollback & misc", [
+        ("e", "Edit / copy pane scrollback"),
+        ("b", "Toggle sidebar"),
+        ("o", "Open latest notification's target"),
+        ("s", "Settings"),
+        ("?", "Help / keybinding overlay"),
+        ("Shift+r", "Reload config"),
+    ]),
+]
+
+# Friendly descriptions for the custom & plugin commands, keyed by the command.
+HERDR_CMD_DESC = {
+    "exec $SHELL": "Scratch shell (disposable temp pane)",
+    "pick-files-herdr": "Pick files → inject paths into the pane",
+    "herdr-extract": "Grab URLs / paths / IDs from scrollback "
+                     "(copy / open / insert)",
+    "cloudmanic.herdr-plus.projects": "herdr-plus: project workspace templates",
+    "cloudmanic.herdr-plus.quick-actions": "herdr-plus: quick-action launcher",
+}
+
+
+def herdr_prefix_label(prefix: str) -> str:
+    """`f12` -> `F12`, `ctrl+b` -> `Ctrl+b`."""
+    out = []
+    for tok in prefix.split("+"):
+        if re.fullmatch(r"f\d+", tok):
+            out.append(tok.upper())
+        elif tok in ("ctrl", "alt", "shift", "cmd", "super", "meta"):
+            out.append(tok.capitalize())
+        else:
+            out.append(tok)
+    return "+".join(out)
+
+
+def title_mods(chord: str) -> str:
+    """Tidy a chord's tokens for display: `shift+x` -> `Shift+x`, `up` -> `Up`."""
+    named = ("shift", "ctrl", "alt", "cmd", "super", "meta", "up", "down",
+             "left", "right", "tab", "enter", "esc", "space", "home", "end",
+             "pageup", "pagedown")
+    return "+".join(t.capitalize() if t in named else t
+                    for t in chord.split("+"))
+
+
+def herdr_config() -> tuple[str, list[tuple[str, str]]]:
+    """(prefix_label, custom_rows) read live from config.toml.
+
+    custom_rows is a list of (post-prefix key, description).
+    """
+    import tomllib
+    data = tomllib.loads(HERDR_CONF.read_text())
+    keys = data.get("keys", {})
+    prefix = herdr_prefix_label(keys.get("prefix", "ctrl+b"))
+    rows = []
+    for cmd in keys.get("command", []):
+        chord = cmd.get("key", "")
+        suffix = chord[len("prefix+"):] if chord.startswith("prefix+") else chord
+        command = cmd.get("command", "")
+        desc = HERDR_CMD_DESC.get(command, f"Run `{command}`")
+        rows.append((title_mods(suffix), desc))
+    return prefix, rows
+
+
+def herdr_sections() -> tuple[str, list[dict]]:
+    """(prefix_label, sections) — shared by the markdown doc and the cheatsheet."""
+    prefix, custom = herdr_config()
+    sections = [{"title": title, "rows": [{"keys": k, "desc": d}
+                                          for k, d in rows]}
+                for title, rows in HERDR_SECTIONS]
+    if custom:
+        sections.append({"title": "Custom commands",
+                         "rows": [{"keys": k, "desc": d} for k, d in custom]})
+    return prefix, sections
+
+
+def gen_herdr() -> str:
+    prefix, sections = herdr_sections()
+    parts = [f"The prefix is {code(prefix)} — press it, release, then the key; "
+             f"every {code(prefix + ' X')} below means *prefix then X*."]
+    for section in sections:
+        parts.append(f"### {section['title']}")
+        parts.append(table(
+            ["Key", "Action"],
+            [[code(f"{prefix} {md_escape(r['keys'])}"), md_escape(r["desc"])]
+             for r in section["rows"]],
+        ))
+    return "\n\n".join(parts)
+
+
+# --------------------------------------------------------------------------
 # niri
 # --------------------------------------------------------------------------
 
@@ -914,6 +1043,8 @@ def cheat_data() -> dict:
         for title, rows in FISH_CHEAT_EXTRAS
     ]
 
+    herdr_prefix, herdr_cheat = herdr_sections()
+
     return {
         "tmux": {
             "title": "tmux",
@@ -922,6 +1053,14 @@ def cheat_data() -> dict:
             "size": 8.2,
             "split_keys": False,
             "sections": tmux_sections,
+        },
+        "herdr": {
+            "title": "herdr",
+            "subtitle": f"agent multiplexer · prefix {herdr_prefix}",
+            "cols": 2,
+            "size": 8.6,
+            "split_keys": False,
+            "sections": herdr_cheat,
         },
         "zellij": {
             "title": "zellij",
@@ -968,6 +1107,7 @@ def cheat_data() -> dict:
 
 TARGETS = {
     DOCS / "shortcuts" / "tmux.md": {"tmux-binds": gen_tmux},
+    DOCS / "shortcuts" / "herdr.md": {"herdr-binds": gen_herdr},
     DOCS / "shortcuts" / "zellij.md": {"zellij-binds": gen_zellij},
     DOCS / "shortcuts" / "shell.md": {"fish-binds": gen_fish},
     DOCS / "shortcuts" / "niri.md": {"niri-binds": gen_niri},

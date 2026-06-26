@@ -20,10 +20,12 @@ nav = [
   { "Justfile reference" = "justfile.md" },
   { "Shortcuts" = [
     { "tmux" = "shortcuts/tmux.md" },
+    { "herdr" = "shortcuts/herdr.md" },
     { "zellij" = "shortcuts/zellij.md" },
     { "niri" = "shortcuts/niri.md" },
     { "shell (fish)" = "shortcuts/shell.md" },
   ] },
+  { "tmux → herdr" = "tmux-vs-herdr.md" },
   { "wl-kbptr" = "wl-kbptr.md" },
 ]
 

@@ -35,6 +35,7 @@ gleam = "1.14.0"
 "pipx:epy-reader" = "latest"
 usage = "latest"
 herdr = "latest"
+"cargo:ghzinga" = "latest"   # GitHub PR/issue viewer (gzg); herdr plugin via `just herdr-plugins`
 
 # Removed from mise — now installed via pacman (see justfile fish-shell recipe):
 #   bottom, zellij, jaq, jnv, ttyper, monolith, jujutsu(jj), lazyjj, lazydocker, duckdb
