@@ -227,11 +227,19 @@ HERDR_SECTIONS = [
 # Friendly descriptions for the custom & plugin commands, keyed by the command.
 HERDR_CMD_DESC = {
     "exec $SHELL": "Scratch shell (disposable temp pane)",
-    "pick-files-herdr": "Pick files → inject paths into the pane",
+    "pick-files-herdr": "Pick files (fd+fzf) → inject paths into the pane",
+    "pick-files-yazi": "Pick files (yazi UI) → inject paths into the pane",
     "herdr-extract": "Grab URLs / paths / IDs from scrollback "
                      "(copy / open / insert)",
     "cloudmanic.herdr-plus.projects": "herdr-plus: project workspace templates",
     "cloudmanic.herdr-plus.quick-actions": "herdr-plus: quick-action launcher",
+    "sessionizer.open": "sessionizer: fuzzy-open a project",
+    "sessionizer.worktree-open": "sessionizer: fuzzy-open a worktree",
+    "persiyanov.reviewr.toggle": "reviewr: toggle code-review sidebar",
+    "vim-herdr-navigation.left": "vim-nav: focus split / pane left",
+    "vim-herdr-navigation.down": "vim-nav: focus split / pane down",
+    "vim-herdr-navigation.up": "vim-nav: focus split / pane up",
+    "vim-herdr-navigation.right": "vim-nav: focus split / pane right",
 }
 
 
@@ -257,48 +265,60 @@ def title_mods(chord: str) -> str:
                     for t in chord.split("+"))
 
 
-def herdr_config() -> tuple[str, list[tuple[str, str]]]:
-    """(prefix_label, custom_rows) read live from config.toml.
+def herdr_config() -> tuple[str, list[tuple[str, str]], list[tuple[str, str]]]:
+    """(prefix_label, prefix_rows, direct_rows) read live from config.toml.
 
-    custom_rows is a list of (post-prefix key, description).
+    prefix_rows: (post-prefix key, desc) for `prefix+…` commands.
+    direct_rows: (chord label, desc) for non-prefix commands (e.g. `alt+h`).
     """
     import tomllib
     data = tomllib.loads(HERDR_CONF.read_text())
     keys = data.get("keys", {})
     prefix = herdr_prefix_label(keys.get("prefix", "ctrl+b"))
-    rows = []
+    prefix_rows, direct_rows = [], []
     for cmd in keys.get("command", []):
         chord = cmd.get("key", "")
-        suffix = chord[len("prefix+"):] if chord.startswith("prefix+") else chord
         command = cmd.get("command", "")
         desc = HERDR_CMD_DESC.get(command, f"Run `{command}`")
-        rows.append((title_mods(suffix), desc))
-    return prefix, rows
+        if chord.startswith("prefix+"):
+            prefix_rows.append((title_mods(chord[len("prefix+"):]), desc))
+        else:
+            direct_rows.append((title_mods(chord), desc))
+    return prefix, prefix_rows, direct_rows
 
 
 def herdr_sections() -> tuple[str, list[dict]]:
-    """(prefix_label, sections) — shared by the markdown doc and the cheatsheet."""
-    prefix, custom = herdr_config()
+    """(prefix_label, sections) — the cheatsheet view (keycaps are post-prefix)."""
+    prefix, prefix_rows, direct_rows = herdr_config()
     sections = [{"title": title, "rows": [{"keys": k, "desc": d}
                                           for k, d in rows]}
                 for title, rows in HERDR_SECTIONS]
-    if custom:
+    if prefix_rows:
         sections.append({"title": "Custom commands",
-                         "rows": [{"keys": k, "desc": d} for k, d in custom]})
+                         "rows": [{"keys": k, "desc": d} for k, d in prefix_rows]})
+    if direct_rows:
+        sections.append({"title": "Direct keys (no prefix)",
+                         "rows": [{"keys": k, "desc": d} for k, d in direct_rows]})
     return prefix, sections
 
 
 def gen_herdr() -> str:
-    prefix, sections = herdr_sections()
+    prefix, prefix_rows, direct_rows = herdr_config()
     parts = [f"The prefix is {code(prefix)} — press it, release, then the key; "
              f"every {code(prefix + ' X')} below means *prefix then X*."]
-    for section in sections:
-        parts.append(f"### {section['title']}")
-        parts.append(table(
-            ["Key", "Action"],
-            [[code(f"{prefix} {md_escape(r['keys'])}"), md_escape(r["desc"])]
-             for r in section["rows"]],
-        ))
+    for title, rows in HERDR_SECTIONS:
+        parts.append(f"### {title}")
+        parts.append(table(["Key", "Action"],
+            [[code(f"{prefix} {md_escape(k)}"), md_escape(d)] for k, d in rows]))
+    if prefix_rows:
+        parts.append("### Custom commands")
+        parts.append(table(["Key", "Action"],
+            [[code(f"{prefix} {md_escape(k)}"), md_escape(d)]
+             for k, d in prefix_rows]))
+    if direct_rows:
+        parts.append("### Direct keys (no prefix)")
+        parts.append(table(["Key", "Action"],
+            [[code(md_escape(k)), md_escape(d)] for k, d in direct_rows]))
     return "\n\n".join(parts)
 
 
