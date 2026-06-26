@@ -27,28 +27,7 @@
   ),
 )
 #let pal = themes.at(theme-id)
-
-#set page(
-  paper: "a4",
-  flipped: true,
-  margin: (x: 0.9cm, top: 1.3cm, bottom: 0.9cm),
-  fill: pal.bg,
-  columns: int(data.at("cols", default: 3)),
-  header: grid(
-    columns: (auto, 1fr),
-    align: (left + bottom, right + bottom),
-    text(size: 14pt, weight: "black", fill: pal.text,
-      data.title + h(4pt) + text(size: 9pt, weight: "regular",
-        fill: pal.subtext, "cheatsheet")),
-    text(size: 7.5pt, fill: pal.subtext, data.subtitle),
-  ),
-  footer: align(center, text(size: 6.5pt, fill: pal.subtext,
-    [rdlu/dotfiles · generated #datetime.today().display() · page #context counter(page).display("1 / 1", both: true)])),
-)
 #let base = float(data.at("size", default: 7.2)) * 1pt
-#set text(font: "Inter", size: base, fill: pal.text)
-#set par(leading: 0.4em)
-#set columns(gutter: 12pt)
 
 #let keycap(k) = box(
   fill: pal.key-bg,
@@ -63,6 +42,33 @@
   text(font: ("JetBrainsMono NF", "JetBrains Mono"), size: base * 0.89, fill: pal.key-text, weight: "medium",
     k.replace("{plus}", "+")),  // literal "+" keys arrive escaped
 )
+
+// Sheets driven by a prefix key (tmux, herdr) spell out "press <prefix> first"
+// in the header so the bare keycaps below aren't mistaken for direct chords.
+#let prefix-note = if "prefix" in data {
+  text(size: 7.5pt, fill: pal.text)[Press #keycap(data.prefix) first, then: ]
+}
+
+#set page(
+  paper: "a4",
+  flipped: true,
+  margin: (x: 0.9cm, top: 1.3cm, bottom: 0.9cm),
+  fill: pal.bg,
+  columns: int(data.at("cols", default: 3)),
+  header: grid(
+    columns: (auto, 1fr),
+    align: (left + bottom, right + bottom),
+    text(size: 14pt, weight: "black", fill: pal.text,
+      data.title + h(4pt) + text(size: 9pt, weight: "regular",
+        fill: pal.subtext, "cheatsheet")),
+    box[#prefix-note#text(size: 7.5pt, fill: pal.subtext, data.subtitle)],
+  ),
+  footer: align(center, text(size: 6.5pt, fill: pal.subtext,
+    [rdlu/dotfiles · generated #datetime.today().display() · page #context counter(page).display("1 / 1", both: true)])),
+)
+#set text(font: "Inter", size: base, fill: pal.text)
+#set par(leading: 0.4em)
+#set columns(gutter: 12pt)
 
 // Space-separated alternatives ("h j k l") each get their own cap; on
 // split_keys sheets each alternative is further split into per-key caps

@@ -233,8 +233,6 @@ HERDR_CMD_DESC = {
                      "(copy / open / insert)",
     "cloudmanic.herdr-plus.projects": "herdr-plus: project workspace templates",
     "cloudmanic.herdr-plus.quick-actions": "herdr-plus: quick-action launcher",
-    "sessionizer.open": "sessionizer: fuzzy-open a project",
-    "sessionizer.worktree-open": "sessionizer: fuzzy-open a worktree",
     "persiyanov.reviewr.toggle": "reviewr: toggle code-review sidebar",
     "vim-herdr-navigation.left": "vim-nav: focus split / pane left",
     "vim-herdr-navigation.down": "vim-nav: focus split / pane down",
@@ -1068,7 +1066,8 @@ def cheat_data() -> dict:
     return {
         "tmux": {
             "title": "tmux",
-            "subtitle": f"prefix {prefix} (Ctrl+a) · open with mux / mux1",
+            "prefix": prefix,
+            "subtitle": "open with mux / mux1",
             "cols": 2,
             "size": 8.2,
             "split_keys": False,
@@ -1076,7 +1075,8 @@ def cheat_data() -> dict:
         },
         "herdr": {
             "title": "herdr",
-            "subtitle": f"agent multiplexer · prefix {herdr_prefix}",
+            "prefix": herdr_prefix,
+            "subtitle": "agent multiplexer",
             "cols": 2,
             "size": 8.6,
             "split_keys": False,
