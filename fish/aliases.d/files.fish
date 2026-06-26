@@ -10,7 +10,7 @@ alias less 'less -FSRXc'
 alias mv "mv -i" # "m" - never forget
 alias cp "cp -i"
 alias b "cd - >/dev/null && l" # b stands for back
-bind alt-f yazi
+bind alt-y yazi  # alt-f kept for fish's nextd/forward-word; alt-y was yank-pop
 
 if test (uname) != Darwin
     alias ls 'ls --color'
