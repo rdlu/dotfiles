@@ -35,6 +35,14 @@ prefix = "f12"
 # prefix+v kept as an alias so the herdr default still works.
 split_vertical = ["prefix+=", "prefix+v"]
 
+# Tab / workspace rename on , and . (tmux used , to rename the window).
+rename_tab = "prefix+,"
+rename_workspace = "prefix+."
+
+# Free prefix+o for the sessionizer custom command below (tmux `prefix o` muscle
+# memory); move the latest-notification jump to prefix+shift+o.
+open_notification_target = "prefix+shift+o"
+
 # Everything else stays default on purpose, notably:
 #   resize_mode     = prefix+r      (I keep herdr's r, not tmux's reload-on-r)
 #   reload_config   = prefix+shift+r
@@ -76,6 +84,14 @@ command = "pick-files-yazi"
 key = "prefix+u"
 type = "pane"
 command = "herdr-extract"
+
+# Fuzzy-open a project / notes directory as a workspace (switch if one is
+# already open for it) — the herdr analogue of my old tmux `prefix o` (sessionx,
+# zoxide + ~/Projects). Built-in `prefix+w` still switches between open ones.
+[[keys.command]]
+key = "prefix+o"
+type = "pane"
+command = "herdr-sessionize"
 
 # --- Native plugins (herdr plugin install …) -------------------------------
 # herdr-plus (cloudmanic/herdr-plus): project workspace templates + a fuzzy

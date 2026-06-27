@@ -1,0 +1,56 @@
+#!/usr/bin/env fish
+
+# herdr-sessionize — fuzzy-pick a project/notes directory and open it as a herdr
+# workspace, switching to an existing one if it's already open for that folder.
+# The herdr analogue of my old tmux `prefix o` (sessionx: zoxide + ~/Projects):
+# handy for jumping between projects, notes, etc. without pre-defining anything.
+#
+# Wired as a herdr custom command (type = "pane"): prefix + o.
+# Needs fzf + fd; uses zoxide (frecency) and eza for the preview when present.
+
+set -l herdr_bin herdr
+test -n "$HERDR_BIN_PATH"; and set herdr_bin $HERDR_BIN_PATH
+
+# Candidate dirs: zoxide's frecency list + immediate subdirs of a few roots.
+set -l dirs
+type -q zoxide; and set -a dirs (zoxide query -l 2>/dev/null)
+for root in ~/Projects ~/notes ~/Documents ~/.dotfiles
+    test -d $root; and set -a dirs (fd --type d --max-depth 1 --absolute-path . $root 2>/dev/null)
+end
+
+# Dedup (trim trailing slash), drop the gone, keep first-seen order.
+set -l uniq
+for d in $dirs
+    set -l dd (string replace -r '/$' '' -- $d)
+    test -d "$dd"; and not contains -- $dd $uniq; and set -a uniq $dd
+end
+test -z "$uniq"; and exit
+
+source $HOME/.dotfiles/fish/fzf-theme.fish
+set -l target (
+    printf '%s\n' $uniq \
+        | fzf --height=100% --reverse --prompt 'workspace ❯ ' \
+            --preview 'eza -la --color=always {} 2>/dev/null; or ls -la {}'
+)
+test -z "$target"; and exit
+
+set -l label (basename "$target")
+
+# Reuse an existing workspace with the same label, else create one in that dir.
+set -l wid (
+    $herdr_bin workspace list 2>/dev/null | python3 -c '
+import json, sys
+label = sys.argv[1]
+try:
+    ws = json.load(sys.stdin)["result"]["workspaces"]
+except Exception:
+    ws = []
+print(next((w["workspace_id"] for w in ws if w.get("label") == label), ""))
+' $label
+)
+
+if test -n "$wid"
+    $herdr_bin workspace focus $wid
+else
+    $herdr_bin workspace create --cwd "$target" --label "$label" --focus
+end
