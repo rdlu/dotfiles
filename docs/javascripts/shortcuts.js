@@ -6,7 +6,7 @@
 (function () {
   // Pages with their own accent color (matches the PDF cards on the home
   // page); anything else falls back to the default accent in extra.css.
-  var PAGES = ["tmux", "zellij", "niri", "shell", "justfile"];
+  var PAGES = ["tmux", "zellij", "niri", "shell", "justfile", "herdr"];
 
   function pageKey() {
     var path = window.location.pathname;

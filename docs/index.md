@@ -13,6 +13,8 @@ Repo: [github.com/rdlu/dotfiles](https://github.com/rdlu/dotfiles)
 - **[File transfer](file-transfer.md)** — LocalSend + rsync-over-ssh, temporary firewall openings, install recipe
 - **[Neovim plugins](neovim-plugins.md)** — the day-to-day LazyVim plugins and keymaps as wired on `nvim-light`
 - **[tmux shortcuts](shortcuts/tmux.md)** — custom binds (generated from `tmux.conf`) + plugin cheatsheets
+- **[herdr shortcuts](shortcuts/herdr.md)** — agent multiplexer (prefix F12); binds + plugins, generated from `config.toml`
+- **[tmux → herdr](tmux-vs-herdr.md)** — what carries over, what's remapped, what's rebuilt
 - **[zellij shortcuts](shortcuts/zellij.md)** — generated from `config.kdl` (all modes)
 - **[niri shortcuts](shortcuts/niri.md)** — generated from `binds.kdl`
 - **[shell shortcuts](shortcuts/shell.md)** — fish binds (generated) + atuin/fzf/built-ins
@@ -30,6 +32,14 @@ Single-page landscape cheatsheets (A4, Catppuccin — **Latte** for print,
     <span class="pdf-links">
       <a href="pdf/tmux-cheatsheet.pdf">Latte</a>
       <a href="pdf/tmux-cheatsheet-mocha.pdf">Mocha</a>
+    </span>
+  </div>
+  <div class="pdf-card herdr">
+    <span class="pdf-title"><span class="pdf-icon">🐃</span> herdr</span>
+    <span class="pdf-sub">agent multiplexer · prefix F12</span>
+    <span class="pdf-links">
+      <a href="pdf/herdr-cheatsheet.pdf">Latte</a>
+      <a href="pdf/herdr-cheatsheet-mocha.pdf">Mocha</a>
     </span>
   </div>
   <div class="pdf-card zellij">
@@ -76,6 +86,7 @@ Single-page landscape cheatsheets (A4, Catppuccin — **Latte** for print,
     <span class="pdf-sub">portrait per-page exports of the site content</span>
     <span class="pdf-links">
       <a href="pdf/tmux-shortcuts.pdf">tmux</a>
+      <a href="pdf/herdr-shortcuts.pdf">herdr</a>
       <a href="pdf/zellij-shortcuts.pdf">zellij</a>
       <a href="pdf/niri-shortcuts.pdf">niri</a>
       <a href="pdf/shell-shortcuts.pdf">shell</a>
