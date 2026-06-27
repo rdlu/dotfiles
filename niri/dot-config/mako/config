@@ -40,12 +40,24 @@ default-timeout=0
 default-timeout=2000
 group-by=category
 
-# YubiKey touch prompts (from ~/.claude/hooks/yubikey-touch-notify.sh, sent with
-# app-name "YubiKey"): yellow border, auto-expire just past the ~5s key blink.
+# Claude-hook touch prompts (from ~/.claude/hooks/yubikey-touch-*, app-name
+# "YubiKey"): vivid gold + draining progress bar. The hooks clear it on command
+# completion; default-timeout is a ~30s fallback.
 [app-name=YubiKey]
 border-color=#ffcc00
 progress-color=over #3a3320
 default-timeout=30000
 
 [mode=do-not-disturb app-name=YubiKey]
+invisible=false
+
+# Detector toast (any OTHER app's touch, via yubikey-touch-notifier, app-name
+# "YubiKey-detector"): dimmer muted-gold + thinner border so it's obviously the
+# secondary, background one at a glance. Low urgency, no progress fill.
+[app-name=YubiKey-detector]
+border-color=#8a7a3a
+border-size=1
+default-timeout=30000
+
+[mode=do-not-disturb app-name=YubiKey-detector]
 invisible=false
