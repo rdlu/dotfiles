@@ -231,7 +231,7 @@ HERDR_CMD_DESC = {
     "pick-files-yazi": "Pick files (yazi UI) → inject paths into the pane",
     "herdr-extract": "Grab URLs / paths / IDs from scrollback "
                      "(copy / open / insert)",
-    "herdr-sessionize": "Fuzzy-open a project / notes dir as a workspace",
+    "herdr-sessionize": "Switch / open a workspace (open ones + project dirs)",
     "cloudmanic.herdr-plus.projects": "herdr-plus: project workspace templates",
     "cloudmanic.herdr-plus.quick-actions": "herdr-plus: quick-action launcher",
     "persiyanov.reviewr.toggle": "reviewr: toggle code-review sidebar",

@@ -1,44 +1,23 @@
 #!/usr/bin/env fish
 
-# herdr-sessionize — fuzzy-pick a project/notes directory and open it as a herdr
-# workspace, switching to an existing one if it's already open for that folder.
-# The herdr analogue of my old tmux `prefix o` (sessionx: zoxide + ~/Projects):
-# handy for jumping between projects, notes, etc. without pre-defining anything.
+# herdr-sessionize — fuzzy workspace switcher / opener; the herdr analogue of my
+# old tmux `prefix o` (sessionx). The list leads with already-open workspaces
+# (pick one to switch to it), then zoxide's frecency-ranked dirs + one level
+# inside ~/Projects and ~/Documents (pick a folder to open/switch a workspace
+# there, reused by folder name). Hidden (dot) folders are skipped.
 #
-# Wired as a herdr custom command (type = "pane"): prefix + o.
-# Needs fzf + fd; uses zoxide (frecency) and eza for the preview when present.
+# Wired as a herdr custom command (type = "pane"): prefix + o. Needs fzf + fd;
+# uses zoxide (frecency) + eza (preview) when present.
 
 set -l herdr_bin herdr
 test -n "$HERDR_BIN_PATH"; and set herdr_bin $HERDR_BIN_PATH
 
-# Candidate dirs: zoxide's frecency list + immediate subdirs of a few roots.
-set -l dirs
-type -q zoxide; and set -a dirs (zoxide query -l 2>/dev/null)
-for root in ~/Projects ~/notes ~/Documents ~/.dotfiles
-    test -d $root; and set -a dirs (fd --type d --max-depth 1 --absolute-path . $root 2>/dev/null)
-end
+set -l ws_json ($herdr_bin workspace list 2>/dev/null | string collect)
 
-# Dedup (trim trailing slash), drop the gone, keep first-seen order.
-set -l uniq
-for d in $dirs
-    set -l dd (string replace -r '/$' '' -- $d)
-    test -d "$dd"; and not contains -- $dd $uniq; and set -a uniq $dd
-end
-test -z "$uniq"; and exit
-
-source $HOME/.dotfiles/fish/fzf-theme.fish
-set -l target (
-    printf '%s\n' $uniq \
-        | fzf --height=100% --reverse --prompt 'workspace ❯ ' \
-            --preview 'eza -la --color=always {} 2>/dev/null; or ls -la {}'
-)
-test -z "$target"; and exit
-
-set -l label (basename "$target")
-
-# Reuse an existing workspace with the same label, else create one in that dir.
-set -l wid (
-    $herdr_bin workspace list 2>/dev/null | python3 -c '
+# Look up a workspace id by its label (used for the open-workspace entries and
+# for reusing a workspace that already exists for a picked folder).
+function _ws_id -a json label
+    printf '%s' $json | python3 -c '
 import json, sys
 label = sys.argv[1]
 try:
@@ -47,10 +26,61 @@ except Exception:
     ws = []
 print(next((w["workspace_id"] for w in ws if w.get("label") == label), ""))
 ' $label
-)
+end
 
-if test -n "$wid"
-    $herdr_bin workspace focus $wid
+# 1. Lead with open workspaces — "● <label>" lines.
+set -l lines
+set -l open_labels
+for label in (printf '%s' $ws_json | python3 -c 'import json,sys
+try: ws=json.load(sys.stdin)["result"]["workspaces"]
+except Exception: ws=[]
+for w in ws: print(w.get("label","?"))')
+    set -a lines "● $label"
+    set -a open_labels $label
+end
+
+# 2. Candidate dirs: zoxide frecency + one level inside ~/Projects and
+#    ~/Documents, minus hidden + already-open.
+set -l dirs
+type -q zoxide; and set -a dirs (zoxide query -l 2>/dev/null)
+for root in ~/Projects ~/Documents
+    test -d $root; and set -a dirs (fd --type d --max-depth 1 --absolute-path . $root 2>/dev/null)
+end
+
+set -l seen
+for d in $dirs
+    set -l dd (string replace -r '/$' '' -- $d)
+    test -d "$dd"; or continue
+    contains -- $dd $seen; and continue
+    set -a seen $dd
+    # skip hidden: a "." path component anywhere under $HOME
+    string match -q '*/.*' -- (string replace -- $HOME '' $dd); and continue
+    contains -- (basename "$dd") $open_labels; and continue # already listed above
+    set -a lines (string replace -- $HOME '~' $dd)
+end
+
+test -z "$lines"; and exit
+
+source $HOME/.dotfiles/fish/fzf-theme.fish
+set -l pick (
+    printf '%s\n' $lines \
+        | fzf --height=100% --reverse --prompt 'workspace ❯ ' \
+            --preview 'case {} in "● "*) echo "↪ open workspace — Enter to switch";; *) d=$(printf "%s" {} | sed "s#^~#'"$HOME"'#"); eza -la --color=always "$d" 2>/dev/null || ls -la "$d";; esac'
+)
+test -z "$pick"; and exit
+
+if string match -q '● *' -- $pick
+    # Switch to an already-open workspace.
+    set -l wid (_ws_id $ws_json (string sub -s 3 -- $pick))
+    test -n "$wid"; and $herdr_bin workspace focus $wid
 else
-    $herdr_bin workspace create --cwd "$target" --label "$label" --focus
+    # Open / switch a workspace for the chosen folder (reuse by name).
+    set -l target (string replace -- '~' $HOME -- $pick)
+    set -l label (basename "$target")
+    set -l wid (_ws_id $ws_json $label)
+    if test -n "$wid"
+        $herdr_bin workspace focus $wid
+    else
+        $herdr_bin workspace create --cwd "$target" --label "$label" --focus
+    end
 end
