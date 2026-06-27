@@ -305,6 +305,11 @@ services-enable:
   # syncthing is install-optional (see syncthing-file-sync); `-` skips if absent.
   -systemctl --user enable --now syncthing.service
   -systemctl --user enable solaar.service
+  # YubiKey touch detector + desktop notifier (any-app touch -> toast). detector
+  # is the security-package unit (also pulls its .socket); notifier stows from
+  # niri/ + scripts/. The Claude Code hooks (~/.claude/hooks) are separate/local.
+  -systemctl --user enable --now yubikey-touch-detector.service
+  -systemctl --user enable --now yubikey-touch-notifier.service
 
   @just _echowarning "\n2) niri-session helpers (started with niri via add-wants)"
   systemctl --user add-wants niri.service waybar.service

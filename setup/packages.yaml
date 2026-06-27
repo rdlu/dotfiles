@@ -259,6 +259,7 @@ security:
   - yubico-pam
   - yubikey-manager
   - yubikey-oath-dmenu
+  - yubikey-touch-detector
 
 system:
   - firewall-config
