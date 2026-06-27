@@ -69,6 +69,7 @@
 
 /* Catppuccin Latte accents (light scheme) */
 .pdf-card.tmux     { --pdf-accent: #40a02b; }  /* green */
+.pdf-card.herdr    { --pdf-accent: #fe640b; }  /* peach */
 .pdf-card.zellij   { --pdf-accent: #df8e1d; }  /* yellow */
 .pdf-card.niri     { --pdf-accent: #1e66f5; }  /* blue */
 .pdf-card.shell    { --pdf-accent: #8839ef; }  /* mauve */
@@ -78,6 +79,7 @@
 
 /* Catppuccin Mocha accents (dark scheme) */
 [data-md-color-scheme="slate"] .pdf-card.tmux     { --pdf-accent: #a6e3a1; }
+[data-md-color-scheme="slate"] .pdf-card.herdr    { --pdf-accent: #fab387; }
 [data-md-color-scheme="slate"] .pdf-card.zellij   { --pdf-accent: #f9e2af; }
 [data-md-color-scheme="slate"] .pdf-card.niri     { --pdf-accent: #89b4fa; }
 [data-md-color-scheme="slate"] .pdf-card.shell    { --pdf-accent: #cba6f7; }
@@ -93,6 +95,7 @@
 
 body { --page-accent: #179299; --page-accent-fg: #ffffff; }  /* teal default */
 body[data-page="tmux"]     { --page-accent: #40a02b; }
+body[data-page="herdr"]    { --page-accent: #fe640b; }
 body[data-page="zellij"]   { --page-accent: #df8e1d; }
 body[data-page="niri"]     { --page-accent: #1e66f5; }
 body[data-page="shell"]    { --page-accent: #8839ef; }
@@ -101,6 +104,7 @@ body[data-page="justfile"] { --page-accent: #d20f39; }
 /* Catppuccin Mocha (dark scheme): pastel accents, dark header text */
 body[data-md-color-scheme="slate"]                    { --page-accent: #94e2d5; --page-accent-fg: #11111b; }
 body[data-md-color-scheme="slate"][data-page="tmux"]     { --page-accent: #a6e3a1; }
+body[data-md-color-scheme="slate"][data-page="herdr"]    { --page-accent: #fab387; }
 body[data-md-color-scheme="slate"][data-page="zellij"]   { --page-accent: #f9e2af; }
 body[data-md-color-scheme="slate"][data-page="niri"]     { --page-accent: #89b4fa; }
 body[data-md-color-scheme="slate"][data-page="shell"]    { --page-accent: #cba6f7; }
