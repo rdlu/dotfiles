@@ -39,3 +39,13 @@ default-timeout=0
 [category=mpd]
 default-timeout=2000
 group-by=category
+
+# YubiKey touch prompts (from ~/.claude/hooks/yubikey-touch-notify.sh, sent with
+# app-name "YubiKey"): yellow border, auto-expire just past the ~5s key blink.
+[app-name=YubiKey]
+border-color=#ffcc00
+progress-color=over #3a3320
+default-timeout=30000
+
+[mode=do-not-disturb app-name=YubiKey]
+invisible=false
