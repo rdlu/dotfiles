@@ -187,7 +187,7 @@ HERDR_CONF = REPO / "terminal" / "dot-config" / "herdr" / "config.toml"
 HERDR_SECTIONS = [
     ("Tabs", [
         ("c", "New tab"),
-        ("Shift+t", "Rename tab"),
+        (",", "Rename tab"),
         ("n", "Next tab"),
         ("p", "Previous tab"),
         ("1-9", "Jump to tab 1–9"),
@@ -208,7 +208,7 @@ HERDR_SECTIONS = [
     ("Workspaces & sessions", [
         ("w", "Workspace picker"),
         ("Shift+n", "New workspace"),
-        ("Shift+w", "Rename workspace"),
+        (".", "Rename workspace"),
         ("Shift+d", "Close workspace (confirm)"),
         ("Shift+g", "New git-worktree workspace"),
         ("g", "Goto / jump prompt"),
@@ -217,7 +217,7 @@ HERDR_SECTIONS = [
     ("Scrollback & misc", [
         ("e", "Edit / copy pane scrollback"),
         ("b", "Toggle sidebar"),
-        ("o", "Open latest notification's target"),
+        ("Shift+o", "Open latest notification's target"),
         ("s", "Settings"),
         ("?", "Help / keybinding overlay"),
         ("Shift+r", "Reload config"),
@@ -231,6 +231,7 @@ HERDR_CMD_DESC = {
     "pick-files-yazi": "Pick files (yazi UI) → inject paths into the pane",
     "herdr-extract": "Grab URLs / paths / IDs from scrollback "
                      "(copy / open / insert)",
+    "herdr-sessionize": "Fuzzy-open a project / notes dir as a workspace",
     "cloudmanic.herdr-plus.projects": "herdr-plus: project workspace templates",
     "cloudmanic.herdr-plus.quick-actions": "herdr-plus: quick-action launcher",
     "persiyanov.reviewr.toggle": "reviewr: toggle code-review sidebar",

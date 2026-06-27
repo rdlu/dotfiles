@@ -23,7 +23,7 @@ The prefix is `F12` — press it, release, then the key; every `F12 X` below mea
 | Key | Action |
 | --- | --- |
 | `F12 c` | New tab |
-| `F12 Shift+t` | Rename tab |
+| `F12 ,` | Rename tab |
 | `F12 n` | Next tab |
 | `F12 p` | Previous tab |
 | `F12 1-9` | Jump to tab 1–9 |
@@ -50,7 +50,7 @@ The prefix is `F12` — press it, release, then the key; every `F12 X` below mea
 | --- | --- |
 | `F12 w` | Workspace picker |
 | `F12 Shift+n` | New workspace |
-| `F12 Shift+w` | Rename workspace |
+| `F12 .` | Rename workspace |
 | `F12 Shift+d` | Close workspace (confirm) |
 | `F12 Shift+g` | New git-worktree workspace |
 | `F12 g` | Goto / jump prompt |
@@ -62,7 +62,7 @@ The prefix is `F12` — press it, release, then the key; every `F12 X` below mea
 | --- | --- |
 | `F12 e` | Edit / copy pane scrollback |
 | `F12 b` | Toggle sidebar |
-| `F12 o` | Open latest notification's target |
+| `F12 Shift+o` | Open latest notification's target |
 | `F12 s` | Settings |
 | `F12 ?` | Help / keybinding overlay |
 | `F12 Shift+r` | Reload config |
@@ -75,6 +75,7 @@ The prefix is `F12` — press it, release, then the key; every `F12 X` below mea
 | `F12 f` | Pick files (fd+fzf) → inject paths into the pane |
 | `F12 y` | Pick files (yazi UI) → inject paths into the pane |
 | `F12 u` | Grab URLs / paths / IDs from scrollback (copy / open / insert) |
+| `F12 o` | Fuzzy-open a project / notes dir as a workspace |
 | `F12 Up` | herdr-plus: project workspace templates |
 | `F12 Down` | herdr-plus: quick-action launcher |
 | `F12 Shift+v` | reviewr: toggle code-review sidebar |
