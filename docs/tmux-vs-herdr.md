@@ -72,14 +72,17 @@ A handful of management keys also moved layer:
 
 | Action            | tmux        | herdr           |
 | ----------------- | ----------- | --------------- |
-| Rename tab        | `,`         | `F12 Shift+t`   |
-| Rename workspace  | `$`         | `F12 Shift+w`   |
+| Rename tab        | `,`         | `F12 ,`         |
+| Rename workspace  | `$`         | `F12 .`         |
 | Close tab         | `&`         | `F12 Shift+x`   |
 | Detach            | `d`         | `F12 q`         |
 | Reload config     | `r`         | `F12 Shift+r`   |
 | Scrollback / copy | `Esc` / `[` | `F12 e`         |
 | Resize            | `H J K L`   | `F12 r` + arrows|
 | Previous tab      | `Ctrl-a Ctrl-a` | `F12 p`     |
+
+`F12 ,` (rename tab) keeps tmux's `,` exactly; `F12 .` (rename workspace) is the
+adjacent key, a small mnemonic I added since tmux's `$` had no obvious herdr home.
 
 Note `r` is deliberately herdr's **resize**, not reload — reload moved to
 `F12 Shift+r`.
@@ -94,13 +97,13 @@ Features tmux simply doesn't have:
   but are unbound by default.)
 - **Built-in git worktrees** — `F12 Shift+g` (`new_worktree`) spins up a
   worktree-backed workspace; no scripting.
-- **Workspaces** — `F12 w` picker, `F12 Shift+n` new, `F12 Shift+w` rename, a
-  layer above tabs.
+- **Workspaces** — `F12 w` picker, `F12 Shift+n` new, `F12 .` rename, a layer
+  above tabs.
 - **Persistent sessions** — survive restart out of the box; no resurrect /
   continuum.
 - **Built-in theming** — `kanagawa` ships in-app instead of a TPM theme plugin.
-- Plus conveniences like `F12 b` sidebar, `F12 g` goto/jump, `F12 o` open the
-  latest notification's target, and `F12 ?` keybinding overlay.
+- Plus conveniences like `F12 b` sidebar, `F12 g` goto/jump, `F12 Shift+o` open
+  the latest notification's target, and `F12 ?` keybinding overlay.
 
 ## No herdr equivalent (dropped)
 
@@ -123,20 +126,35 @@ internally instead).
 
 ## Rebuilt as herdr custom commands
 
-A few plugin workflows I wasn't willing to lose were rebuilt as herdr **custom
-commands**. These open a temporary pane that closes when the command exits, and
-they talk to the triggering pane through herdr's pane API
-(`herdr pane read` / `herdr pane send-text`):
+A few tmux workflows I wasn't willing to lose were rebuilt as herdr **custom
+commands** (helper scripts in `scripts/dot-local/bin/`). Each opens a temporary
+pane that closes when the command exits, and drives herdr over its CLI / pane
+API (`herdr pane read` / `send-text`, `herdr workspace …`):
 
 | Key     | Command            | Replaces            | What it does                                            |
 | ------- | ------------------ | ------------------- | ------------------------------------------------------- |
-| `F12 u` | `herdr-extract`    | extrakto + urlview  | Fuzzy-grab URLs/paths/IDs from scrollback → copy / open / insert |
-| `F12 f` | `pick-files-herdr` | pick-files          | Pick files, inject paths into the triggering pane       |
+| `F12 u` | `herdr-extract`    | extrakto + urlview  | Fuzzy-grab URLs/paths/IDs from scrollback → copy / open / insert (`Ctrl-G` opens a GitHub ref in ghzinga) |
+| `F12 f` | `pick-files-herdr` | pick-files          | Pick files (fd+fzf), inject paths into the triggering pane |
+| `F12 y` | `pick-files-yazi`  | — (yazi UI variant) | Same, but with yazi's full file-manager UI              |
 | `F12 t` | `exec $SHELL`      | `C-t` display-popup | Disposable scratch shell in a temp pane                 |
+| `F12 o` | `herdr-sessionize` | sessionx (`prefix o`) | Fuzzy-pick a project/notes dir → open or switch a workspace for it; leads with the already-open workspaces |
 
 !!! note
     herdr has **no floating popups**; these are real (disposable) panes that
     close on exit, not `display-popup` overlays.
+
+## Native plugins
+
+Unlike the TPM plugins above (which have no herdr equivalent), herdr *does* have
+its own manifest-based plugin system — these have no tmux analogue and are
+installed with `just herdr-plugins`:
+
+| Plugin | Key | What it adds |
+| ------ | --- | ------------ |
+| [herdr-plus](https://github.com/cloudmanic/herdr-plus) | `F12 Up` / `F12 Down` | Project workspace templates + a fuzzy quick-action launcher |
+| [ghzinga](https://github.com/dutifuldev/ghzinga) | Ctrl-click / `F12 u` → `Ctrl-G` | Open a GitHub issue/PR in a side viewer pane |
+| [reviewr](https://github.com/persiyanov/herdr-reviewr) | `F12 Shift+v` | Code-review sidebar for the focused agent's changes |
+| [vim-herdr-navigation](https://github.com/paulbkim-dev/vim-herdr-navigation) | `Alt-h/j/k/l` | Seamless pane ↔ Neovim-split nav (the vim-tmux-navigator pattern) |
 
 ## When to use which
 
