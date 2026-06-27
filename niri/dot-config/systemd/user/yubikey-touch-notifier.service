@@ -1,0 +1,13 @@
+[Unit]
+Description=YubiKey touch desktop notifier (consumes yubikey-touch-detector socket)
+After=yubikey-touch-detector.service
+Wants=yubikey-touch-detector.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 %h/.local/bin/yubikey-touch-notifier
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target

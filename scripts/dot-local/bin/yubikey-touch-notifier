@@ -1,0 +1,113 @@
+#!/usr/bin/env python3
+"""Desktop notifier for yubikey-touch-detector — fires a LOW-urgency toast
+whenever any app OTHER than the Claude Code hooks makes the YubiKey wait for a
+touch (ssh in any terminal, browser WebAuthn, pam-u2f sudo, GPG, …), and clears
+it the instant the wait ends.
+
+It can't know the originating *command* — the touch is requested by an
+agent/helper (e.g. gpg-agent for ssh keys), decoupled from whatever you typed.
+As a hint it shows the process currently holding the YubiKey's FIDO hidraw.
+
+Reads the detector socket ($XDG_RUNTIME_DIR/yubikey-touch-detector.socket), which
+emits fixed 5-byte events U2F_1/U2F_0, GPG_1/GPG_0, MAC_1/MAC_0. Sends with
+app-name "YubiKey" (mako gold rule) and dismisses via the freedesktop
+CloseNotification D-Bus call (daemon-agnostic). Runs as a systemd --user service.
+"""
+import glob
+import os
+import socket
+import subprocess
+import time
+
+RUNTIME = os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}")
+SOCK = os.path.join(RUNTIME, "yubikey-touch-detector.socket")
+current = None
+
+
+def fido_hidraws():
+    """/dev/hidraw* nodes belonging to a Yubico (vendor 1050) device."""
+    out = []
+    for hr in glob.glob("/sys/class/hidraw/hidraw*"):
+        try:
+            with open(os.path.join(hr, "device/uevent")) as f:
+                if "1050" in f.read():            # HID_ID=0003:00001050:....
+                    out.append("/dev/" + os.path.basename(hr))
+        except OSError:
+            pass
+    return out
+
+
+def holder_process(devs):
+    """comm of a process currently holding one of the YubiKey hidraw nodes."""
+    if not devs:
+        return None
+    for pid in os.listdir("/proc"):
+        if not pid.isdigit():
+            continue
+        try:
+            for fd in os.listdir(f"/proc/{pid}/fd"):
+                try:
+                    if os.readlink(f"/proc/{pid}/fd/{fd}") in devs:
+                        with open(f"/proc/{pid}/comm") as f:
+                            return f.read().strip()
+                except OSError:
+                    continue
+        except OSError:
+            continue
+    return None
+
+
+def source_label(kind):
+    if kind == "GPG":
+        return "GPG"
+    if kind == "MAC":
+        return "HMAC challenge-response"
+    who = None
+    try:
+        who = holder_process(fido_hidraws())
+    except Exception:
+        who = None
+    return f"FIDO2 · {who}" if who else "FIDO2 · another app"
+
+
+def show(kind):
+    global current
+    body = f"{source_label(kind)} (detector)"
+    r = subprocess.run(
+        ["notify-send", "-p", "-u", "low", "-a", "YubiKey-detector",
+         "-i", "dialog-password", "🔑 Touch your YubiKey", body],
+        capture_output=True, text=True)
+    current = (r.stdout.strip() or None) if r.returncode == 0 else None
+
+
+def clear():
+    global current
+    if current:
+        subprocess.run(
+            ["gdbus", "call", "-e", "-d", "org.freedesktop.Notifications",
+             "-o", "/org/freedesktop/Notifications",
+             "-m", "org.freedesktop.Notifications.CloseNotification", current],
+            capture_output=True)
+        current = None
+
+
+while True:
+    try:
+        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        s.connect(SOCK)
+        buf = b""
+        while True:
+            data = s.recv(64)
+            if not data:
+                break
+            buf += data
+            while len(buf) >= 5:
+                ev = buf[:5].decode("ascii", "ignore")
+                buf = buf[5:]
+                if ev[-1] == "1":
+                    show(ev[:3])
+                elif ev[-1] == "0":
+                    clear()
+    except (FileNotFoundError, ConnectionRefusedError, OSError):
+        clear()
+        time.sleep(2)
