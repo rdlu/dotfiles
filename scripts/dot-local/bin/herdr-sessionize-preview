@@ -1,0 +1,13 @@
+#!/bin/sh
+# Preview for herdr-sessionize's fzf list. $1 is the selected row,
+# "<display><TAB><payload>" where <payload> is `ws:<id>` or `dir:<abspath>`.
+# Shell-agnostic (runs under /bin/sh regardless of fzf's $SHELL).
+case "$1" in
+    *dir:*)
+        dir=${1##*dir:}
+        eza -la --color=always "$dir" 2>/dev/null || ls -la "$dir"
+        ;;
+    *)
+        printf '↪ open workspace — Enter to switch\n'
+        ;;
+esac

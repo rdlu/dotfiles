@@ -6,16 +6,21 @@
 # inside ~/Projects and ~/Documents (pick a folder to open/switch a workspace
 # there, reused by folder name). Hidden (dot) folders are skipped.
 #
+# Each fzf row is "<display>\t<payload>" — fzf shows only <display> (--with-nth 1)
+# while <payload> (ws:<id> or dir:<abspath>) drives the action, so display
+# niceties (~-abbreviation, "(unnamed)") never corrupt the path/id we act on.
+#
 # Wired as a herdr custom command (type = "pane"): prefix + o. Needs fzf + fd;
 # uses zoxide (frecency) + eza (preview) when present.
 
 set -l herdr_bin herdr
 test -n "$HERDR_BIN_PATH"; and set herdr_bin $HERDR_BIN_PATH
+set -l TAB \t
 
 set -l ws_json ($herdr_bin workspace list 2>/dev/null | string collect)
 
-# Look up a workspace id by its label (used for the open-workspace entries and
-# for reusing a workspace that already exists for a picked folder).
+# Look up a workspace id by its label (for reusing a workspace already open for a
+# picked folder).
 function _ws_id -a json label
     printf '%s' $json | python3 -c '
 import json, sys
@@ -28,15 +33,19 @@ print(next((w["workspace_id"] for w in ws if w.get("label") == label), ""))
 ' $label
 end
 
-# 1. Lead with open workspaces — "● <label>" lines.
+# 1. Lead with open workspaces — display "● <label>", payload "ws:<id>".
 set -l lines
 set -l open_labels
-for label in (printf '%s' $ws_json | python3 -c 'import json,sys
+for entry in (printf '%s' $ws_json | python3 -c 'import json,sys
 try: ws=json.load(sys.stdin)["result"]["workspaces"]
 except Exception: ws=[]
-for w in ws: print(w.get("label","?"))')
-    set -a lines "● $label"
-    set -a open_labels $label
+for w in ws:
+    wid=w.get("workspace_id","")
+    lbl=(w.get("label") or "").strip() or f"(unnamed {wid})"
+    print(f"{wid}\t{lbl}")')
+    set -l parts (string split $TAB -- $entry)
+    set -a lines "● $parts[2]"$TAB"ws:$parts[1]"
+    set -a open_labels $parts[2]
 end
 
 # 2. Candidate dirs: zoxide frecency + one level inside ~/Projects and
@@ -46,17 +55,15 @@ type -q zoxide; and set -a dirs (zoxide query -l 2>/dev/null)
 for root in ~/Projects ~/Documents
     test -d $root; and set -a dirs (fd --type d --max-depth 1 --absolute-path . $root 2>/dev/null)
 end
-
 set -l seen
 for d in $dirs
     set -l dd (string replace -r '/$' '' -- $d)
     test -d "$dd"; or continue
     contains -- $dd $seen; and continue
     set -a seen $dd
-    # skip hidden: a "." path component anywhere under $HOME
     string match -q '*/.*' -- (string replace -- $HOME '' $dd); and continue
     contains -- (basename "$dd") $open_labels; and continue # already listed above
-    set -a lines (string replace -- $HOME '~' $dd)
+    set -a lines (string replace -- $HOME '~' $dd)$TAB"dir:$dd"
 end
 
 test -z "$lines"; and exit
@@ -65,17 +72,18 @@ source $HOME/.dotfiles/fish/fzf-theme.fish
 set -l pick (
     printf '%s\n' $lines \
         | fzf --height=100% --reverse --prompt 'workspace ❯ ' \
-            --preview 'case {} in "● "*) echo "↪ open workspace — Enter to switch";; *) d=$(printf "%s" {} | sed "s#^~#'"$HOME"'#"); eza -la --color=always "$d" 2>/dev/null || ls -la "$d";; esac'
+            --delimiter $TAB --with-nth 1 \
+            --preview 'herdr-sessionize-preview {}'
 )
 test -z "$pick"; and exit
 
-if string match -q '● *' -- $pick
+set -l payload (string split $TAB -- $pick)[2]
+if string match -q 'ws:*' -- $payload
     # Switch to an already-open workspace.
-    set -l wid (_ws_id $ws_json (string sub -s 3 -- $pick))
-    test -n "$wid"; and $herdr_bin workspace focus $wid
+    $herdr_bin workspace focus (string sub -s 4 -- $payload)
 else
     # Open / switch a workspace for the chosen folder (reuse by name).
-    set -l target (string replace -- '~' $HOME -- $pick)
+    set -l target (string sub -s 5 -- $payload)
     set -l label (basename "$target")
     set -l wid (_ws_id $ws_json $label)
     if test -n "$wid"
