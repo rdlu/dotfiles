@@ -21,6 +21,7 @@ auto_switch = false
 # Show detected agent labels (claude, codex, …) in split pane borders.
 show_agent_labels_on_pane_borders = true
 
+agent_panel_sort = "spaces"
 [ui.toast]
 # Route herdr notifications to the OS notification service.
 delivery = "system"
