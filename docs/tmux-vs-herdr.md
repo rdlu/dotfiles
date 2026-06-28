@@ -93,8 +93,10 @@ Features tmux simply doesn't have:
 
 - **Agent awareness** — herdr detects the agent in each pane, labels it on the
   border, tracks its state, and can notify/sort by state and resume agent
-  sessions on restart. (`previous_agent` / `next_agent` / `focus_agent` exist
-  but are unbound by default.)
+  sessions on restart. `previous_agent` / `next_agent` / `focus_agent` ship
+  unbound; I put them on `Ctrl-b {` / `Ctrl-b }` / `Ctrl-b Alt+1–9` — the curly
+  brackets step agents (plain `[` / `]` step workspaces), mirroring
+  `Ctrl-b Shift+1–9` for workspace jumps.
 - **Built-in git worktrees** — `Ctrl-b Shift+g` (`new_worktree`) spins up a
   worktree-backed workspace; no scripting.
 - **Workspaces** — `Ctrl-b w` picker, `Ctrl-b Shift+n` new, `Ctrl-b .` rename, a layer

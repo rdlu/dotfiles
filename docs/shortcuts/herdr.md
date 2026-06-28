@@ -54,7 +54,18 @@ The prefix is `Ctrl+b` — press it, release, then the key; every `Ctrl+b X` bel
 | `Ctrl+b Shift+d` | Close workspace (confirm) |
 | `Ctrl+b Shift+g` | New git-worktree workspace |
 | `Ctrl+b g` | Goto / jump prompt |
+| `Ctrl+b Shift+1-9` | Jump to workspace 1–9 |
+| `Ctrl+b [` | Previous workspace |
+| `Ctrl+b ]` | Next workspace |
 | `Ctrl+b q` | Detach session |
+
+### Agents
+
+| Key | Action |
+| --- | --- |
+| `Ctrl+b Alt+1-9` | Focus agent 1–9 |
+| `Ctrl+b {` | Previous agent |
+| `Ctrl+b }` | Next agent |
 
 ### Scrollback & misc
 
@@ -71,14 +82,14 @@ The prefix is `Ctrl+b` — press it, release, then the key; every `Ctrl+b X` bel
 
 | Key | Action |
 | --- | --- |
-| `Ctrl+b t` | Scratch shell (disposable temp pane) |
-| `Ctrl+b f` | Pick files (fd+fzf) → inject paths into the pane |
-| `Ctrl+b y` | Pick files (yazi UI) → inject paths into the pane |
-| `Ctrl+b u` | Grab URLs / paths / IDs from scrollback (copy / open / insert) |
-| `Ctrl+b o` | Switch / open a workspace (open ones + project dirs) |
-| `Ctrl+b Up` | herdr-plus: project workspace templates |
-| `Ctrl+b Down` | herdr-plus: quick-action launcher |
-| `Ctrl+b Shift+v` | reviewr: toggle code-review sidebar |
+| `Ctrl+b t` | Scratch shell (disposable pane) |
+| `Ctrl+b f` | Pick files (fd+fzf) → inject paths |
+| `Ctrl+b y` | Pick files (yazi UI) → inject paths |
+| `Ctrl+b u` | Grab URLs / paths / IDs from scrollback |
+| `Ctrl+b o` | Switch / open a project workspace |
+| `Ctrl+b Up` | herdr-plus: projects |
+| `Ctrl+b Down` | herdr-plus: quick actions |
+| `Ctrl+b Shift+v` | reviewr: toggle review sidebar |
 
 ### Direct keys (no prefix)
 

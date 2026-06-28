@@ -46,6 +46,21 @@ rename_workspace = "prefix+."
 # memory); move the latest-notification jump to prefix+shift+o.
 open_notification_target = "prefix+shift+o"
 
+# Indexed jumps form a consistent ladder across the three nesting levels:
+#   prefix+1..9        => tab        (herdr default)
+#   prefix+shift+1..9  => workspace  (the session-like layer above tabs)
+#   prefix+alt+1..9    => agent      (jump straight to a detected agent)
+# All three were unset by default. Bracket keys step prev/next: `[` / `]` for
+# workspaces, `{` / `}` (= shift-bracket, very reachable) for agents. The plain
+# brackets are free — herdr has no copy-mode binding on them.
+previous_workspace = "prefix+["
+next_workspace = "prefix+]"
+switch_workspace = "prefix+shift+1..9"
+
+previous_agent = "prefix+{"
+next_agent = "prefix+}"
+focus_agent = "prefix+alt+1..9"
+
 # Everything else stays default on purpose, notably:
 #   resize_mode     = prefix+r      (I keep herdr's r, not tmux's reload-on-r)
 #   reload_config   = prefix+shift+r
@@ -63,6 +78,7 @@ open_notification_target = "prefix+shift+o"
 key = "prefix+t"
 type = "pane"
 command = "exec $SHELL"
+description = "Scratch shell (disposable pane)"
 
 # Pick files and inject their paths into the triggering pane (was root C-t /
 # `prefix + C-f`). The tmux smart-passthrough (fish/nvim) can't be replicated;
@@ -71,6 +87,7 @@ command = "exec $SHELL"
 key = "prefix+f"
 type = "pane"
 command = "pick-files-herdr"
+description = "Pick files (fd+fzf) → inject paths"
 
 # Same idea as prefix+f but with yazi's full file-manager UI (preview, nav,
 # multi-select) instead of fd+fzf. Both pickers inject paths into the pane.
@@ -78,6 +95,7 @@ command = "pick-files-herdr"
 key = "prefix+y"
 type = "pane"
 command = "pick-files-yazi"
+description = "Pick files (yazi UI) → inject paths"
 
 # Extract & grab from the triggering pane's scrollback — replaces BOTH tmux
 # urlview (`prefix + u`) and extrakto (`prefix + Tab`). Fuzzy-pick URLs / paths
@@ -87,6 +105,7 @@ command = "pick-files-yazi"
 key = "prefix+u"
 type = "pane"
 command = "herdr-extract"
+description = "Grab URLs / paths / IDs from scrollback"
 
 # Fuzzy-open a project / notes directory as a workspace (switch if one is
 # already open for it) — the herdr analogue of my old tmux `prefix o` (sessionx,
@@ -95,6 +114,7 @@ command = "herdr-extract"
 key = "prefix+o"
 type = "pane"
 command = "herdr-sessionize"
+description = "Switch / open a project workspace"
 
 # --- Native plugins (herdr plugin install …) -------------------------------
 # herdr-plus (cloudmanic/herdr-plus): project workspace templates + a fuzzy
