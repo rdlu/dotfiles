@@ -16,69 +16,69 @@ Generated from
 `tools/gen-docs.py` — run `just docs-update` to refresh.
 
 <!-- gen:herdr-binds -->
-The prefix is `F12` — press it, release, then the key; every `F12 X` below means *prefix then X*.
+The prefix is `Ctrl+b` — press it, release, then the key; every `Ctrl+b X` below means *prefix then X*.
 
 ### Tabs
 
 | Key | Action |
 | --- | --- |
-| `F12 c` | New tab |
-| `F12 ,` | Rename tab |
-| `F12 n` | Next tab |
-| `F12 p` | Previous tab |
-| `F12 1-9` | Jump to tab 1–9 |
-| `F12 Shift+x` | Close tab |
+| `Ctrl+b c` | New tab |
+| `Ctrl+b ,` | Rename tab |
+| `Ctrl+b n` | Next tab |
+| `Ctrl+b p` | Previous tab |
+| `Ctrl+b 1-9` | Jump to tab 1–9 |
+| `Ctrl+b Shift+x` | Close tab |
 
 ### Panes
 
 | Key | Action |
 | --- | --- |
-| `F12 h j k l` | Focus pane ← ↓ ↑ → |
-| `F12 =` | Split side-by-side |
-| `F12 -` | Split stacked |
-| `F12 v` | Split side-by-side (alias) |
-| `F12 z` | Zoom / fullscreen pane |
-| `F12 r` | Resize mode (then arrows / hjkl) |
-| `F12 x` | Close pane |
-| `F12 Tab` | Cycle to next pane |
-| `F12 Shift+Tab` | Cycle to previous pane |
-| `F12 Shift+p` | Rename pane |
+| `Ctrl+b h j k l` | Focus pane ← ↓ ↑ → |
+| `Ctrl+b =` | Split side-by-side |
+| `Ctrl+b -` | Split stacked |
+| `Ctrl+b v` | Split side-by-side (alias) |
+| `Ctrl+b z` | Zoom / fullscreen pane |
+| `Ctrl+b r` | Resize mode (then arrows / hjkl) |
+| `Ctrl+b x` | Close pane |
+| `Ctrl+b Tab` | Cycle to next pane |
+| `Ctrl+b Shift+Tab` | Cycle to previous pane |
+| `Ctrl+b Shift+p` | Rename pane |
 
 ### Workspaces & sessions
 
 | Key | Action |
 | --- | --- |
-| `F12 w` | Workspace picker |
-| `F12 Shift+n` | New workspace |
-| `F12 .` | Rename workspace |
-| `F12 Shift+d` | Close workspace (confirm) |
-| `F12 Shift+g` | New git-worktree workspace |
-| `F12 g` | Goto / jump prompt |
-| `F12 q` | Detach session |
+| `Ctrl+b w` | Workspace picker |
+| `Ctrl+b Shift+n` | New workspace |
+| `Ctrl+b .` | Rename workspace |
+| `Ctrl+b Shift+d` | Close workspace (confirm) |
+| `Ctrl+b Shift+g` | New git-worktree workspace |
+| `Ctrl+b g` | Goto / jump prompt |
+| `Ctrl+b q` | Detach session |
 
 ### Scrollback & misc
 
 | Key | Action |
 | --- | --- |
-| `F12 e` | Edit / copy pane scrollback |
-| `F12 b` | Toggle sidebar |
-| `F12 Shift+o` | Open latest notification's target |
-| `F12 s` | Settings |
-| `F12 ?` | Help / keybinding overlay |
-| `F12 Shift+r` | Reload config |
+| `Ctrl+b e` | Edit / copy pane scrollback |
+| `Ctrl+b b` | Toggle sidebar |
+| `Ctrl+b Shift+o` | Open latest notification's target |
+| `Ctrl+b s` | Settings |
+| `Ctrl+b ?` | Help / keybinding overlay |
+| `Ctrl+b Shift+r` | Reload config |
 
 ### Custom commands
 
 | Key | Action |
 | --- | --- |
-| `F12 t` | Scratch shell (disposable temp pane) |
-| `F12 f` | Pick files (fd+fzf) → inject paths into the pane |
-| `F12 y` | Pick files (yazi UI) → inject paths into the pane |
-| `F12 u` | Grab URLs / paths / IDs from scrollback (copy / open / insert) |
-| `F12 o` | Switch / open a workspace (open ones + project dirs) |
-| `F12 Up` | herdr-plus: project workspace templates |
-| `F12 Down` | herdr-plus: quick-action launcher |
-| `F12 Shift+v` | reviewr: toggle code-review sidebar |
+| `Ctrl+b t` | Scratch shell (disposable temp pane) |
+| `Ctrl+b f` | Pick files (fd+fzf) → inject paths into the pane |
+| `Ctrl+b y` | Pick files (yazi UI) → inject paths into the pane |
+| `Ctrl+b u` | Grab URLs / paths / IDs from scrollback (copy / open / insert) |
+| `Ctrl+b o` | Switch / open a workspace (open ones + project dirs) |
+| `Ctrl+b Up` | herdr-plus: project workspace templates |
+| `Ctrl+b Down` | herdr-plus: quick-action launcher |
+| `Ctrl+b Shift+v` | reviewr: toggle code-review sidebar |
 
 ### Direct keys (no prefix)
 

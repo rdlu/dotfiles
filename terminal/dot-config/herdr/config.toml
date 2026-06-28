@@ -1,3 +1,4 @@
+onboarding = false
 # herdr configuration — stowed to ~/.config/herdr/config.toml
 # Only the keys I deliberately change from herdr's defaults live here; every
 # unspecified action keeps its built-in default (see `herdr --default-config`).
@@ -8,8 +9,9 @@
 #   - No plugin system: tmux-thumbs / copycat / tmux-open / logging have no
 #     herdr equivalent and are dropped. extrakto + urlview are both rebuilt as
 #     the `herdr-extract` custom command below (prefix + u).
-#   - F12 (not Ctrl-a/Ctrl-b) is the prefix so both Ctrl-a and Ctrl-b stay free
-#     as readline/agent keys inside panes — important in an agent multiplexer.
+#   - Ctrl-b is the prefix (herdr's default). tmux stays on Ctrl-a, so the two
+#     multiplexers don't collide; Ctrl-a is left free as a readline/agent key
+#     inside herdr panes (and is tmux's prefix when one is nested).
 
 [theme]
 # Chosen during herdr onboarding. (Built-ins also include catppuccin, which is
@@ -27,8 +29,8 @@ agent_panel_sort = "spaces"
 delivery = "system"
 
 [keys]
-# Prefix on F12 — easy reach on the Soffle, and it leaves Ctrl-a/Ctrl-b alone.
-prefix = "f12"
+# Prefix on Ctrl-b (herdr's default). tmux is on Ctrl-a, so the two coexist.
+prefix = "ctrl+b"
 
 # Splits: match my tmux muscle memory.
 #   `=` => side-by-side (herdr "split right" / split_vertical)
