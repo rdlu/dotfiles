@@ -21,8 +21,10 @@
 ;; See 'C-h v doom-font' for documentation and more examples of what they
 ;; accept. For example:
 ;;
-(setq doom-font (font-spec :family "JetBrainsMono Nerd Font" :size 16 :weight 'semi-light)
-     doom-variable-pitch-font (font-spec :family "JetBrainsMono Nerd Font" :size 16))
+;; Monospace everywhere — JetBrains Mono, matching the ghostty terminal default.
+;; variable-pitch is pointed at the same mono on purpose: no proportional prose.
+(setq doom-font (font-spec :family "JetBrainsMono Nerd Font" :size 16.0 :weight 'semi-light)
+     doom-variable-pitch-font (font-spec :family "JetBrainsMono Nerd Font" :size 16.0))
 ;;
 ;; If you or Emacs can't find your font, use 'M-x describe-font' to look them
 ;; up, `M-x eval-region' to execute elisp code, and 'M-x doom/reload-font' to
@@ -32,7 +34,29 @@
 ;; There are two ways to load a theme. Both assume the theme is installed and
 ;; available. You can either set `doom-theme' or manually load a theme with the
 ;; `load-theme' function. This is the default:
-(setq doom-theme 'doom-tokyo-night')
+(setq doom-theme 'doom-tokyo-night)
+
+;; Force a true-black background over the theme — themes ship a near-black, not
+;; pure #000000. `custom-set-faces!' runs AFTER the theme loads, so it wins.
+;; `solaire-default-face' is overridden too: Doom's solaire-mode gives real file
+;; buffers a slightly different background by default, which would otherwise show
+;; through as not-quite-black. (To skip that nuance entirely: (solaire-global-mode -1))
+(custom-set-faces!
+  '(default              :background "#000000")
+  '(fringe               :background "#000000")
+  '(solaire-default-face :background "#000000"))
+
+;; Window opacity 0.9. `alpha-background' (Emacs 29+) makes only the background
+;; see-through; text/UI stay crisp — unlike the older `alpha'. Value is an
+;; integer percent: 90 = 0.9, 100 = opaque. Needs a GUI pgtk build (emacs-wayland)
+;; and a compositor (niri). default-frame-alist covers future frames; the
+;; set-frame-parameter applies it to the one open now.
+(add-to-list 'default-frame-alist '(alpha-background . 90))
+(set-frame-parameter nil 'alpha-background 90)
+
+;; Markdown: fontify fenced code blocks in their own language (```python ...)
+;; instead of flat monospace — the most visible markdown highlighting bump in Doom.
+(setq markdown-fontify-code-blocks-natively t)
 
 ;; This determines the style of line numbers in effect. If set to `nil', line
 ;; numbers are disabled. For relative line numbers, set this to `relative'.
