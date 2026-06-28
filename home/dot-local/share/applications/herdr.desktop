@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Herdr
+GenericName=Terminal Multiplexer
+Comment=Ghostty running the herdr multiplexer, full-width in niri
+Exec=ghostty --title=Herdr --class=Herdr -e mise exec -- herdr
+Icon=com.mitchellh.ghostty
+Type=Application
+Terminal=false
+Categories=System;TerminalEmulator;
+StartupNotify=false

@@ -26,6 +26,13 @@ window-rule {
     default-column-width { proportion 1.0; }
 }
 
+// Ghostty launched via the Herdr .desktop entry (app-id set with --class):
+// open full-width. The regular `ghostty` quick terminal is unaffected.
+window-rule {
+    match app-id="Herdr"
+    default-column-width { proportion 1.0; }
+}
+
 window-rule {
     match title="^Calculator"
     default-column-width { proportion 0.33333; }
