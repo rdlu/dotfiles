@@ -212,7 +212,15 @@ HERDR_SECTIONS = [
         ("Shift+d", "Close workspace (confirm)"),
         ("Shift+g", "New git-worktree workspace"),
         ("g", "Goto / jump prompt"),
+        ("Shift+1-9", "Jump to workspace 1–9"),
+        ("[", "Previous workspace"),
+        ("]", "Next workspace"),
         ("q", "Detach session"),
+    ]),
+    ("Agents", [
+        ("Alt+1-9", "Focus agent 1–9"),
+        ("{", "Previous agent"),
+        ("}", "Next agent"),
     ]),
     ("Scrollback & misc", [
         ("e", "Edit / copy pane scrollback"),
@@ -278,7 +286,9 @@ def herdr_config() -> tuple[str, list[tuple[str, str]], list[tuple[str, str]]]:
     for cmd in keys.get("command", []):
         chord = cmd.get("key", "")
         command = cmd.get("command", "")
-        desc = HERDR_CMD_DESC.get(command, f"Run `{command}`")
+        # config.toml's own `description` is authoritative (it's what the in-app
+        # overlay shows); fall back to the curated map, then the raw command.
+        desc = cmd.get("description") or HERDR_CMD_DESC.get(command, f"Run `{command}`")
         if chord.startswith("prefix+"):
             prefix_rows.append((title_mods(chord[len("prefix+"):]), desc))
         else:
