@@ -2,7 +2,7 @@ set shell := ["bash", "-uc"]
 
 # Base stow packages deployed on every machine.
 # Host-specific bits live in hosts/<hostname>/ (see the `stow` recipe).
-base_packages := "home git idea scripts terminal lazyvim vim systemd niri"
+base_packages := "home git idea scripts terminal lazyvim vim doom systemd niri"
 
 # Where the cheatsheet keycap font (JetBrainsMono Nerd Font) lives. typst's
 # default scan misses /usr/share/fonts/TTF on CachyOS, so point it there
@@ -116,6 +116,25 @@ helix-editor:
 
   @just _echowarning "\n2) Stowing Helix config"
   stow --no-folding --dotfiles -S helix
+
+# The framework (~/.config/emacs) is a git clone managed via `doom upgrade`,
+# NOT stowed; only the `doom` package (~/.config/doom) is tracked here.
+# Idempotent — re-runnable; skips the clone when ~/.config/emacs already exists.
+#
+# Install Emacs + Doom: clone the framework, stow config, sync packages
+[group("install-essentials")]
+doom-bootstrap:
+  @just _echowarning "1) Installing Emacs and dependencies"
+  paru -S --needed $(just _pkgs emacs)
+
+  @just _echowarning "\n2) Cloning Doom framework into ~/.config/emacs (skipped if present)"
+  test -d ~/.config/emacs || git clone --depth 1 https://github.com/doomemacs/doomemacs ~/.config/emacs
+
+  @just _echowarning "\n3) Stowing Doom config"
+  stow --no-folding --dotfiles -S doom
+
+  @just _echowarning "\n4) Running doom install (syncs packages)"
+  ~/.config/emacs/bin/doom install
 
 [group("install-graphical")]
 kitty-terminal:
