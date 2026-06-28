@@ -20,6 +20,12 @@ window-rule {
     default-column-width { proportion 0.92; }
 }
 
+// Emacs / Doom Emacs: open taking the full screen width.
+window-rule {
+    match app-id="emacs"
+    default-column-width { proportion 1.0; }
+}
+
 window-rule {
     match title="^Calculator"
     default-column-width { proportion 0.33333; }
