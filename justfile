@@ -279,12 +279,13 @@ unstow:
   stow -D --no-folding --dotfiles -t ~ {{base_packages}}
 
 # Enables the systemd services for some essential niri helpers
-systemd-niri-config: systemd-niri-config-install wpaper-reload mako-reload waybar-reload swayidle-reload
+systemd-niri-config: systemd-niri-config-install wpaper-reload mako-reload waybar-reload swayidle-reload hyprpolkitagent-reload
 systemd-niri-config-install:
   systemctl --user add-wants niri.service wpaperd.service
   systemctl --user add-wants niri.service mako.service
   systemctl --user add-wants niri.service swayidle.service
   systemctl --user add-wants niri.service waybar.service
+  systemctl --user add-wants niri.service hyprpolkitagent.service
   # swayosd-libinput-backend is a SYSTEM unit — sudo, not --user
   -sudo systemctl enable --now swayosd-libinput-backend.service
 
@@ -308,6 +309,11 @@ waybar-reload:
 swayidle-reload:
   @just _echowarning "Reloading Swayidle"
   systemctl --user reload-or-restart swayidle.service
+
+[group("niri-reload")]
+hyprpolkitagent-reload:
+  @just _echowarning "Reloading Hyprpolkitagent (polkit agent)"
+  systemctl --user reload-or-restart hyprpolkitagent.service
 
 # Idempotent; replaces the old tracked *.target.wants/ symlinks. Lines that may
 # be absent on a fresh machine are prefixed `-` so a missing unit doesn't abort.
@@ -335,6 +341,7 @@ services-enable:
   systemctl --user add-wants niri.service wpaperd.service
   systemctl --user add-wants niri.service mako.service
   systemctl --user add-wants niri.service swayidle.service
+  systemctl --user add-wants niri.service hyprpolkitagent.service
 
   @just _echowarning "\n3) swayosd backend (SYSTEM unit — sudo, NOT --user)"
   -sudo systemctl enable --now swayosd-libinput-backend.service
