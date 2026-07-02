@@ -1,4 +1,17 @@
-timeout 301 swaylock
-timeout 601 "niri msg action power-off-monitors"
-before-sleep swaylock
-lock swaylock
+# Driven by the systemd user unit swayidle.service (`swayidle -w`).
+#
+# Every lock trigger funnels through logind's session-lock signal
+# (`loginctl lock-session`), so there is ONE lock code path. swayidle's `lock`
+# handler is the only place the locker is launched. `pidof hyprlock || hyprlock`
+# guards against stacking a second instance if a lock is requested while already
+# locked (hyprlock does not daemonize, unlike the old swaylock setup).
+lock 'pidof hyprlock || hyprlock'
+
+# Idle: at 5 min request a lock, at ~10 min blank the monitors.
+timeout 301 'loginctl lock-session'
+timeout 601 'niri msg action power-off-monitors'
+
+# Lock before suspend. `loginctl lock-session` returns immediately (it just emits
+# the Lock signal), so it never blocks the suspend; the `lock` handler above does
+# the actual work.
+before-sleep 'loginctl lock-session'

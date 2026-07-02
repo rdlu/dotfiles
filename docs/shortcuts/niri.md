@@ -18,7 +18,7 @@ binds see also the [wl-kbptr guide](../wl-kbptr.md).
 | `Mod+T` | Open a Terminal: ghostty |
 | `Mod+D` | Run an Application: fuzzel |
 | `Mod+Slash` | Run an Application: fuzzel |
-| `Super+Alt+L` | Lock the Screen: swaylock |
+| `Super+Alt+L` | Lock the Screen |
 | `Mod+Escape` | Menu Power |
 | `Mod+Shift+Escape` | Menu Just: dotfiles commands |
 | `Mod+E` | Run `ghostty -e yazi` |
