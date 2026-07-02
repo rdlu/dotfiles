@@ -18,7 +18,7 @@ function audio_entry -a icon noun flag target
 end
 
 set -l entries \
-    ' Lock|swaylock' \
+    ' Lock|loginctl lock-session' \
     '󰤄 Suspend|systemctl suspend' \
     '󰜉 Reboot [Restart]|systemctl reboot' \
     '󰐥 Shutdown|systemctl poweroff' \
