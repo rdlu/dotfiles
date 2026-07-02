@@ -94,10 +94,10 @@ niri-wm: # niri-window-manager (nerd-fonts is a group: pulls all nerd fonts)
   - gdm
   - gnome-keyring
   - hyprlock
+  - hyprpolkitagent
   - inter-font
   - jq
   - mako
-  - mate-polkit
   - nerd-fonts
   - niri
   - noto-fonts
@@ -292,7 +292,6 @@ desktop:
   - hyprpicker
   - matugen
   - nirius
-  - polkit-kde-agent
   - quickshell
   - selectdefaultapplication-fork-git
   - swaybg
