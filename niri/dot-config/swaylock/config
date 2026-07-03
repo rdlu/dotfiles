@@ -12,8 +12,11 @@ effect-vignette=0.5:0.5
 indicator
 indicator-radius=120
 clock
-timestr=%I:%M %p
-datestr=%A, %d %B
+# 24h, minute resolution on purpose: a per-second clock makes swaylock redraw
+# every second, which (like hyprlock) keeps the panel lit and defeats the idle
+# monitor power-off. Minute resolution stays static enough to blank while locked.
+timestr=%H:%M
+datestr=%A, %d %B %Y
 ring-color=4C566A
 key-hl-color=A3BE8C
 line-color=2E3440

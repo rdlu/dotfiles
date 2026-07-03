@@ -2,10 +2,12 @@
 #
 # Every lock trigger funnels through logind's session-lock signal
 # (`loginctl lock-session`), so there is ONE lock code path. swayidle's `lock`
-# handler is the only place the locker is launched. `pidof hyprlock || hyprlock`
+# handler is the only place the locker is launched. `pidof swaylock || swaylock`
 # guards against stacking a second instance if a lock is requested while already
-# locked (hyprlock does not daemonize, unlike the old swaylock setup).
-lock 'pidof hyprlock || hyprlock'
+# locked. swaylock daemonizes (-f / `daemonize` in its config), so it returns
+# promptly and — unlike hyprlock — renders statically enough that niri's idle
+# monitor power-off actually holds while locked.
+lock 'pidof swaylock || swaylock -f'
 
 # Idle: at 5 min request a lock, at ~10 min blank the monitors.
 timeout 301 'loginctl lock-session'
