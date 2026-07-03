@@ -1,0 +1,62 @@
+#!/usr/bin/fish
+
+# caffeine — temporarily keep the screen awake (no auto-lock, no blanking).
+#
+# Works by pausing swayidle.service, the daemon that drives every idle action:
+# idle-lock (5 min), monitor blank (10 min) and the before-sleep lock. While
+# caffeine is ON, none of them fire.
+#
+# NOT persistent: a reboot restarts swayidle, so you can never accidentally
+# leave the machine permanently un-locking.
+#
+# CAVEAT: because swayidle is what locks before suspend, caffeine ON means a
+# suspend (lid close / `systemctl suspend`) will NOT lock the screen. Use it
+# while you're at the machine, not before walking away.
+#
+# Independent of the waybar idle_inhibitor toggle (that one holds a Wayland
+# idle-inhibitor on the bar surface); either alone keeps the screen awake.
+#
+# Usage: caffeine [on | off | toggle | status]   (default: toggle)
+
+set -l unit swayidle.service
+
+# Caffeine is ON when swayidle is NOT active (we stopped it).
+function _caffeinated -a unit
+    not systemctl --user is-active -q $unit
+end
+
+function _notify -a state
+    command -q notify-send; or return
+    if test "$state" = on
+        notify-send -a caffeine -i preferences-desktop-screensaver \
+            "☕ Caffeine ON" "Auto-lock and screen blanking paused."
+    else
+        notify-send -a caffeine -i preferences-desktop-screensaver \
+            "💤 Caffeine OFF" "Auto-lock and screen blanking restored."
+    end
+end
+
+set -l cmd $argv[1]
+test -n "$cmd"; or set cmd toggle
+
+switch $cmd
+    case on
+        systemctl --user stop $unit
+        _notify on
+    case off
+        systemctl --user start $unit
+        _notify off
+    case toggle
+        if _caffeinated $unit
+            systemctl --user start $unit
+            _notify off
+        else
+            systemctl --user stop $unit
+            _notify on
+        end
+    case status
+        _caffeinated $unit; and echo on; or echo off
+    case '*'
+        echo "usage: caffeine [on|off|toggle|status]" >&2
+        exit 2
+end
