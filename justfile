@@ -315,6 +315,11 @@ hyprpolkitagent-reload:
   @just _echowarning "Reloading Hyprpolkitagent (polkit agent)"
   systemctl --user reload-or-restart hyprpolkitagent.service
 
+# Keep the screen awake (pause auto-lock + blanking). Also on the power menu.
+[group("niri-reload")]
+caffeine action="toggle":
+  @~/.local/bin/caffeine {{action}}
+
 # Idempotent; replaces the old tracked *.target.wants/ symlinks. Lines that may
 # be absent on a fresh machine are prefixed `-` so a missing unit doesn't abort.
 

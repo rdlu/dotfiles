@@ -17,9 +17,20 @@ function audio_entry -a icon noun flag target
     printf '%s\n' "$label|swayosd-client --$flag-volume mute-toggle"
 end
 
+# Caffeine toggle showing live state: when ON (swayidle paused) the action is to
+# turn it OFF, and vice-versa — same live-state pattern as the audio entries.
+function caffeine_entry
+    if test "$(caffeine status 2>/dev/null)" = on
+        printf '%s\n' '☕ Caffeine: ON (keeping awake) → turn OFF|caffeine off'
+    else
+        printf '%s\n' '☕ Caffeine: OFF → keep awake (turn ON)|caffeine on'
+    end
+end
+
 set -l entries \
     ' Lock|loginctl lock-session' \
     '󰤄 Suspend|systemctl suspend' \
+    (caffeine_entry) \
     '󰜉 Reboot [Restart]|systemctl reboot' \
     '󰐥 Shutdown|systemctl poweroff' \
     '🚀 Waybar restart|systemctl --user restart waybar.service' \
@@ -38,7 +49,7 @@ set -l entries \
     '󰩈 Exit session|niri msg action quit'
 
 set -l selection (string split -f1 '|' -- $entries | fuzzel --dmenu \
-    --font='JetBrainsMono Nerd Font Mono:size=14' --lines=18)
+    --font='JetBrainsMono Nerd Font Mono:size=14' --lines=19)
 test -n "$selection"; or exit
 
 for entry in $entries
