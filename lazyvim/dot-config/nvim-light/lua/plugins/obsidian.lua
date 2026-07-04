@@ -78,10 +78,9 @@ return {
         return out
       end,
     },
+    -- Completion is served by obsidian.nvim's built-in obsidian-ls LSP; the
+    -- old nvim_cmp/blink toggles are deprecated (removed in 4.0).
     completion = {
-      nvim_cmp = false,
-      -- Enables completion using blink.cmp
-      blink = true,
       -- Trigger completion at 2 chars.
       min_chars = 2,
       -- Set to false to disable new note creation in the picker

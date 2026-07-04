@@ -199,6 +199,7 @@ editors:
   - harper
   - neovim
   - obsidian
+  - tree-sitter-cli # required by nvim-treesitter main branch (LazyVim 15.x) to build parsers
   - tinymist
   - typstyle
 
