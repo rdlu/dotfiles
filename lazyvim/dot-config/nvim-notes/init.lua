@@ -51,14 +51,22 @@ end
 vim.pack.add({
   'https://github.com/folke/which-key.nvim',
   'https://github.com/folke/snacks.nvim',
+  'https://github.com/folke/flash.nvim',
+  'https://github.com/nvim-mini/mini.ai',
 })
 
 require('which-key').setup({})
+require('flash').setup({})
+require('mini.ai').setup() -- extra a/i textobjects: arguments, quotes, brackets pairs, …
 require('snacks').setup({
   picker = { enabled = true },
   notifier = { enabled = true },
   zen = { enabled = true },
 })
+
+-- flash: s to jump anywhere, S for treesitter-scope select; f/F/t/T get labels
+vim.keymap.set({ 'n', 'x', 'o' }, 's', function() require('flash').jump() end, { desc = 'Flash jump' })
+vim.keymap.set({ 'n', 'x', 'o' }, 'S', function() require('flash').treesitter() end, { desc = 'Flash treesitter select' })
 
 vim.keymap.set('n', '<leader><leader>', function() Snacks.picker.files() end, { desc = 'Find note' })
 vim.keymap.set('n', '<leader>/', function() Snacks.picker.grep() end, { desc = 'Grep notes' })
