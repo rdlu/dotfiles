@@ -33,6 +33,12 @@ window-rule {
     default-column-width { proportion 1.0; }
 }
 
+// Ghostty running clin over the Suika Box vault (ClinSuikaBox.desktop, daisy).
+window-rule {
+    match app-id="ClinSuikaBox"
+    default-column-width { proportion 1.0; }
+}
+
 window-rule {
     match title="^Calculator"
     default-column-width { proportion 0.33333; }
