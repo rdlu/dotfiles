@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Herdr (kitty)
+GenericName=Terminal Multiplexer
+Comment=Kitty running the herdr multiplexer, ghostty-matched look via herdr.conf
+Exec=kitty --config /home/rdlu/.config/kitty/herdr.conf --app-id Herdr --title Herdr mise exec -- herdr
+Icon=kitty
+Type=Application
+Terminal=false
+Categories=System;TerminalEmulator;
+StartupNotify=false
