@@ -6,8 +6,12 @@ function nv
     env NVIM_APPNAME=nvim-light nvim $argv
 end
 
+function nvn
+    env NVIM_APPNAME=nvim-notes nvim $argv
+end
+
 function nvims
-    set items default nvim-lazy nvim-full
+    set items default nvim-lazy nvim-full nvim-notes
     set config (printf "%s\n" $items | fzf --prompt=" Neovim Config = " --height=~50% --layout=reverse --border --exit-0)
     if [ -z $config ]
         echo "Nothing selected"
