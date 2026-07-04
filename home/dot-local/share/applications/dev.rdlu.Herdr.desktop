@@ -2,7 +2,7 @@
 Name=Herdr
 GenericName=Terminal Multiplexer
 Comment=Ghostty running the herdr multiplexer, full-width in niri
-Exec=ghostty --title=Herdr --class=Herdr -e mise exec -- herdr
+Exec=ghostty --title=Herdr --class=dev.rdlu.Herdr -e mise exec -- herdr
 Icon=Herdr
 Type=Application
 Terminal=false
