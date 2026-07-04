@@ -54,10 +54,14 @@ HTML site + PDFs ([rdlu.github.io/dotfiles](https://rdlu.github.io/dotfiles/)):
 
 The shortcut tables are **generated from the real configs** by
 [`tools/gen-docs.py`](./tools/gen-docs.py); [Zensical](https://zensical.org)
-(via `uvx`) builds the HTML, pandoc + Typst render the PDFs:
+(installed by mise from the repo-local [`mise.toml`](./mise.toml)) builds the
+HTML, pandoc + Typst render the PDFs:
 
 ```sh
 just docs-setup   # one-time: pandoc + typst
 just docs         # regenerate markdown, build site/ + docs/pdf/
 just docs-serve   # live preview
 ```
+
+Every `just` recipe is now a mise task (`mise run docs`, `mise tasks` to
+list) — the justfile is a thin shim that delegates to them.

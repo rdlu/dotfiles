@@ -22,6 +22,7 @@ binds see also the [wl-kbptr guide](../wl-kbptr.md).
 | `Mod+Escape` | Menu Power |
 | `Mod+Shift+Escape` | Menu Just: dotfiles commands |
 | `Mod+E` | Run `ghostty -e yazi` |
+| `Mod+Shift+C` | Color Picker: hyprpicker |
 | `Mod+Period` | Emoji Finder |
 | `Mod+V` | Manage clipboard |
 | `Mod+B` | Hide Waybar |

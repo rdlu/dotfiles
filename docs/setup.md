@@ -83,6 +83,8 @@ just docs-serve   # live-preview the site while editing
 
 `tools/gen-docs.py` (Python stdlib, no deps) re-reads `tmux.conf`,
 `binds.kdl`, and the justfile and rewrites the generated blocks in the
-markdown. [Zensical](https://zensical.org) (run via `uvx`, nothing to
-install) builds the HTML site into `site/`; pandoc + Typst render the PDFs
-into `docs/pdf/`, which the site links directly.
+markdown. [Zensical](https://zensical.org) (installed by mise from the
+repo-root `mise.toml`) builds the HTML site into `site/`; pandoc + Typst
+render the PDFs into `docs/pdf/`, which the site links directly. The `just`
+recipes are thin shims over the equivalent mise tasks (`mise run docs`,
+etc.).

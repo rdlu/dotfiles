@@ -7,6 +7,7 @@ Reads:
   - niri/dot-config/niri/binds.kdl           -> niri key bindings
   - fish/**/*.fish (top-level `bind` lines)  -> custom shell bindings
   - `just --dump --dump-format json`         -> justfile recipe reference
+  - `mise tasks ls --json`                    -> task dependencies (mise.toml)
 
 Writes (in place, between markers):
   - docs/shortcuts/tmux.md     <!-- gen:tmux-binds -->
@@ -734,11 +735,32 @@ JUST_GROUP_ORDER = [
 ]
 
 
+def mise_task_deps() -> dict[str, list[str]]:
+    """Task name -> tasks it runs, from mise.toml (`depends` plus sequential
+    `mise run X` lines in aggregate task bodies)."""
+    tasks = json.loads(subprocess.run(
+        ["mise", "tasks", "ls", "--json", "--hidden"],
+        cwd=REPO, capture_output=True, text=True, check=True,
+    ).stdout)
+    deps: dict[str, list[str]] = {}
+    for task in tasks:
+        runs = list(task.get("depends") or [])
+        for script in task.get("run") or []:
+            runs += re.findall(r"\bmise run ([A-Za-z][A-Za-z0-9_-]*)", script)
+        seen: list[str] = []
+        for d in runs:
+            if not d.startswith("_") and d not in seen:
+                seen.append(d)
+        deps[task["name"]] = seen
+    return deps
+
+
 def gen_just() -> str:
     dump = json.loads(subprocess.run(
         ["just", "--dump", "--dump-format", "json"],
         cwd=REPO, capture_output=True, text=True, check=True,
     ).stdout)
+    mise_deps = mise_task_deps()
 
     grouped: dict[str | None, list] = {}
     for name, recipe in sorted(dump["recipes"].items()):
@@ -747,14 +769,18 @@ def gen_just() -> str:
         private = name.startswith("_") or "private" in attrs or recipe.get("private")
         if private or name == "default":
             continue
-        deps = [d["recipe"] if isinstance(d, dict) else str(d)
-                for d in recipe.get("dependencies", [])]
+        # The justfile is a thin shim (no deps of its own); the real
+        # dependencies live on the mise task of the same name.
+        deps = mise_deps.get(name, [])
         grouped.setdefault(groups[0] if groups else None, []).append(
             (name, recipe.get("doc") or "", deps))
 
     known = [g for g, _ in JUST_GROUP_ORDER]
     extra = [(g, g) for g in sorted(k for k in grouped if k not in known and k)]
-    parts = ["Run from the repo root. `just` with no arguments lists everything."]
+    parts = ["Run from the repo root. `just` with no arguments lists everything.\n"
+             "Tasks are defined in the repo-root `mise.toml` — every recipe is "
+             "equally runnable as `mise run <task>` (the justfile is a thin "
+             "shim that delegates to mise)."]
     for group, title in JUST_GROUP_ORDER + extra:
         rows = grouped.get(group)
         if not rows:

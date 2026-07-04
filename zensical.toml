@@ -1,5 +1,6 @@
 # Zensical (https://zensical.org) config for the docs site.
-# Build with `just docs-html` (runs zensical via uvx, nothing to install).
+# Build with `mise run docs-html` (zensical is installed by mise from the
+# repo-root mise.toml; `just docs-html` still works as a shim).
 
 [project]
 site_name = "rdlu's dotfiles"
