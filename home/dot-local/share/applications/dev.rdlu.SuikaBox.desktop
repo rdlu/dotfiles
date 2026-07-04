@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Name=Suika Box
+Comment=Vault inbox in neovim, via Ghostty
+Exec=ghostty "--title=Suika Box" --class=dev.rdlu.SuikaBox "--working-directory=/home/rdlu/Documents/Suika Box" -e nvim inbox.md
+Terminal=false
+Type=Application
+Keywords=Text;editor;
+Icon=SuikaBox
+Categories=Utility;TextEditor;
+StartupNotify=false
