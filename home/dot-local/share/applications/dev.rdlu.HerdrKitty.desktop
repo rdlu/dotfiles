@@ -2,7 +2,7 @@
 Name=Herdr (kitty)
 GenericName=Terminal Multiplexer
 Comment=Kitty running the herdr multiplexer, ghostty-matched look via herdr.conf
-Exec=kitty --config /home/rdlu/.config/kitty/herdr.conf --app-id Herdr --title Herdr mise exec -- herdr
+Exec=kitty --config /home/rdlu/.config/kitty/herdr.conf --app-id dev.rdlu.HerdrKitty --title Herdr mise exec -- herdr
 Icon=HerdrKitty
 Type=Application
 Terminal=false
