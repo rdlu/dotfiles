@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Clin (Suika Box)
+GenericName=Note Manager
+Comment=Ghostty running the clin TUI over the Suika Box vault
+Exec=ghostty "--title=Clin Suika Box" --class=ClinSuikaBox "--working-directory=/home/rdlu/Documents/Suika Box" -e mise exec -- clin --vault "/home/rdlu/Documents/Suika Box"
+Icon=SuikaBox
+Type=Application
+Terminal=false
+Keywords=Notes;Markdown;Vault;
+Categories=Utility;TextEditor;
+StartupNotify=false

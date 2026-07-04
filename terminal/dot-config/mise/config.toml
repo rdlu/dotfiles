@@ -30,6 +30,10 @@ gleam = "1.14.0"
 # the github backend to pull the prebuilt release binary (the musl static-pie
 # asset). Replaces a hand-placed ~/.local/bin/fff-mcp.
 "github:dmtrKovalenko/fff" = { version = "latest", bin = "fff-mcp", matching_regex = "fff-mcp-.*-musl$" }
+# clin: Obsidian-like TUI note manager (binary `clin`, repo clin-rs). NOT on
+# crates.io despite the README's `cargo install clin-rs`, so pull the prebuilt
+# x86_64 gnu tarball from GitHub releases (both hosts are x86_64 glibc).
+"github:reekta92/clin-rs" = { version = "latest", bin = "clin", matching_regex = "x86_64-unknown-linux-gnu\\.tar\\.gz$" }
 "pipx:llm" = "latest"
 "pipx:xxh-xxh" = "latest"
 "pipx:epy-reader" = "latest"
