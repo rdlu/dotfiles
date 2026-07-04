@@ -127,7 +127,7 @@ calendar_enabled = true
 
 [editor]
 # External editor command (e.g., "nvim", "code", "nano").
-external_command = "env NVIM_APPNAME=nvim-light nvim"
+external_command = "helix"
 
 # Enable external editor mode by default.
 external_enabled = true
