@@ -1,6 +1,8 @@
--- nvim-notes: plugin-free neovim for note editing (clin's external editor;
--- `nvn` in fish). Markdown via the bundled treesitter parsers, shared spell
--- with nvim-light (spell/ symlink), and just enough to follow [[wikilinks]].
+-- nvim-notes: lean neovim for note editing (clin's external editor; `nvn` in
+-- fish). Markdown via the bundled treesitter parsers, shared spell with
+-- nvim-light (spell/ symlink), just enough to follow [[wikilinks]], plus two
+-- plugins via the built-in vim.pack manager (auto-cloned on first launch):
+-- which-key and a slice of snacks (picker/zen/notifier).
 
 vim.g.mapleader = ' '
 vim.o.number = true
@@ -45,6 +47,23 @@ local function follow_wikilink()
   end
   vim.cmd.edit(vim.fn.fnameescape(found or vim.fs.joinpath(buf_dir, target .. '.md')))
 end
+
+vim.pack.add({
+  'https://github.com/folke/which-key.nvim',
+  'https://github.com/folke/snacks.nvim',
+})
+
+require('which-key').setup({})
+require('snacks').setup({
+  picker = { enabled = true },
+  notifier = { enabled = true },
+  zen = { enabled = true },
+})
+
+vim.keymap.set('n', '<leader><leader>', function() Snacks.picker.files() end, { desc = 'Find note' })
+vim.keymap.set('n', '<leader>/', function() Snacks.picker.grep() end, { desc = 'Grep notes' })
+vim.keymap.set('n', '<leader>r', function() Snacks.picker.recent() end, { desc = 'Recent notes' })
+vim.keymap.set('n', '<leader>z', function() Snacks.zen() end, { desc = 'Zen writing mode' })
 
 vim.api.nvim_create_autocmd('FileType', {
   pattern = 'markdown',
