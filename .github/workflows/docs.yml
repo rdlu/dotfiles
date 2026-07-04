@@ -1,5 +1,5 @@
 # Build and deploy the docs site (HTML + PDFs) to GitHub Pages.
-# Mirrors `just docs` locally: gen-docs.py -> pandoc/typst PDFs -> zensical.
+# Mirrors `mise run docs` locally: gen-docs.py -> pandoc/typst PDFs -> zensical.
 name: Documentation
 on:
   push:
@@ -21,19 +21,31 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: 3.x
+      # just is only needed for gen-docs.py's `just --dump` (recipe reference
+      # table); the build itself goes through mise tasks.
       - uses: extractions/setup-just@v4
       - uses: typst-community/setup-typst@v5
       - uses: pandoc/actions/setup@v1
       - name: Install cheatsheet fonts
         run: sudo apt-get update -qq && sudo apt-get install -y -qq fonts-inter fonts-jetbrains-mono
-      - run: pip install zensical
-      # Build via the justfile so CI can't drift from `just docs` (pages,
-      # cheatsheets and the handbook concat all live there). On Ubuntu the
-      # nerd font dir is absent, so cheatsheet keycaps fall back to the
-      # fonts-jetbrains-mono family installed above.
+      # mise installs the repo-local tools from ./mise.toml (uv + zensical)
+      # and runs the docs tasks.
+      - uses: jdx/mise-action@v2
+        with:
+          cache: true
+      # Build via the mise tasks so CI can't drift from `mise run docs` /
+      # `just docs` (pages, cheatsheets and the handbook concat all live
+      # there). On Ubuntu the nerd font dir is absent, so CHEAT_FONT_PATH
+      # points at the fonts-jetbrains-mono family installed above and the
+      # cheatsheet keycaps fall back to plain JetBrains Mono.
+      # `:::` is mise's multi-task separator (their shared docs-update dep
+      # runs once).
       - name: Build PDFs + cheatsheets
-        run: just cheat_font_path=/usr/share/fonts/truetype/jetbrains-mono docs-pdf docs-cheatsheets
-      - run: zensical build --clean
+        run: mise run docs-pdf ::: docs-cheatsheets
+        env:
+          CHEAT_FONT_PATH: /usr/share/fonts/truetype/jetbrains-mono
+      - name: Build HTML site
+        run: mise run docs-html
       - uses: actions/upload-pages-artifact@v5
         with:
           path: site

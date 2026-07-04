@@ -1,0 +1,526 @@
+# Repo-local mise config: the repo's tasks + docs-only tools.
+#
+# This file is NOT a stow package — it lives at the repo root and only applies
+# inside the repo. The user-level mise config (global tools) is stowed from
+# terminal/dot-config/mise/ and host overlays; don't mix the two.
+#
+# The justfile is now a thin compatibility shim over these tasks:
+# `just X` == `mise run X`. List everything with `mise tasks`.
+
+[tools]
+# Docs site generator (zensical) + uv to run it. pandoc, typst, uv and fonts
+# stay on pacman locally (category `docs-toolchain` in setup/packages.yaml);
+# these two are here so CI gets them too.
+uv = "latest"
+"pipx:zensical" = "latest"
+
+[settings]
+# Run task scripts under bash with `set -u`, matching the old justfile's
+# `set shell := ["bash", "-uc"]`. Each entry of a `run` list is a separate
+# script and the task stops on the first failing entry — same per-line
+# semantics as just. Self-contained here (CI has no user-level mise config).
+unix_default_inline_shell_args = "bash -uc"
+
+[settings.pipx]
+# Run pipx: tools through uvx (uv). Also set in the user-level config, but CI
+# only sees this file.
+uvx = true
+
+[vars]
+# Base stow packages deployed on every machine.
+# Host-specific bits live in hosts/<hostname>/ (see the `stow` task).
+base_packages = "home git idea scripts terminal lazyvim vim doom systemd niri"
+
+# ALL package names live in setup/packages.yaml — tasks resolve their list
+# from a category here; never hardcode package names in a task.
+
+# Print the packages of one manifest category (empty category = all)
+[tasks._pkgs]
+hide = true
+quiet = true
+usage = 'arg "[category]" default=""'
+run = '''awk -v cat="${usage_category}" '/^[a-z0-9][a-z0-9-]*:/ { c = substr($1, 1, length($1) - 1) } /^  - / { if (cat == "" || c == cat) print $2 }' setup/packages.yaml'''
+
+# Aggregate installs run their steps via sequential `mise run` lines (NOT
+# `depends`, which mise may parallelize) — order matters here.
+
+[tasks.full-auto]
+description = "Full auto installation"
+run = [
+  "mise run packages",
+  "mise run dev-setup",
+  "mise run cli-tools",
+  "mise run fish-shell",
+  "mise run helix-editor",
+  "mise run yazi-file-manager",
+  "mise run fastfetch",
+]
+
+[tasks.full-auto-gui]
+description = "Fuller auto (graphical) installation"
+run = [
+  "mise run full-auto",
+  "mise run kitty-terminal",
+  "mise run niri-window-manager",
+]
+
+[tasks.packages]
+description = "(Run first unless running full-auto) Setup Flatpak, pacman mirrors, Chaotic AUR, and paru AUR helper"
+run = [
+  '''echo -e "\033[1;33m1) Installing Flatpak and adding Flathub repository\033[0m"''',
+  'sudo pacman -S --needed $(mise run _pkgs bootstrap-flatpak)',
+  'flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo',
+  '''echo -e "\033[1;33m\n2) Installing reflector (automatic mirror configuration)\033[0m"''',
+  'sudo pacman -S --needed $(mise run _pkgs bootstrap-mirrors)',
+  '''echo -e "\033[1;31m\n\n----- IMPORTANT -----\nPlease modify /etc/xdg/reflector/reflector.conf before continuing\n---------------------\033[0m"''',
+  'read -p "Press enter to continue"',
+  'sudo systemctl enable --now reflector.timer',
+  '''echo -e "\033[1;33m\n3) Adding Chaotic AUR repository to pacman\033[0m"''',
+  'sudo pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com',
+  'sudo pacman-key --lsign-key 3056513887B78AEB',
+  "sudo pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst'",
+  "sudo pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'",
+  '''echo -e "\033[1;31m\n\n----- IMPORTANT -----\nPlease add the following 2 lines to the end of /etc/pacman.conf before continuing\n\n[chaotic-aur]\nInclude = /etc/pacman.d/chaotic-mirrorlist\n---------------------\033[0m"''',
+  'read -p "Press enter to continue"',
+  '''echo -e "\033[1;33m\n4) Installing paru AUR helper\033[0m"''',
+  'sudo pacman -Sy --needed $(mise run _pkgs bootstrap-aur-helper)',
+]
+
+[tasks.dev-setup]
+description = "Programming languages, runtimes, toolchains, and git"
+run = [
+  '''echo -e "\033[1;33m1) Installing languages, runtimes, and toolchains\033[0m"''',
+  'paru -S --needed $(mise run _pkgs languages)',
+  '''echo -e "\033[1;33m\n2) Installing Rust language\033[0m"''',
+  'rustup default stable',
+  '''echo -e "\033[1;33m\n3) Setting git global config\033[0m"''',
+  'git config --global init.defaultBranch "main"',
+  '''echo -e "\033[1;33m\n4) Bootstrapping mise-managed tool versions\033[0m"''',
+  'mise install',
+]
+
+[tasks.fastfetch]
+description = "Install fastfetch and stow its config"
+run = [
+  '''echo -e "\033[1;33m1) Installing fastfetch and dependencies\033[0m"''',
+  'paru -S --needed $(mise run _pkgs fastfetch)',
+  '''echo -e "\033[1;33m\n2) Stowing fastfetch config\033[0m"''',
+  'stow --no-folding --dotfiles -S fastfetch',
+]
+
+# These are NOT managed by mise [tools] — mise only handles version-pinned
+# languages and tools that aren't in the pacman repos.
+
+[tasks.cli-tools]
+description = "Essential CLI tools from the pacman repos"
+run = [
+  '''echo -e "\033[1;33mInstalling CLI tools via pacman\033[0m"''',
+  'paru -S --needed $(mise run _pkgs cli-essentials)',
+]
+
+[tasks.fish-shell]
+description = "fish shell and plugins"
+run = [
+  '''echo -e "\033[1;33m1) Installing fish, fish plugin manager, and Starship prompt\033[0m"''',
+  'paru -S --needed $(mise run _pkgs fish-shell)',
+  'test -d ~/.tmux/plugins/tpm || git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm',
+  '''echo -e "\033[1;33m\n2) Stowing fish config\033[0m"''',
+  'stow --no-folding --dotfiles -S terminal',
+  '''echo -e "\033[1;33m\n3) Setting user shell\033[0m"''',
+  'test "$SHELL" = /usr/bin/fish || chsh -s /usr/bin/fish',
+  '''echo -e "\033[1;33m\n4) Installing fish plugins\033[0m"''',
+  'fish -c "fisher update"',
+]
+
+[tasks.helix-editor]
+description = "Install Helix and stow its config"
+run = [
+  '''echo -e "\033[1;33m1) Installing Helix and dependencies\033[0m"''',
+  'paru -S --needed $(mise run _pkgs helix-editor)',
+  '''echo -e "\033[1;33m\n2) Stowing Helix config\033[0m"''',
+  'stow --no-folding --dotfiles -S helix',
+]
+
+# The framework (~/.config/emacs) is a git clone managed via `doom upgrade`,
+# NOT stowed; only the `doom` package (~/.config/doom) is tracked here.
+# Idempotent — re-runnable; skips the clone when ~/.config/emacs already exists.
+
+[tasks.doom-bootstrap]
+description = "Install Emacs + Doom: clone the framework, stow config, sync packages"
+run = [
+  '''echo -e "\033[1;33m1) Installing Emacs and dependencies\033[0m"''',
+  'paru -S --needed $(mise run _pkgs emacs)',
+  '''echo -e "\033[1;33m\n2) Cloning Doom framework into ~/.config/emacs (skipped if present)\033[0m"''',
+  'test -d ~/.config/emacs || git clone --depth 1 https://github.com/doomemacs/doomemacs ~/.config/emacs',
+  '''echo -e "\033[1;33m\n3) Stowing Doom config\033[0m"''',
+  'stow --no-folding --dotfiles -S doom',
+  '''echo -e "\033[1;33m\n4) Running doom install (syncs packages)\033[0m"''',
+  '~/.config/emacs/bin/doom install',
+]
+
+[tasks.kitty-terminal]
+description = "Install the terminal emulators and stow their config"
+run = [
+  '''echo -e "\033[1;33m1) Installing the terminal emulators (kitty, ghostty, wezterm) and dependencies\033[0m"''',
+  'paru -S --needed $(mise run _pkgs terminals)',
+  '''echo -e "\033[1;33m\n2) Stowing Kitty config\033[0m"''',
+  'stow --no-folding --dotfiles -S terminal',
+]
+
+[tasks.niri-window-manager]
+description = "Install niri and tools used with it"
+run = [
+  '''echo -e "\033[1;33m1) Installing niri and related tools\033[0m"''',
+  'paru -S --needed $(mise run _pkgs niri-wm)',
+  '''echo -e "\033[1;33m\n2) Stowing niri config\033[0m"''',
+  'stow --no-folding --dotfiles -S niri',
+  # 'echo -e "\033[1;33m\n3) Enabling GNOME display manager service\033[0m"',
+  # 'sudo systemctl enable gdm',
+]
+
+[tasks.keybase-ssh]
+description = "Import the Keybase PGP key into GPG and expose it for SSH auth"
+run = [
+  'paru -S --needed $(mise run _pkgs keybase)',
+  'keybase pgp export --secret | gpg --allow-secret-key-import --import',
+  'keybase pgp pull-private --all',
+  'ls ~/.gnupg/private-keys-v1.d/ | sed s/.key// >> ~/.gnupg/sshcontrol',
+  '''echo -e "\033[1;33mKeys loaded for SSH:\033[0m"''',
+  'ssh-add -L',
+]
+
+[tasks.syncthing-file-sync]
+description = "Install Syncthing and enable its user service"
+run = [
+  '''echo -e "\033[1;33m1) Installing Syncthing\033[0m"''',
+  'paru -S --needed $(mise run _pkgs syncthing)',
+  '''echo -e "\033[1;33m\n2) Enabling and starting Syncthing user service\033[0m"''',
+  'systemctl enable --now --user syncthing',
+]
+
+[tasks.file-transfer]
+description = "Set up LocalSend + rsync-over-ssh receiving (packages, firewall, folder, docs)"
+run = [
+  '''echo -e "\033[1;33m1) Installing transfer tools (LocalSend, rsync, openssh)\033[0m"''',
+  'paru -S --needed $(mise run _pkgs file-transfer)',
+  '''echo -e "\033[1;33m\n2) Stowing helper scripts + niri menu entries\033[0m"''',
+  'stow --no-folding --dotfiles -S scripts niri',
+  '''echo -e "\033[1;33m\n3) Firewall + transfer folder + docs\033[0m"''',
+  'scripts/dot-local/bin/setup-file-transfer',
+]
+
+[tasks.file-transfer-harden]
+description = "Harden a receiving machine: inbound SSH key-only + LLMNR off (disables passwords!)"
+run = 'scripts/dot-local/bin/harden-file-transfer-ssh'
+
+# setup/packages.yaml is the categorized manifest of everything intentionally
+# installed beyond the tasks above (built from pacman.log: explicit installs
+# after the day-0 CachyOS run). pkg-drift reports new intentional installs
+# that aren't captured yet — add them to the yaml to keep it current.
+
+[tasks.pkg-install]
+description = "Install the package manifest (all of setup/packages.yaml, or one category)"
+usage = 'arg "[category]" default=""'
+run = 'mise run _pkgs "${usage_category}" | sort -u | paru -S --needed -'
+
+[tasks.pkg-categories]
+description = "List the manifest categories with their package counts"
+quiet = true
+run = '''awk '/^[a-z][a-z0-9-]*:/ { if (c) print c, n; c = substr($1, 1, length($1) - 1); n = 0 } /^  - / { n++ } END { print c, n }' setup/packages.yaml | column -t'''
+
+[tasks.pkg-drift]
+description = "Explicit installs (post day-0) not yet in the manifest or any task"
+run = 'scripts/dot-local/bin/pacman-drift'
+
+[tasks.pkg-tui]
+description = "Interactive manifest manager: browse categories, install/remove/audit (fzf TUI)"
+run = 'scripts/dot-local/bin/pkg-tui'
+
+# Register the herdr native plugins (idempotent; needs herdr running + network).
+[tasks.herdr-plugins]
+description = "ghzinga's viewer binary `gzg` comes from mise (cargo:ghzinga)."
+run = [
+  'herdr plugin install cloudmanic/herdr-plus --yes',
+  'herdr plugin install dutifuldev/ghzinga/plugins/herdr --yes',
+  'herdr plugin install persiyanov/herdr-reviewr --yes',
+  'herdr plugin install paulbkim-dev/vim-herdr-navigation --yes',
+  'herdr server reload-config',
+]
+
+[tasks.yazi-file-manager]
+description = "Yazi terminal file manager and plugins"
+run = [
+  '''echo -e "\033[1;33m1) Installing Yazi and dependencies\033[0m"''',
+  'paru -S --needed $(mise run _pkgs yazi)',
+  '''echo -e "\033[1;33m\n2) Stowing Yazi config\033[0m"''',
+  'stow --no-folding --dotfiles -S terminal',
+  '''echo -e "\033[1;33m\n3) Installing Yazi plugins\033[0m"''',
+  'ya pkg install',
+]
+
+# --no-folding lets base + host overlay both populate shared dirs
+# (~/.config/waybar, ~/.config/mise) without tree-folding conflicts.
+# CRITICAL: the -D lines need --no-folding too — unstowing WITHOUT it re-folds
+# a shared dir around the other stow root's remaining links (e.g. waybar around
+# hosts/daisy's host.jsonc), and the next -S dies parsing that cross-root link.
+# `|| true` tolerates a first run where nothing is stowed yet.
+
+[tasks.stow]
+description = "Stow base packages + this host's overlay (hosts/$hostname/), auto-detected"
+run = [
+  'stow -D --no-folding --dotfiles -t ~ {{vars.base_packages}} || true',
+  'stow -S --no-folding --dotfiles -t ~ {{vars.base_packages}}',
+  '''
+host="$(hostname)"
+if [ -d "hosts/$host" ]; then
+  echo -e "\033[1;33mStowing host overlay: hosts/$host\033[0m"
+  stow -D --no-folding --dotfiles -d hosts -t ~ "$host" 2>/dev/null || true
+  stow -S --no-folding --dotfiles -d hosts -t ~ "$host"
+else
+  echo -e "\033[1;33mNo host overlay for '$host' (hosts/$host absent) -- skipping\033[0m"
+fi
+''',
+]
+
+[tasks.stow-check]
+description = "Dry-run the stow above (shows what would change, touches nothing)"
+run = [
+  'stow -n -v -R --no-folding --dotfiles -t ~ {{vars.base_packages}}',
+  '''
+host="$(hostname)"
+if [ -d "hosts/$host" ]; then
+  stow -n -v -R --no-folding --dotfiles -d hosts -t ~ "$host"
+fi
+''',
+]
+
+[tasks.unstow]
+description = "Remove all symlinks created by `stow` (host overlay first, then base)"
+run = [
+  '''
+host="$(hostname)"
+if [ -d "hosts/$host" ]; then
+  stow -D --no-folding --dotfiles -d hosts -t ~ "$host"
+fi
+''',
+  'stow -D --no-folding --dotfiles -t ~ {{vars.base_packages}}',
+]
+
+[tasks.systemd-niri-config]
+description = "Enables the systemd services for some essential niri helpers"
+# Sequential on purpose: install the add-wants first, then reload each helper.
+run = [
+  "mise run systemd-niri-config-install",
+  "mise run wpaper-reload",
+  "mise run mako-reload",
+  "mise run waybar-reload",
+  "mise run swayidle-reload",
+  "mise run hyprpolkitagent-reload",
+]
+
+[tasks.systemd-niri-config-install]
+run = [
+  'systemctl --user add-wants niri.service wpaperd.service',
+  'systemctl --user add-wants niri.service mako.service',
+  'systemctl --user add-wants niri.service swayidle.service',
+  'systemctl --user add-wants niri.service waybar.service',
+  'systemctl --user add-wants niri.service hyprpolkitagent.service',
+  # swayosd-libinput-backend is a SYSTEM unit — sudo, not --user
+  'sudo systemctl enable --now swayosd-libinput-backend.service || true',
+]
+
+[tasks.wpaper-reload]
+description = "Reload WallpaperD"
+run = [
+  '''echo -e "\033[1;33mReloading WallpaperD\033[0m"''',
+  'systemctl --user reload-or-restart wpaperd.service',
+]
+
+[tasks.mako-reload]
+description = "Reload Mako notifications"
+run = [
+  '''echo -e "\033[1;33mReloading Maki Notifications\033[0m"''',
+  'systemctl --user reload-or-restart mako.service',
+]
+
+[tasks.waybar-reload]
+description = "Restart Waybar"
+run = [
+  '''echo -e "\033[1;33mReloading Waybar\033[0m"''',
+  # waybar doesn't support reload-or-restart cleanly; plain restart
+  'systemctl --user restart waybar.service',
+]
+
+[tasks.swayidle-reload]
+description = "Reload Swayidle"
+run = [
+  '''echo -e "\033[1;33mReloading Swayidle\033[0m"''',
+  'systemctl --user reload-or-restart swayidle.service',
+]
+
+[tasks.hyprpolkitagent-reload]
+description = "Reload Hyprpolkitagent (polkit agent)"
+run = [
+  '''echo -e "\033[1;33mReloading Hyprpolkitagent (polkit agent)\033[0m"''',
+  'systemctl --user reload-or-restart hyprpolkitagent.service',
+]
+
+[tasks.caffeine]
+description = "Keep the screen awake (pause auto-lock + blanking). Also on the power menu."
+quiet = true
+usage = 'arg "[action]" default="toggle"'
+run = '"$HOME/.local/bin/caffeine" "${usage_action}"'
+
+# Idempotent; replaces the old tracked *.target.wants/ symlinks. Lines that may
+# be absent on a fresh machine get `|| true` so a missing unit doesn't abort.
+
+[tasks.services-enable]
+description = "Enable + start the user services this setup expects"
+run = [
+  '''echo -e "\033[1;33m1) Globally-enabled user services\033[0m"''',
+  # Enable the service for boot + start it now (the bit that actually plays).
+  # Enable the socket for boot-time socket-activation but DON'T --now it: if
+  # mpd.service is already running, starting the socket fails ("already active").
+  'systemctl --user enable --now mpd.service || true',
+  'systemctl --user enable mpd.socket || true',
+  # syncthing is install-optional (see syncthing-file-sync); `|| true` skips if absent.
+  'systemctl --user enable --now syncthing.service || true',
+  'systemctl --user enable solaar.service || true',
+  # YubiKey touch detector + desktop notifier (any-app touch -> toast). detector
+  # is the security-package unit (also pulls its .socket); notifier stows from
+  # niri/ + scripts/. The Claude Code hooks (~/.claude/hooks) are separate/local.
+  'systemctl --user enable --now yubikey-touch-detector.service || true',
+  'systemctl --user enable --now yubikey-touch-notifier.service || true',
+  '''echo -e "\033[1;33m\n2) niri-session helpers (started with niri via add-wants)\033[0m"''',
+  'systemctl --user add-wants niri.service waybar.service',
+  'systemctl --user add-wants niri.service wpaperd.service',
+  'systemctl --user add-wants niri.service mako.service',
+  'systemctl --user add-wants niri.service swayidle.service',
+  'systemctl --user add-wants niri.service hyprpolkitagent.service',
+  '''echo -e "\033[1;33m\n3) swayosd backend (SYSTEM unit — sudo, NOT --user)\033[0m"''',
+  'sudo systemctl enable --now swayosd-libinput-backend.service || true',
+]
+
+# Docs pipeline: gen-docs.py rewrites the generated markdown blocks from the
+# live configs; zensical (from [tools] above, via uvx) builds the HTML site
+# into site/; pandoc+typst render PDFs into docs/pdf/ (linked by the site,
+# so build PDFs before HTML — enforced by docs-html's wait_for below).
+
+[tasks.docs-setup]
+description = "One-time install of the docs toolchain (pandoc + typst; uv ships with CachyOS)"
+run = 'paru -S --needed $(mise run _pkgs docs-toolchain)'
+
+[tasks.docs-update]
+description = "Regenerate the generated markdown blocks from tmux.conf, binds.kdl, and the justfile"
+run = 'python3 tools/gen-docs.py'
+
+[tasks.docs-pdf]
+description = "Build the PDFs (per-page references + combined handbook) into docs/pdf/"
+depends = ["docs-update"]
+run = [
+  'mkdir -p docs/pdf',
+  '''
+for page in setup file-transfer neovim-plugins justfile shortcuts/tmux shortcuts/herdr shortcuts/zellij shortcuts/niri shortcuts/shell wl-kbptr; do
+  out="$(basename "$page")"
+  case "$out" in tmux|herdr|zellij|niri|shell) out="$out-shortcuts";; esac
+  pandoc "docs/$page.md" -o "docs/pdf/$out.pdf" \
+    --pdf-engine=typst --toc -V papersize=a4 -V mainfont="Libertinus Serif" -M date="$(date -I)"
+done
+''',
+  '''
+pandoc docs/setup.md docs/file-transfer.md docs/neovim-plugins.md docs/justfile.md \
+  docs/shortcuts/tmux.md docs/shortcuts/herdr.md \
+  docs/shortcuts/zellij.md docs/shortcuts/niri.md docs/shortcuts/shell.md \
+  docs/wl-kbptr.md \
+  -o docs/pdf/dotfiles-handbook.pdf \
+  --pdf-engine=typst --toc -V papersize=a4 -V mainfont="Libertinus Serif" \
+  -M title="rdlu's dotfiles handbook" -M date="$(date -I)"
+''',
+]
+
+# CHEAT_FONT_PATH: where the cheatsheet keycap font (JetBrainsMono Nerd Font)
+# lives. typst's default scan misses /usr/share/fonts/TTF on CachyOS, so point
+# it there explicitly. Harmless if the dir is absent, where cheatsheet.typ
+# falls back to plain "JetBrains Mono". Deliberately a plain env var with a
+# shell-side default (NOT mise [env]) so CI can override it per-step.
+
+[tasks.docs-cheatsheets]
+description = "Landscape cheatsheet PDFs, Catppuccin Latte (print) + Mocha (dark) variants"
+depends = ["docs-update"]
+run = [
+  'mkdir -p docs/pdf',
+  '''
+for sheet in tmux herdr zellij niri shell neovim; do
+  typst compile --font-path "${CHEAT_FONT_PATH:-/usr/share/fonts/TTF}" --input sheet=$sheet --input theme=latte \
+    tools/cheatsheets/cheatsheet.typ "docs/pdf/$sheet-cheatsheet.pdf"
+  typst compile --font-path "${CHEAT_FONT_PATH:-/usr/share/fonts/TTF}" --input sheet=$sheet --input theme=mocha \
+    tools/cheatsheets/cheatsheet.typ "docs/pdf/$sheet-cheatsheet-mocha.pdf"
+done
+''',
+]
+
+[tasks.docs-html]
+description = "Build the HTML site into site/ (zensical from mise tools)"
+depends = ["docs-update"]
+# When co-scheduled (e.g. `mise run docs`), build the PDFs first — the site
+# links them. Standalone `mise run docs-html` is unaffected.
+wait_for = ["docs-pdf", "docs-cheatsheets"]
+run = 'zensical build --clean'
+
+[tasks.docs]
+description = "Full docs build: regenerate markdown, then PDFs + cheatsheets, then the HTML site"
+depends = ["docs-pdf", "docs-cheatsheets", "docs-html"]
+
+[tasks.docs-serve]
+description = "Live-preview the docs site while editing (opens the browser once it's up)"
+depends = ["docs-update"]
+run = '''
+(sleep 1 && xdg-open http://localhost:8000) &
+zensical serve
+'''
+
+[tasks.docs-open]
+description = "Open a PDF (default: the combined handbook; e.g. `mise run docs-open tmux-shortcuts`)"
+depends = ["docs-pdf"]
+usage = 'arg "[pdf]" default="dotfiles-handbook"'
+run = 'xdg-open "docs/pdf/${usage_pdf}.pdf"'
+
+[tasks.update]
+description = "Bring an existing machine fully up to date (each step best-effort)"
+run = [
+  'paru -Syu || true',
+  'mise upgrade || true',
+  'fish -c "fisher update" || true',
+  'ya pkg upgrade || true',
+  'nvim --headless "+Lazy! sync" +qa || true',
+]
+
+[tasks.doctor]
+description = "Health check: tools present, shell, host overlay, services, mise, key symlinks"
+quiet = true
+run = [
+  '''echo -e "\033[1;33mTools\033[0m"''',
+  '''
+for t in fish tmux stow mise paru git nvim; do
+  command -v "$t" >/dev/null 2>&1 && echo "  ok    $t" || echo "  MISS  $t"
+done
+''',
+  '''echo -e "\033[1;33mShell\033[0m"''',
+  '''sh=$(getent passwd "$USER" | cut -d: -f7); case "$sh" in */fish) echo "  ok    login shell is fish ($sh)";; *) echo "  warn  login shell=$sh (expected fish)";; esac''',
+  '''echo -e "\033[1;33mHost overlay\033[0m"''',
+  '''host="$(hostname)"; [ -d "hosts/$host" ] && echo "  ok    hosts/$host present" || echo "  warn  no hosts/$host overlay"''',
+  '''echo -e "\033[1;33mUser services enabled\033[0m"''',
+  '''
+for s in mpd.service waybar.service wpaperd.service mako.service swayidle.service; do
+  echo "  $(systemctl --user is-enabled "$s" 2>/dev/null || echo missing)  $s"
+done
+''',
+  '''echo -e "\033[1;33mmise resolves\033[0m"''',
+  'mise ls >/dev/null 2>&1 && echo "  ok    mise ls" || echo "  warn  mise ls failed"',
+  '''echo -e "\033[1;33mKey symlinks live\033[0m"''',
+  '''
+for l in ~/.config/fish/config.fish ~/.config/mise/config.toml ~/.config/waybar/config.jsonc; do
+  [ -e "$l" ] && echo "  ok    $l" || echo "  MISS  $l"
+done
+''',
+]

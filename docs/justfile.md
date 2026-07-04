@@ -1,11 +1,14 @@
 # Justfile reference
 
-All automation in this repo is a `just` recipe. This page is generated from
-the live justfile by `tools/gen-docs.py` — run `just docs-update` to refresh
-it.
+All automation in this repo is a mise task (defined in the repo-root
+`mise.toml`), with a matching `just` recipe kept as a thin shim — `just X`
+and `mise run X` are interchangeable. This page is generated from the live
+justfile + mise tasks by `tools/gen-docs.py` — run `just docs-update` to
+refresh it.
 
 <!-- gen:just-recipes -->
 Run from the repo root. `just` with no arguments lists everything.
+Tasks are defined in the repo-root `mise.toml` — every recipe is equally runnable as `mise run <task>` (the justfile is a thin shim that delegates to mise).
 
 ### Top-level
 
@@ -14,7 +17,7 @@ Run from the repo root. `just` with no arguments lists everything.
 | `just full-auto` | Full auto installation | `packages`, `dev-setup`, `cli-tools`, `fish-shell`, `helix-editor`, `yazi-file-manager`, `fastfetch` |
 | `just full-auto-gui` | Fuller auto (graphical) installation | `full-auto`, `kitty-terminal`, `niri-window-manager` |
 | `just packages` | (Run first unless running full-auto) Setup Flatpak, pacman mirrors, Chaotic AUR, and paru AUR helper |  |
-| `just systemd-niri-config` | Enables the systemd services for some essential niri helpers | `systemd-niri-config-install`, `wpaper-reload`, `mako-reload`, `waybar-reload`, `swayidle-reload` |
+| `just systemd-niri-config` | Enables the systemd services for some essential niri helpers | `systemd-niri-config-install`, `wpaper-reload`, `mako-reload`, `waybar-reload`, `swayidle-reload`, `hyprpolkitagent-reload` |
 | `just systemd-niri-config-install` |  |  |
 
 ### Install: essentials
@@ -23,6 +26,7 @@ Run from the repo root. `just` with no arguments lists everything.
 | --- | --- | --- |
 | `just cli-tools` | Essential CLI tools from the pacman repos |  |
 | `just dev-setup` | Programming languages, runtimes, toolchains, and git |  |
+| `just doom-bootstrap` | Install Emacs + Doom: clone the framework, stow config, sync packages |  |
 | `just fish-shell` | fish shell and plugins |  |
 | `just helix-editor` |  |  |
 | `just yazi-file-manager` | Yazi terminal file manager and plugins |  |
@@ -63,6 +67,8 @@ Run from the repo root. `just` with no arguments lists everything.
 
 | Recipe | Description | Runs |
 | --- | --- | --- |
+| `just caffeine` | Keep the screen awake (pause auto-lock + blanking). Also on the power menu. |  |
+| `just hyprpolkitagent-reload` |  |  |
 | `just mako-reload` |  |  |
 | `just swayidle-reload` |  |  |
 | `just waybar-reload` |  |  |
@@ -83,12 +89,12 @@ Run from the repo root. `just` with no arguments lists everything.
 | --- | --- | --- |
 | `just docs` | Full docs build: regenerate markdown, then PDFs + cheatsheets, then the HTML site | `docs-pdf`, `docs-cheatsheets`, `docs-html` |
 | `just docs-cheatsheets` | Landscape cheatsheet PDFs, Catppuccin Latte (print) + Mocha (dark) variants | `docs-update` |
-| `just docs-html` | Build the HTML site into site/ (zensical via uvx) | `docs-update` |
+| `just docs-html` | Build the HTML site into site/ (zensical from the repo's mise tools) | `docs-update` |
 | `just docs-open` | Open a PDF (default: the combined handbook; e.g. `just docs-open tmux-shortcuts`) | `docs-pdf` |
 | `just docs-pdf` | Build the PDFs (per-page references + combined handbook) into docs/pdf/ | `docs-update` |
 | `just docs-serve` | Live-preview the docs site while editing (opens the browser once it's up) | `docs-update` |
 | `just docs-setup` | One-time install of the docs toolchain (pandoc + typst; uv ships with CachyOS) |  |
-| `just docs-update` | Regenerate the generated markdown blocks from tmux.conf, binds.kdl, and this justfile |  |
+| `just docs-update` | Regenerate the generated markdown blocks from tmux.conf, binds.kdl, and the justfile |  |
 
 ### file-transfer
 

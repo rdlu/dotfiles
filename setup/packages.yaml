@@ -1,6 +1,7 @@
 # Categorized manifest of ALL intentionally-installed pacman/AUR packages.
-# Every package name lives here — justfile recipes pull their list from a
-# category via `just _pkgs <category>` instead of hardcoding names.
+# Every package name lives here — the mise tasks (see mise.toml) pull their
+# list from a category via `mise run _pkgs <category>` instead of hardcoding
+# names.
 #
 # Source: the justfile recipe lists plus a pacman.log analysis on daisy
 # (2026-06-06) — packages explicitly installed AFTER the day-0 CachyOS
