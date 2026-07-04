@@ -93,7 +93,7 @@ density = "compact"
 default_view = "grid"
 
 # Default sorting field for the notes list ("title" or "modified").
-# default_sort_field = "title"
+default_sort_field = "modified"
 
 # Default sorting order ("ascending" or "descending").
 # default_sort_order = "ascending"
