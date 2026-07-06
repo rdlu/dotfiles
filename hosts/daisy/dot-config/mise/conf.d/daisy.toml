@@ -2,3 +2,12 @@
 # Only present on daisy (this overlay is stowed only there).
 [tools]
 "cargo:probe-rs-tools" = "latest"  # microcontroller side project
+
+# rustlock: Rust Wayland screen locker (swaylock-effects-inspired), built from
+# OUR fork rdlu/rustlock which adds PAM message display — the faillock lockout
+# notice now renders on the lock screen (upstream/swaylock drop it). Not on
+# crates.io, so the cargo backend builds from the fork's master HEAD. NOT the
+# active locker — swaylock is (it blanks while locked; rustlock renders
+# continuously). Kept for testing. Feature branch: pam-message-display.
+# Daisy-only while under test (this overlay is stowed only there).
+"cargo:https://github.com/rdlu/rustlock" = "HEAD"
