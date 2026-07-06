@@ -22,7 +22,7 @@ set -l zone (firewall-cmd --get-zone-of-interface=$iface 2>/dev/null)
 test -n "$zone"; or set zone (firewall-cmd --get-default-zone 2>/dev/null)
 
 # Privileged firewall-cmd: root → direct; graphical session → polkit prompt via
-# pkexec (hyprpolkitagent); plain terminal → sudo.
+# pkexec (polkit-kde-agent); plain terminal → sudo.
 function _fw
     if test (id -u) -eq 0
         firewall-cmd $argv
