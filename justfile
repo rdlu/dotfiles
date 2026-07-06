@@ -279,13 +279,13 @@ unstow:
   stow -D --no-folding --dotfiles -t ~ {{base_packages}}
 
 # Enables the systemd services for some essential niri helpers
-systemd-niri-config: systemd-niri-config-install wpaper-reload mako-reload waybar-reload swayidle-reload hyprpolkitagent-reload
+systemd-niri-config: systemd-niri-config-install wpaper-reload mako-reload waybar-reload swayidle-reload polkit-agent-reload
 systemd-niri-config-install:
   systemctl --user add-wants niri.service wpaperd.service
   systemctl --user add-wants niri.service mako.service
   systemctl --user add-wants niri.service swayidle.service
   systemctl --user add-wants niri.service waybar.service
-  systemctl --user add-wants niri.service hyprpolkitagent.service
+  systemctl --user add-wants niri.service plasma-polkit-agent.service
   # swayosd-libinput-backend is a SYSTEM unit — sudo, not --user
   -sudo systemctl enable --now swayosd-libinput-backend.service
 
@@ -311,9 +311,9 @@ swayidle-reload:
   systemctl --user reload-or-restart swayidle.service
 
 [group("niri-reload")]
-hyprpolkitagent-reload:
-  @just _echowarning "Reloading Hyprpolkitagent (polkit agent)"
-  systemctl --user reload-or-restart hyprpolkitagent.service
+polkit-agent-reload:
+  @just _echowarning "Reloading KDE polkit authentication agent"
+  systemctl --user reload-or-restart plasma-polkit-agent.service
 
 # Keep the screen awake (pause auto-lock + blanking). Also on the power menu.
 [group("niri-reload")]
@@ -346,7 +346,7 @@ services-enable:
   systemctl --user add-wants niri.service wpaperd.service
   systemctl --user add-wants niri.service mako.service
   systemctl --user add-wants niri.service swayidle.service
-  systemctl --user add-wants niri.service hyprpolkitagent.service
+  systemctl --user add-wants niri.service plasma-polkit-agent.service
 
   @just _echowarning "\n3) swayosd backend (SYSTEM unit — sudo, NOT --user)"
   -sudo systemctl enable --now swayosd-libinput-backend.service
