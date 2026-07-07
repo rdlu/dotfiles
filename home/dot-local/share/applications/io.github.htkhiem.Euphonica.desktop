@@ -1,0 +1,14 @@
+# Override of /usr/share/applications/io.github.htkhiem.Euphonica.desktop:
+# rename so the launcher shows what it is (an MPD client, easy to forget).
+[Desktop Entry]
+Version=1.0
+Type=Application
+
+Name=Euphonica (MPD Player)
+Comment=GTK4 libadwaita MPD client
+Categories=AudioVideo;Player;
+Keywords=Music;Player;MPD;mpd
+
+Icon=io.github.htkhiem.Euphonica
+Exec=euphonica
+Terminal=false
