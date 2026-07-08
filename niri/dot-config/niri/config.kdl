@@ -49,6 +49,11 @@ include "window-rules.kdl"
 // Keybindings
 include "binds.kdl"
 
+hotkey-overlay {
+    // No keybind for this; on demand: niri msg action show-hotkey-overlay
+    skip-at-startup
+}
+
 overview {
     workspace-shadow {
         softness 30

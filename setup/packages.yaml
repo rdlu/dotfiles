@@ -254,6 +254,7 @@ keybase: # keybase-ssh recipe installs this (keybase-bin provides keybase + kbfs
 security:
   - age-plugin-yubikey
   - libfido2
+  - pam-fprint-grosshack
   - rage-encryption
   - secrets
   - veracrypt
