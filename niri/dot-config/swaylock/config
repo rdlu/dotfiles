@@ -1,4 +1,5 @@
-ignore-empty-password
+# empty Enter must submit: it starts the PAM conversation, which arms the
+# fingerprint reader (pam_fprintd runs first in /etc/pam.d/swaylock)
 show-failed-attempts
 daemonize
 color=232136
