@@ -154,8 +154,8 @@ swayidle-reload:
   @mise run swayidle-reload
 
 [group("niri-reload")]
-hyprpolkitagent-reload:
-  @mise run hyprpolkitagent-reload
+polkit-agent-reload:
+  @mise run polkit-agent-reload
 
 # Keep the screen awake (pause auto-lock + blanking). Also on the power menu.
 [group("niri-reload")]

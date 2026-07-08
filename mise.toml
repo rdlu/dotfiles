@@ -315,7 +315,7 @@ run = [
   "mise run mako-reload",
   "mise run waybar-reload",
   "mise run swayidle-reload",
-  "mise run hyprpolkitagent-reload",
+  "mise run polkit-agent-reload",
 ]
 
 [tasks.systemd-niri-config-install]
@@ -324,7 +324,7 @@ run = [
   'systemctl --user add-wants niri.service mako.service',
   'systemctl --user add-wants niri.service swayidle.service',
   'systemctl --user add-wants niri.service waybar.service',
-  'systemctl --user add-wants niri.service hyprpolkitagent.service',
+  'systemctl --user add-wants niri.service plasma-polkit-agent.service',
   # swayosd-libinput-backend is a SYSTEM unit — sudo, not --user
   'sudo systemctl enable --now swayosd-libinput-backend.service || true',
 ]
@@ -358,11 +358,11 @@ run = [
   'systemctl --user reload-or-restart swayidle.service',
 ]
 
-[tasks.hyprpolkitagent-reload]
-description = "Reload Hyprpolkitagent (polkit agent)"
+[tasks.polkit-agent-reload]
+description = "Reload the polkit agent (plasma-polkit-agent)"
 run = [
-  '''echo -e "\033[1;33mReloading Hyprpolkitagent (polkit agent)\033[0m"''',
-  'systemctl --user reload-or-restart hyprpolkitagent.service',
+  '''echo -e "\033[1;33mReloading the polkit agent (plasma-polkit-agent)\033[0m"''',
+  'systemctl --user reload-or-restart plasma-polkit-agent.service',
 ]
 
 [tasks.caffeine]
@@ -396,7 +396,7 @@ run = [
   'systemctl --user add-wants niri.service wpaperd.service',
   'systemctl --user add-wants niri.service mako.service',
   'systemctl --user add-wants niri.service swayidle.service',
-  'systemctl --user add-wants niri.service hyprpolkitagent.service',
+  'systemctl --user add-wants niri.service plasma-polkit-agent.service',
   '''echo -e "\033[1;33m\n3) swayosd backend (SYSTEM unit — sudo, NOT --user)\033[0m"''',
   'sudo systemctl enable --now swayosd-libinput-backend.service || true',
 ]
