@@ -15,6 +15,18 @@
 # brightness as VCP feature 0x10 over DDC/CI, so we set that with ddcutil and
 # feed the resulting value into swayosd's --custom-progress to match the OSD.
 
+# Serialize instances. DDC/CI is a slow, single-owner i2c bus: holding a
+# brightness key makes key-repeat spawn many overlapping ddcutil calls that
+# collide on the bus, fail their reads, and spam "No DDC display" notifications.
+# Re-exec under a non-blocking lock so that while one adjustment is in flight,
+# extra repeats are dropped (the key just steps again on the next free slot).
+set -l lock "$XDG_RUNTIME_DIR/ext-brightness.lock"
+test -n "$XDG_RUNTIME_DIR"; or set lock /tmp/ext-brightness.lock
+if not set -q _EXT_BRIGHTNESS_LOCKED
+    set -gx _EXT_BRIGHTNESS_LOCKED 1
+    exec flock -n $lock (status filename) $argv
+end
+
 set -l disp 1   # ddcutil display number for the external monitor (`ddcutil detect`).
                 # Laptop panels never get a Display number (no DDC/CI), so the
                 # single external monitor is reliably Display 1. Bump if you run
@@ -27,14 +39,25 @@ if test -z "$argv[1]"
 end
 
 # Read current + max. `--brief` prints one line: `VCP 10 C <current> <max>`.
-# ddcutil warns on stderr about the laptop-panel i2c bus; drop it.
-set -l parts (ddcutil getvcp $vcp --display $disp --brief 2>/dev/null | string split ' ')
-set -l cur $parts[4]
-set -l max $parts[5]
+# ddcutil warns on stderr about the laptop-panel i2c bus; drop it. DDC reads can
+# glitch transiently, so retry a couple of times before declaring no display.
+set -l cur
+set -l max
+for attempt in 1 2 3
+    set -l parts (ddcutil getvcp $vcp --display $disp --brief 2>/dev/null | string split ' ')
+    if test -n "$parts[4]"
+        set cur $parts[4]
+        set max $parts[5]
+        break
+    end
+end
 
 if test -z "$cur"
-    notify-send -a ext-brightness "External brightness" \
-        "No DDC/CI display found on ddcutil display $disp"
+    # Synchronous hint => mako replaces the previous one in place instead of
+    # stacking a wall of identical errors.
+    notify-send -a ext-brightness \
+        -h string:x-canonical-private-synchronous:ext-brightness \
+        "External brightness" "No DDC/CI display found on ddcutil display $disp"
     exit 1
 end
 test -z "$max"; and set max 100
