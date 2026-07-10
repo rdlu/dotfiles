@@ -167,6 +167,11 @@ caffeine action="toggle":
 ext-brightness level="get":
   @mise run ext-brightness "{{ level }}"
 
+# Interactive TUI for the external monitor over DDC/CI (brightness, contrast, input, presets)
+[group("niri-reload")]
+ext-display:
+  @mise run ext-display
+
 # Enable + start the user services this setup expects
 [group("services")]
 services-enable:
