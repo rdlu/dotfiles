@@ -377,6 +377,11 @@ quiet = true
 usage = 'arg "[level]" default="get"'
 run = '"$HOME/.local/bin/ext-brightness" "${usage_level}"'
 
+[tasks.ext-display]
+description = "Interactive TUI to control the external monitor over DDC/CI: brightness, contrast, sharpness, input, colour preset, power (gum)."
+quiet = true
+run = '"$HOME/.local/bin/ext-display"'
+
 # Idempotent; replaces the old tracked *.target.wants/ symlinks. Lines that may
 # be absent on a fresh machine get `|| true` so a missing unit doesn't abort.
 
