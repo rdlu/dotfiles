@@ -23,6 +23,8 @@ binds see also the [wl-kbptr guide](../wl-kbptr.md).
 | `Mod+Shift+Escape` | Menu Just: dotfiles commands |
 | `Mod+E` | Run `ghostty -e yazi` |
 | `Mod+Shift+C` | Color Picker: hyprpicker |
+| `Mod+XF86MonBrightnessUp` | External monitor brightness up *(works on lock screen)* |
+| `Mod+XF86MonBrightnessDown` | External monitor brightness down *(works on lock screen)* |
 | `Mod+Period` | Emoji Finder |
 | `Mod+V` | Manage clipboard |
 | `Mod+B` | Hide Waybar |

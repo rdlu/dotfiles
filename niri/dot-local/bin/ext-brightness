@@ -3,12 +3,17 @@
 # Adjust the external monitor's brightness over DDC/CI (ddcutil) and show a
 # swayosd popup identical to the internal-panel brightness OSD.
 #
-# Usage:  ext-brightness +10   # relative up
-#         ext-brightness -10   # relative down
-#         ext-brightness 70    # absolute
+# Usage:  ext-brightness up      # step up   (+10)
+#         ext-brightness down    # step down (-10)
+#         ext-brightness +10     # relative
+#         ext-brightness -10     # relative
+#         ext-brightness 70      # absolute (0-100)
+#         ext-brightness         # print the current level and exit
 #
-# Bound to Mod+XF86MonBrightnessUp / Down in niri (binds.kdl); also usable
-# straight from a shell since ~/.local/bin is on PATH.
+# Bound to Mod+XF86MonBrightnessUp / Down in niri (binds.kdl); also exposed as
+# `mise run ext-brightness` / `just ext-brightness` (up/down/level -- those
+# avoid the leading '-' that just/mise would read as a flag), and usable from a
+# shell since ~/.local/bin is on PATH.
 #
 # Why a script and not swayosd's own --brightness: swayosd drives the sysfs
 # backlight, which only the internal laptop panel has. External monitors expose
@@ -32,11 +37,7 @@ set -l disp 1   # ddcutil display number for the external monitor (`ddcutil dete
                 # single external monitor is reliably Display 1. Bump if you run
                 # more than one external DDC monitor.
 set -l vcp 10   # VCP 0x10 = luminance / brightness.
-
-if test -z "$argv[1]"
-    echo "usage: ext-brightness +N | -N | N" >&2
-    exit 2
-end
+set -l step 10  # how far `up` / `down` move.
 
 # Read current + max. `--brief` prints one line: `VCP 10 C <current> <max>`.
 # ddcutil warns on stderr about the laptop-panel i2c bus; drop it. DDC reads can
@@ -62,16 +63,29 @@ if test -z "$cur"
 end
 test -z "$max"; and set max 100
 
-# Resolve the requested value to an absolute target.
+# Resolve the request to an absolute target (a bare call just reports current).
 set -l arg $argv[1]
 set -l target
-switch $arg
+switch "$arg"
+    case '' get
+        echo "External monitor brightness: $cur / $max"
+        exit 0
+    case up
+        set target (math "$cur + $step")
+    case down
+        set target (math "$cur - $step")
     case '+*'
         set target (math "$cur + "(string sub -s 2 -- $arg))
     case '-*'
         set target (math "$cur - "(string sub -s 2 -- $arg))
     case '*'
         set target $arg
+end
+
+# Reject anything that didn't resolve to an integer.
+if not string match -qr '^-?[0-9]+$' -- "$target"
+    echo "ext-brightness: invalid level '$arg' (use up | down | +N | -N | 0-$max)" >&2
+    exit 2
 end
 
 # Clamp to 0..max.

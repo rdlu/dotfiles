@@ -371,6 +371,12 @@ quiet = true
 usage = 'arg "[action]" default="toggle"'
 run = '"$HOME/.local/bin/caffeine" "${usage_action}"'
 
+[tasks.ext-brightness]
+description = "External monitor brightness over DDC/CI: up | down | 0-100 (bare shows current). Also on Mod+brightness keys."
+quiet = true
+usage = 'arg "[level]" default="get"'
+run = '"$HOME/.local/bin/ext-brightness" "${usage_level}"'
+
 # Idempotent; replaces the old tracked *.target.wants/ symlinks. Lines that may
 # be absent on a fresh machine get `|| true` so a missing unit doesn't abort.
 
