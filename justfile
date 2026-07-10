@@ -162,6 +162,11 @@ polkit-agent-reload:
 caffeine action="toggle":
   @mise run caffeine "{{ action }}"
 
+# External monitor brightness over DDC/CI: up | down | 0-100 (bare shows current)
+[group("niri-reload")]
+ext-brightness level="get":
+  @mise run ext-brightness "{{ level }}"
+
 # Enable + start the user services this setup expects
 [group("services")]
 services-enable:

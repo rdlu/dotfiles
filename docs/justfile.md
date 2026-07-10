@@ -68,6 +68,7 @@ Tasks are defined in the repo-root `mise.toml` — every recipe is equally runna
 | Recipe | Description | Runs |
 | --- | --- | --- |
 | `just caffeine` | Keep the screen awake (pause auto-lock + blanking). Also on the power menu. |  |
+| `just ext-brightness` | External monitor brightness over DDC/CI: up \| down \| 0-100 (bare shows current) |  |
 | `just mako-reload` |  |  |
 | `just polkit-agent-reload` |  |  |
 | `just swayidle-reload` |  |  |
