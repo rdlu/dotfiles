@@ -1,0 +1,67 @@
+#!/usr/bin/fish
+
+# Adjust the external monitor's brightness over DDC/CI (ddcutil) and show a
+# swayosd popup identical to the internal-panel brightness OSD.
+#
+# Usage:  ext-brightness +10   # relative up
+#         ext-brightness -10   # relative down
+#         ext-brightness 70    # absolute
+#
+# Bound to Mod+XF86MonBrightnessUp / Down in niri (binds.kdl); also usable
+# straight from a shell since ~/.local/bin is on PATH.
+#
+# Why a script and not swayosd's own --brightness: swayosd drives the sysfs
+# backlight, which only the internal laptop panel has. External monitors expose
+# brightness as VCP feature 0x10 over DDC/CI, so we set that with ddcutil and
+# feed the resulting value into swayosd's --custom-progress to match the OSD.
+
+set -l disp 1   # ddcutil display number for the external monitor (`ddcutil detect`).
+                # Laptop panels never get a Display number (no DDC/CI), so the
+                # single external monitor is reliably Display 1. Bump if you run
+                # more than one external DDC monitor.
+set -l vcp 10   # VCP 0x10 = luminance / brightness.
+
+if test -z "$argv[1]"
+    echo "usage: ext-brightness +N | -N | N" >&2
+    exit 2
+end
+
+# Read current + max. `--brief` prints one line: `VCP 10 C <current> <max>`.
+# ddcutil warns on stderr about the laptop-panel i2c bus; drop it.
+set -l parts (ddcutil getvcp $vcp --display $disp --brief 2>/dev/null | string split ' ')
+set -l cur $parts[4]
+set -l max $parts[5]
+
+if test -z "$cur"
+    notify-send -a ext-brightness "External brightness" \
+        "No DDC/CI display found on ddcutil display $disp"
+    exit 1
+end
+test -z "$max"; and set max 100
+
+# Resolve the requested value to an absolute target.
+set -l arg $argv[1]
+set -l target
+switch $arg
+    case '+*'
+        set target (math "$cur + "(string sub -s 2 -- $arg))
+    case '-*'
+        set target (math "$cur - "(string sub -s 2 -- $arg))
+    case '*'
+        set target $arg
+end
+
+# Clamp to 0..max.
+test $target -gt $max; and set target $max
+test $target -lt 0; and set target 0
+
+# --noverify skips the post-set readback so key-repeat stays snappy over DDC.
+ddcutil setvcp --noverify $vcp $target --display $disp 2>/dev/null
+
+# Mirror the internal OSD: progress bar + brightness icon + a percent label.
+if type -q swayosd-client
+    swayosd-client \
+        --custom-progress (math "$target / $max") \
+        --custom-progress-text "$target%" \
+        --custom-icon display-brightness-symbolic
+end
