@@ -46,10 +46,11 @@ set -l entries \
     ' Sound|ghostty --title=Wiremix --class=Wiremix -e wiremix -v output' \
     ' Microphone|ghostty --title=Wiremix --class=Wiremix -e wiremix -v input' \
     ' System Monitor|ghostty --class=btop --title=btop -e btop' \
+    '󰍹 External Display (DDC)|ghostty --title="External Display" --class=ext-display -e ext-display' \
     '󰩈 Exit session|niri msg action quit'
 
 set -l selection (string split -f1 '|' -- $entries | fuzzel --dmenu \
-    --font='JetBrainsMono Nerd Font Mono:size=14' --lines=19)
+    --font='JetBrainsMono Nerd Font Mono:size=14' --lines=20)
 test -n "$selection"; or exit
 
 for entry in $entries
