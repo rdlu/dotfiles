@@ -288,6 +288,7 @@ system:
 desktop:
   - alacarte
   - bemoji
+  - ddcutil # external-monitor brightness/contrast over DDC/CI
   - dex
   - dgop
   - gnome-epub-thumbnailer
