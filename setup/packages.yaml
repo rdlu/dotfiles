@@ -215,6 +215,7 @@ cli-tools:
   - thefuck
   - qrcodegencpp-cmake
   - skim
+  - superfile
   - ueberzugpp
 
 docs-wiki:

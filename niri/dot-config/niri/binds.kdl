@@ -20,7 +20,8 @@ binds {
     Super+Alt+L hotkey-overlay-title="Lock the Screen" { spawn "loginctl" "lock-session"; }
     Mod+Escape hotkey-overlay-title="Menu Power" { spawn "~/.local/bin/menu-power"; }
     Mod+Shift+Escape hotkey-overlay-title="Menu Just: dotfiles commands" { spawn "~/.local/bin/menu-just"; }
-    Mod+E { spawn-sh "ghostty -e yazi"; }
+    Mod+E hotkey-overlay-title="File Manager: superfile" { spawn-sh "ghostty -e spf"; }
+    Mod+Y hotkey-overlay-title="File Manager: yazi" { spawn-sh "ghostty -e yazi"; }
     Mod+Shift+C hotkey-overlay-title="Color Picker: hyprpicker" { spawn "hyprpicker" "-a"; }
 
     Mod+G hotkey-overlay-title="Mouse Warp: wl-kbptr" { spawn "wl-kbptr"; }
