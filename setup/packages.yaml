@@ -211,6 +211,7 @@ emacs:
 cli-tools:
   - ed
   - fasd
+  - gum # ext-display TUI
   - htop
   - thefuck
   - qrcodegencpp-cmake
