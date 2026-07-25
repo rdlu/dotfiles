@@ -5,6 +5,10 @@
 # brightness / contrast / sharpness, switch the input source, pick a colour
 # preset, or restore the brightness/contrast defaults.
 #
+# Driven by single-key shortcuts: b/c/s pick a level (digits 1-9 = 10-90%,
+# 0 = 100%), i switches input, p picks a preset, r restores defaults,
+# q (or Esc) quits.
+#
 # Exposed as `mise run ext-display` / `just ext-display`; also on PATH. For a
 # one-shot brightness step (and the swayosd OSD) use `ext-brightness` instead;
 # this is the interactive panel.
@@ -46,19 +50,18 @@ function _toast --argument-names msg
     gum style --foreground 42 "  $msg"
 end
 
-# Pick a level for a 0..max feature; brightness/contrast step by 10, small
-# ranges (sharpness) list every value.
+# Pick a level for a 0..max feature with a single keystroke: digits 1-9 map
+# to 10-90% of max, 0 means 100%; q/Esc/Enter goes back without changing
+# anything. (For sharpness, max is small, so e.g. 5 -> 5/10.)
 function _pick_level --argument-names code label
     set -l max (_max $code)
     set -l cur (_cur $code)
-    set -l levels
-    if test $max -le 10
-        set levels (seq $max -1 0)
-    else
-        set levels (seq $max -10 0)
-    end
-    set -l pick (gum choose --header "$label -- now $cur/$max:" --selected "$cur" $levels)
-    test -z "$pick"; and return
+    echo
+    gum style --foreground 63 "$label -- now $cur/$max.   1-9 = 10-90%   0 = 100%   q = back"
+    read -l --nchars 1 -P "  > " key; or return
+    string match -qr '^[0-9]$' -- $key; or return
+    set -l pick (math "round($key * $max / 10)")
+    test "$key" = 0; and set pick $max
     ddcutil setvcp --noverify $code $pick --display $DISP 2>/dev/null
     # Mirror the OSD for brightness, matching the keybind behaviour.
     if test "$code" = 10; and type -q swayosd-client
@@ -105,29 +108,32 @@ while true
         "External monitor  ·  DDC/CI" \
         "Brightness $b/100    Contrast $c/100    Input "(_input_name)
 
-    set -l choice (gum choose --header "Control:" \
-        "Brightness" "Contrast" "Sharpness" "Input source" "Colour preset" \
-        "Restore brightness/contrast" "Quit")
+    echo
+    echo "  [b] Brightness       [c] Contrast        [s] Sharpness"
+    echo "  [i] Input source     [p] Colour preset   [r] Restore defaults"
+    echo "  [q] Quit"
+    echo
+    read -l --nchars 1 -P "  key: " key; or break
 
-    switch "$choice"
-        case Brightness
+    switch "$key"
+        case b
             _pick_level 10 Brightness
-        case Contrast
+        case c
             _pick_level 12 Contrast
-        case Sharpness
+        case s
             _pick_level 87 Sharpness
-        case "Input source"
+        case i
             _pick_input
-        case "Colour preset"
+        case p
             _pick_preset
-        case "Restore brightness/contrast"
+        case r
             # VCP 05 = restore factory brightness/contrast only (never touches
             # the input source, unlike the broad factory reset 04).
             if gum confirm "Restore factory brightness & contrast?"
                 ddcutil setvcp 05 01 --display $DISP 2>/dev/null
                 _toast "restored brightness/contrast defaults"
             end
-        case Quit '' '*'
+        case q \e
             break
     end
 end
