@@ -280,6 +280,7 @@ system:
   - iptables
   - nfs-utils
   - ntfs-3g
+  - rebuild-detector
   - samba
   - solaar
   - squashfuse
