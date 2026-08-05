@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily check for foreign packages needing a rebuild
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+RandomizedDelaySec=15min
+
+[Install]
+WantedBy=timers.target

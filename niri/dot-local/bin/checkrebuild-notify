@@ -1,0 +1,30 @@
+#!/usr/bin/fish
+
+# checkrebuild-notify — surface broken AUR/foreign packages as a mako
+# notification instead of a line buried in pacman upgrade output.
+#
+# rebuild-detector's pacman hook prints "packages need to be rebuilt" during
+# every upgrade, but it scrolls past between snapper hooks and nothing acts on
+# it — that's how wl-kbptr (the Mod+X mouseless setup) sat broken after the
+# OpenCV 4→5 bump until the keybind died. This script runs `checkrebuild`
+# and raises a notification listing anything linked against missing libs.
+#
+# Driven by checkrebuild-notify.timer (daily). Run manually anytime.
+#
+# Fix reported packages with: paru -S --rebuild <pkg>
+# (a "foreign" tag means AUR — those never get rebuilt by system updates)
+
+set -l broken (checkrebuild 2>/dev/null)
+or begin
+    notify-send -u low -a checkrebuild "Rebuild check failed" \
+        "checkrebuild exited with an error — run it in a terminal."
+    exit 1
+end
+
+test -n "$broken"; or exit 0
+
+notify-send -u critical -a checkrebuild -i package-broken \
+    "Packages need rebuilding" \
+    (string join \n $broken)"
+
+Fix with: paru -S --rebuild <pkg>"
