@@ -33,7 +33,7 @@ set -l entries \
     (caffeine_entry) \
     '󰜉 Reboot [Restart]|systemctl reboot' \
     '󰐥 Shutdown|systemctl poweroff' \
-    '🚀 Waybar restart|systemctl --user restart waybar.service' \
+    # '🚀 Waybar restart|systemctl --user restart waybar.service' \
     '󰤨 Wi-Fi|ghostty --title=Impala --class=Impala -e impala' \
     ' Bluetooth|ghostty --title=BlueTUI --class=bluetui -e bluetui' \
     '🗂️ SMB Shares|ghostty --title="SMB Manager" --class=smb-tui -e ~/.local/bin/smb-tui' \
