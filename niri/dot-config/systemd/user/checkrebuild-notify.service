@@ -1,0 +1,6 @@
+[Unit]
+Description=Notify about foreign packages linked against missing libraries
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/checkrebuild-notify
