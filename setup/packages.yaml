@@ -92,8 +92,9 @@ niri-wm: # niri-window-manager (nerd-fonts is a group: pulls all nerd fonts)
   - brightnessctl
   - cliphist
   - fuzzel
-  - gdm
   - gnome-keyring
+  - greetd
+  - greetd-tuigreet
   - inter-font
   - jq
   - mako

@@ -431,7 +431,7 @@ depends = ["docs-update"]
 run = [
   'mkdir -p docs/pdf',
   '''
-for page in setup file-transfer neovim-plugins justfile shortcuts/tmux shortcuts/herdr shortcuts/zellij shortcuts/niri shortcuts/shell wl-kbptr; do
+for page in setup file-transfer neovim-plugins justfile shortcuts/tmux shortcuts/herdr shortcuts/zellij shortcuts/niri shortcuts/shell wl-kbptr migrations/luks-fido2-login-setup; do
   out="$(basename "$page")"
   case "$out" in tmux|herdr|zellij|niri|shell) out="$out-shortcuts";; esac
   pandoc "docs/$page.md" -o "docs/pdf/$out.pdf" \
