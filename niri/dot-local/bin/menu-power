@@ -27,6 +27,21 @@ function caffeine_entry
     end
 end
 
+# FIDO2 SSH key in the shared ssh-agent, live state like the caffeine entry:
+# loaded → the action is to drop it, locked → the action is to unlock. Adding
+# the key needs a TTY for the passphrase prompt (and a YubiKey touch), so that
+# path opens a terminal; dropping it is silent + a notification.
+function sshkey_entry
+    switch (~/.local/bin/ssh-unlock status 2>/dev/null)
+        case loaded
+            printf '%s\n' '🔓 SSH key: loaded → lock (drop from agent)|~/.local/bin/ssh-unlock lock'
+        case noagent
+            printf '%s\n' '🔑 SSH key: agent DOWN → diagnose|ghostty --title="SSH Unlock" --class=ssh-unlock -e ~/.local/bin/ssh-unlock'
+        case '*'
+            printf '%s\n' '🔒 SSH key: locked → unlock|ghostty --title="SSH Unlock" --class=ssh-unlock -e ~/.local/bin/ssh-unlock'
+    end
+end
+
 set -l entries \
     ' Lock|loginctl lock-session' \
     '󰤄 Suspend|systemctl suspend' \
@@ -41,6 +56,7 @@ set -l entries \
     '🔒 LocalSend close|localsend-here off' \
     '🔑 SSH/rsync in (temp)|ssh-here on' \
     '🔒 SSH/rsync close|ssh-here off' \
+    (sshkey_entry) \
     (audio_entry '' speakers output @DEFAULT_AUDIO_SINK@) \
     (audio_entry '' mic input @DEFAULT_AUDIO_SOURCE@) \
     ' Sound|ghostty --title=Wiremix --class=Wiremix -e wiremix -v output' \
