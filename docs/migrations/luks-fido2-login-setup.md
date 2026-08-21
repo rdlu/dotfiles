@@ -174,9 +174,20 @@ FIDO2-specific parts:
 | Parameter | Why |
 | --------- | --- |
 | `rd.luks.name=<UUID>=luks-<UUID>` | Names the mapped device; `root=` must match. |
-| `rd.luks.options=fido2-device=auto` | Tells `systemd-cryptsetup` to try FIDO2 first. |
-| `token-timeout=1s` | How long to wait for the token before falling back to the passphrase prompt. Short on purpose, and the reason booting with no key inserted lands on the passphrase prompt immediately rather than stalling. Keep it low. |
+| `rd.luks.options=fido2-device=auto` | Enables FIDO2 unlocking for the volume. `auto` means the token's `hidraw` device is **auto-discovered as it is plugged in** — it selects *which device*, not an order of preference. `rd.luks.options=` is the analogue of crypttab's fourth (options) field, and is honored **only in the initrd**; `luks.options=` would apply in both. |
+| `token-timeout=1s` | How long to wait *at most* for a configured security device to **show up**. Once it elapses, password authentication is attempted — which is why booting with no key inserted lands on the passphrase prompt immediately instead of stalling. Default is `30s`; `0` waits forever. Note it does **not** bound the token's PIN prompt. |
 | `systemd.setenv=SYSTEMD_CRYPTSETUP_USE_TOKEN_MODULE=0` | Disables the libcryptsetup token plugin so systemd drives the FIDO2 exchange itself. Without it the unlock can fail or hang on some systemd/cryptsetup combinations. |
+
+!!! note "`rd.luks.options=` here is unscoped, on purpose"
+
+    The option list above carries **no `UUID=` prefix**, so it applies to
+    any LUKS volume not named elsewhere and without an `/etc/crypttab`
+    entry. Fine on a single-LUKS laptop like daisy. If xps ends up with
+    a second encrypted volume, scope it explicitly instead:
+
+    ```sh
+    rd.luks.options=<UUID>=fido2-device=auto,token-timeout=1s
+    ```
 
 !!! note "The PIN prompt is expected"
 
