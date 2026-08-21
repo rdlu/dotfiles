@@ -152,6 +152,40 @@ Budget a test reboot specifically for this. If the prompt is swallowed,
 either drop the hook (daisy's choice) or remove `quiet` from the cmdline
 so the prompt is visible.
 
+### Keeping the console readable
+
+With no splash, the FIDO2 prompt competes with whatever else is printing
+to the console — so boot-time warning noise stops being cosmetic and
+starts being a usability problem. Audit it:
+
+```sh
+journalctl -b -p warning --no-pager | grep -v 'kernel:'
+```
+
+On daisy this turned up a stale `/etc/udev/rules.d/99-mouseless-input.rules`,
+left behind by [mouseless](../wl-kbptr.md) after wl-kbptr replaced it. It was
+emitting ~30 warnings per boot plus one deprecation notice, the last of
+them landing about two seconds before the greeter started — close enough
+that it read as though greetd were the source. Removed:
+
+```sh
+sudo rm /etc/udev/rules.d/99-mouseless-input.rules
+sudo udevadm control --reload
+```
+
+!!! tip "Two lessons worth carrying to xps"
+
+    **Attribute console messages by timestamp, not by position.** The
+    last thing printed before a service starts usually is not that
+    service. `journalctl -u <unit> -p warning` settles it — greetd's was
+    empty across every boot.
+
+    **Own your udev rules.** `pacman -Qo <file>` on anything in
+    `/etc/udev/rules.d/` — a rule no package owns is one you wrote, and
+    it will outlive the tool it was written for. Naming a login user as
+    a device-node group (`GROUP="rdlu"`) is the specific pattern being
+    deprecated; use `TAG+="uaccess"` or a real system group instead.
+
 ## Kernel cmdline
 
 With Limine, the cmdline lives in `/etc/default/limine` — **not** in
