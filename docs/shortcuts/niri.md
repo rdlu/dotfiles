@@ -21,7 +21,8 @@ binds see also the [wl-kbptr guide](../wl-kbptr.md).
 | `Super+Alt+L` | Lock the Screen |
 | `Mod+Escape` | Menu Power |
 | `Mod+Shift+Escape` | Menu Just: dotfiles commands |
-| `Mod+E` | Run `ghostty -e yazi` |
+| `Mod+E` | File Manager: superfile |
+| `Mod+Y` | File Manager: yazi |
 | `Mod+Shift+C` | Color Picker: hyprpicker |
 | `Mod+XF86MonBrightnessUp` | External monitor brightness up *(works on lock screen)* |
 | `Mod+XF86MonBrightnessDown` | External monitor brightness down *(works on lock screen)* |
