@@ -176,7 +176,58 @@ FIDO2-specific parts:
 | `rd.luks.name=<UUID>=luks-<UUID>` | Names the mapped device; `root=` must match. |
 | `rd.luks.options=fido2-device=auto` | Enables FIDO2 unlocking for the volume. `auto` means the token's `hidraw` device is **auto-discovered as it is plugged in** — it selects *which device*, not an order of preference. `rd.luks.options=` is the analogue of crypttab's fourth (options) field, and is honored **only in the initrd**; `luks.options=` would apply in both. |
 | `token-timeout=1s` | How long to wait *at most* for a configured security device to **show up**. Once it elapses, password authentication is attempted — which is why booting with no key inserted lands on the passphrase prompt immediately instead of stalling. Default is `30s`; `0` waits forever. Note it does **not** bound the token's PIN prompt. |
-| `systemd.setenv=SYSTEMD_CRYPTSETUP_USE_TOKEN_MODULE=0` | Disables the libcryptsetup token plugin so systemd drives the FIDO2 exchange itself. Without it the unlock can fail or hang on some systemd/cryptsetup combinations. |
+| `systemd.setenv=SYSTEMD_CRYPTSETUP_USE_TOKEN_MODULE=0` | **The parameter that made this setup usable.** Stops the double PIN prompt — see [below](#the-double-pin-prompt). Do not omit it. |
+
+### The double PIN prompt
+
+!!! success "If you take one thing from this guide, take this"
+
+    `systemd.setenv=SYSTEMD_CRYPTSETUP_USE_TOKEN_MODULE=0` is what turned
+    this from an annoying boot into a clean one on daisy. Everything else
+    can be derived from the man pages; this cannot.
+
+**Symptom.** FIDO2 unlock works, but every boot asks for the PIN
+**twice** — most visibly on a keyless boot, where you get two prompts
+before the passphrase fallback appears.
+
+**Cause.** `systemd-cryptsetup` has two independent FIDO2 code paths: the
+libcryptsetup **token plugin** (`libcryptsetup-token-systemd-fido2.so`),
+and its own **built-in** implementation. It tries the plugin first, then
+falls through to the built-in one — and each runs its own PIN prompt. The
+enrollment is fine; you are simply being asked twice by two different
+implementations.
+
+**Fix.** Disable the plugin path so only the built-in one runs. Append to
+`KERNEL_CMDLINE[default]` in `/etc/default/limine`, then rebuild:
+
+```sh
+systemd.setenv=SYSTEMD_CRYPTSETUP_USE_TOKEN_MODULE=0
+```
+
+```sh
+sudo limine-mkinitcpio     # or: sudo limine-update && sudo mkinitcpio -P
+```
+
+It takes effect only **after a reboot** — the value must be in
+`/proc/cmdline`, not merely in `/etc/default/limine`. Confirm with:
+
+```sh
+grep -o 'SYSTEMD_CRYPTSETUP_USE_TOKEN_MODULE=[01]' /proc/cmdline
+```
+
+!!! info "Why the cmdline, and not deleting the .so"
+
+    The other way to kill the plugin path is to remove
+    `libcryptsetup-token-systemd-fido2.so` from the initramfs via a
+    shadowed `/etc/initcpio/install/sd-encrypt`. The cmdline flag was
+    chosen deliberately, for three reasons:
+
+    - It is **rollback-able from the Limine menu** — press `e`, delete
+      the parameter, boot. No rescue media needed if it misbehaves.
+    - It needs **no re-sync** when Arch updates the `sd-encrypt` hook; a
+      shadowed install file silently drifts from upstream.
+    - It leaves the plugin in place on the **real root**, so
+      `cryptsetup open` from a rescue USB still works with the key.
 
 !!! note "`rd.luks.options=` here is unscoped, on purpose"
 
@@ -215,6 +266,26 @@ lsinitcpio -a /boot/initramfs-linux-cachyos.img | grep -i systemd
 ```
 
 Then reboot with the key inserted, and with the passphrase to hand.
+
+#### Rehearsing the unlock without rebooting
+
+You can exercise the real FIDO2 path against the live volume, which is
+much faster than a reboot cycle when tuning options:
+
+```sh
+sudo systemd-cryptsetup attach lukstest \
+  /dev/disk/by-uuid/<UUID> - fido2-device=auto,token-timeout=1s
+```
+
+!!! danger "Ctrl+C at the passphrase prompt — never complete it"
+
+    This creates a **second dm-crypt mapping over an already-mounted
+    btrfs filesystem**. Let it prove the FIDO2 handshake (PIN prompt,
+    touch, or the fallback), then abort at the passphrase prompt. Do not
+    let it finish and do not mount the result.
+
+Use `/dev/disk/by-uuid/` here rather than `/dev/nvme…` — NVMe
+enumeration order is not stable.
 
 ## greetd + tuigreet
 
@@ -339,6 +410,7 @@ sudo reboot
 | Plymouth | installed, hook **omitted** | **undecided** — see [Plymouth](#plymouth) |
 | Bootloader | Limine | Limine |
 | Greeter | greetd + tuigreet | same |
+| `SYSTEMD_CRYPTSETUP_USE_TOKEN_MODULE=0` | required | **required** — same double-prompt bug, see [The double PIN prompt](#the-double-pin-prompt) |
 
 Everything else transfers unchanged. Do the LUKS half and the greetd
 half as separate reboots.
