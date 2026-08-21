@@ -1,27 +1,11 @@
-# Set up a persistent SSH agent socket
-set -gx ssh_agent_file "$HOME/.ssh/agent.env"
-
-function __start_agent
-    set ssh_agent_file "$HOME/.ssh/agent.env"
-    echo "Starting new SSH agent..."
-    ssh-agent -c | sed 's/^echo/#echo/' >$ssh_agent_file
-    chmod 600 $ssh_agent_file
-    source $ssh_agent_file
-end
-
-# Check if the agent file exists
-if test -f $ssh_agent_file
-    # Source the agent file to load existing environment
-    source $ssh_agent_file >/dev/null
-
-    # Check if the agent is still running
-    if not ps -p $SSH_AGENT_PID >/dev/null
-        # Agent not running, start a new one
-        __start_agent
+# ssh-agent runs as a systemd user service (ssh-agent.service) on a fixed
+# socket, so every shell shares one agent. Shells started from the graphical
+# session inherit SSH_AUTH_SOCK from environment.d; this covers the ones that
+# don't (tty logins, su). Inbound ssh sessions keep their forwarded agent.
+if not set -q SSH_CONNECTION; and set -q XDG_RUNTIME_DIR
+    if test -S $XDG_RUNTIME_DIR/ssh-agent.socket
+        set -gx SSH_AUTH_SOCK $XDG_RUNTIME_DIR/ssh-agent.socket
     end
-else
-    # No agent file exists, start a new agent
-    __start_agent
 end
 
 # Wrap ssh to automatically toggle tmux into "OFF" mode for nested tmux
