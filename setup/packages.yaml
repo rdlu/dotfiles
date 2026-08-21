@@ -92,7 +92,6 @@ niri-wm: # niri-window-manager (nerd-fonts is a group: pulls all nerd fonts)
   - brightnessctl
   - cliphist
   - fuzzel
-  - gnome-keyring
   - greetd
   - greetd-tuigreet
   - inter-font
@@ -104,6 +103,7 @@ niri-wm: # niri-window-manager (nerd-fonts is a group: pulls all nerd fonts)
   - noto-fonts-cjk
   - noto-fonts-emoji
   - noto-fonts-extra
+  - oo7
   - polkit-kde-agent
   - swayidle
   - swaylock-effects-git
