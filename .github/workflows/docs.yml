@@ -41,7 +41,9 @@ jobs:
       # `:::` is mise's multi-task separator (their shared docs-update dep
       # runs once).
       - name: Build PDFs + cheatsheets
-        run: mise run docs-pdf ::: docs-cheatsheets
+        # Quoted: an unquoted YAML scalar cannot contain ": ", and mise's
+        # ":::" separator trips the parser (the whole file fails to load).
+        run: "mise run docs-pdf ::: docs-cheatsheets"
         env:
           CHEAT_FONT_PATH: /usr/share/fonts/truetype/jetbrains-mono
       - name: Build HTML site
