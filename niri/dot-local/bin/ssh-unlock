@@ -1,0 +1,146 @@
+#!/usr/bin/fish
+
+# ssh-unlock — load (or drop) the FIDO2 SSH key in the shared ssh-agent.
+#
+# The agent is ssh-agent.service (a systemd user service on the fixed socket
+# $XDG_RUNTIME_DIR/ssh-agent.socket), so there is exactly ONE agent per login:
+# unlocking here unlocks ssh for every shell, editor and tool in the session.
+#
+# ~/.ssh/id_ed25519_sk is passphrase-encrypted AND lives on the YubiKey, so
+# `ssh-add` asks for the passphrase (needs a real TTY — hence the terminal
+# window from the power menu) and then waits for a physical touch. Every
+# signature afterwards still needs its own touch; that is the point of the key.
+#
+# Usage: ssh-unlock [unlock | lock | status]   (default: unlock)
+#   unlock  interactive: add the key, explaining each prompt
+#   lock    drop every identity from the agent (ssh-add -D), notify
+#   status  print loaded | locked | noagent — for menu-power's live-state entry
+#
+# Reached from the niri power menu (Mod+Escape); also on PATH.
+
+set -g KEY $HOME/.ssh/id_ed25519_sk
+
+# Anything the graphical session spawns should inherit SSH_AUTH_SOCK from
+# environment.d, but niri itself may predate the agent (nothing re-imports the
+# variable into a running compositor), so its children get no socket at all.
+# Same fallback as fish/conf.d/ssh.fish: if the inherited socket is missing or
+# stale, use the well-known one. A live (e.g. forwarded) socket is left alone.
+if not set -q SSH_AUTH_SOCK; or not test -S "$SSH_AUTH_SOCK"
+    if set -q XDG_RUNTIME_DIR; and test -S $XDG_RUNTIME_DIR/ssh-agent.socket
+        set -gx SSH_AUTH_SOCK $XDG_RUNTIME_DIR/ssh-agent.socket
+    end
+end
+
+# `ssh-add -l` exit codes: 0 = agent up with keys, 1 = agent up but empty,
+# 2 = no agent reachable. The 1/2 distinction is the whole state machine.
+function _state
+    ssh-add -l >/dev/null 2>&1
+    switch $status
+        case 0
+            echo loaded
+        case 1
+            echo locked
+        case '*'
+            echo noagent
+    end
+end
+
+# Never let the terminal vanish on top of a message the user needs to read.
+function _pause -a msg
+    test -n "$msg"; or set msg "Press enter to close…"
+    echo
+    read -l ack -P "$msg"
+end
+
+function _notify -a title body
+    command -q notify-send; or return
+    notify-send -a ssh-unlock -i dialog-password "$title" "$body"
+end
+
+function _no_agent
+    set_color red
+    echo "No ssh-agent reachable."
+    set_color normal
+    echo
+    echo "Tried socket: "(set -q SSH_AUTH_SOCK; and echo $SSH_AUTH_SOCK; or echo '(SSH_AUTH_SOCK unset)')
+    echo
+    echo "The agent runs as a systemd user service. Check it with:"
+    echo "    systemctl --user status ssh-agent.service"
+    echo "    systemctl --user restart ssh-agent.service"
+end
+
+set -l cmd $argv[1]
+test -n "$cmd"; or set cmd unlock
+
+switch $cmd
+    case status
+        _state
+
+    case lock
+        switch (_state)
+            case noagent
+                _notify "🔑 SSH key" "No ssh-agent reachable — check ssh-agent.service."
+                exit 1
+            case '*'
+                ssh-add -D >/dev/null 2>&1
+                and _notify "🔒 SSH key locked" "Dropped from the agent. Unlock again from Mod+Escape."
+                or begin
+                    _notify "🔑 SSH key" "ssh-add -D failed."
+                    exit 1
+                end
+        end
+
+    case unlock
+        switch (_state)
+            case noagent
+                _no_agent
+                _pause
+                exit 1
+            case loaded
+                set_color green
+                echo "SSH key already unlocked — the agent is holding:"
+                set_color normal
+                echo
+                ssh-add -l
+                echo
+                echo "Nothing to do. (Drop it again from the power menu, or: ssh-add -D)"
+                _pause
+                exit 0
+            case locked
+                if not test -f $KEY
+                    set_color red
+                    echo "Key not found: $KEY"
+                    set_color normal
+                    _pause
+                    exit 1
+                end
+                set_color --bold
+                echo "Unlocking $KEY"
+                set_color normal
+                echo
+                echo "  1. type the key's passphrase below"
+                echo "  2. then TOUCH the YubiKey when it blinks"
+                echo
+                if ssh-add $KEY
+                    echo
+                    set_color green
+                    echo "Unlocked — every shell in this session shares this agent now."
+                    set_color normal
+                    echo "(Each signature still needs a YubiKey touch.)"
+                    _notify "🔓 SSH key unlocked" "Loaded into ssh-agent for this session."
+                    sleep 2
+                    exit 0
+                else
+                    echo
+                    set_color red
+                    echo "ssh-add failed — key NOT loaded (see the error above)."
+                    set_color normal
+                    _pause
+                    exit 1
+                end
+        end
+
+    case '*'
+        echo "usage: ssh-unlock [unlock|lock|status]" >&2
+        exit 2
+end
