@@ -1,0 +1,26 @@
+#!/bin/bash
+# Raise the ACPI platform profile to `performance` for the duration of a game.
+# On this hardware (Radeon 680M, shared CPU/iGPU package power budget) the
+# platform profile sets the package power limit, which is what an iGPU-bound
+# game is actually starved by — measured on daisy in No Man's Sky:
+#   performance ~58fps | balanced ~30-40fps | low-power ~10fps
+#
+# Pairs with `game-power-restore`. Wired into Heroic per-game as the
+# "before launch" script; power-profiles-daemon allows this without root
+# (org.freedesktop.UPower.PowerProfiles.switch-profile -> allow_active=yes).
+set -euo pipefail
+
+state="${XDG_RUNTIME_DIR:-/tmp}/game-power-profile"
+
+command -v powerprofilesctl >/dev/null || exit 0
+
+current=$(powerprofilesctl get 2>/dev/null || echo "")
+[ -n "$current" ] || exit 0
+
+# Only record the pre-game profile if we are not already boosted, so a second
+# boost without an intervening restore cannot clobber the saved value.
+if [ "$current" != "performance" ]; then
+    printf '%s\n' "$current" > "$state"
+fi
+
+powerprofilesctl set performance

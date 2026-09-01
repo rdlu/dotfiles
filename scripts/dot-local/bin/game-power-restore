@@ -1,0 +1,23 @@
+#!/bin/bash
+# Restore the platform profile saved by `game-power-boost`. Wired into Heroic
+# per-game as the "after launch" script. Falls back to `balanced` if no saved
+# state exists (e.g. the boost script never ran, or the runtime dir was
+# cleared by a reboot) so the machine never stays pinned to `performance`.
+set -euo pipefail
+
+state="${XDG_RUNTIME_DIR:-/tmp}/game-power-profile"
+
+command -v powerprofilesctl >/dev/null || exit 0
+
+previous="balanced"
+if [ -r "$state" ]; then
+    previous=$(<"$state")
+    rm -f "$state"
+fi
+
+# Only restore to a profile the firmware actually offers.
+if powerprofilesctl list 2>/dev/null | grep -qF "$previous"; then
+    powerprofilesctl set "$previous"
+else
+    powerprofilesctl set balanced
+fi
