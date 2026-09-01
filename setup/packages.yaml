@@ -378,8 +378,12 @@ graphics:
 
 gaming:
   - gamemode
+  - innoextract # extracts GOG offline installers natively (no Wine)
+  - mcrcon # Minecraft server rcon client
+  - nmcrcon-git # Minecraft server rcon client (alternative)
   - prismlauncher
-  - proton-cachyos-slr
+  - proton-cachyos-native # runner Heroic uses; unlisted it orphans and gets GC'd
+  - proton-cachyos-slr # sibling build that expects Steam's runtime container
   - protonup-qt
   - vkd3d
   - wine-gecko
