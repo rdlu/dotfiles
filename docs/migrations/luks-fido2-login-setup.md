@@ -899,7 +899,10 @@ sudo reboot
 
 ## daisy vs xps
 
-Every row here is a verified difference, not a guess.
+The **xps** column is verified by direct inspection of this machine. The
+**daisy** column is carried over from what this guide already recorded —
+where daisy's value was never written down, the cell says so rather than
+guessing.
 
 | Item | daisy (AMD) | xps (Intel, XPS 9320) |
 | ---- | ----------- | --------------------- |
@@ -908,15 +911,15 @@ Every row here is a verified difference, not a guess.
 | Microcode | `amd-ucode` | `intel-ucode` (installed; `microcode` hook already in `HOOKS`) |
 | Plymouth | installed, hook **omitted** | **kept** — hook moved after `systemd`, `splash` retained. See [Plymouth](#plymouth) |
 | Display manager | gdm → greetd | **sddm** → greetd (gdm present but already disabled) |
-| Autologin before the swap | gdm, no autologin | `sddm-autologin` — `initial_session` preserves it |
+| Autologin before the swap | not recorded | `sddm-autologin` — `initial_session` preserves it |
 | Initramfs layout | mkinitcpio presets, `/boot/initramfs-linux-cachyos.img` | Boot Loader Spec, `/boot/<machine-id>/<kernel>/initramfs`; `/etc/mkinitcpio.d/` **empty** |
 | Rebuild command | `sudo mkinitcpio -P` | **`sudo limine-mkinitcpio`** — `mkinitcpio -P` builds nothing |
-| Secure Boot | not in use | **enabled/deployed**, `sbctl`-managed; entries carry BLAKE2B hashes. See [Secure Boot](#secure-boot-and-verified-boot-entries) |
+| Secure Boot | not recorded — **check before reusing xps's steps** | **enabled/deployed**, `sbctl`-managed; entries carry BLAKE2B hashes. See [Secure Boot](#secure-boot-and-verified-boot-entries) |
 | Fallback initramfs | present | **none** |
 | Rollback path | `-fallback` entry | **Snapper snapshot entries** — take one before the `HOOKS` edit; fix `MAX_SNAPSHOT_ENTRIES` first |
-| Kernels installed | one | `linux-cachyos` 7.2.2 + `linux-cachyos-lts` 6.18.48 (shared `mkinitcpio.conf` — not a fallback) |
+| Kernels installed | not recorded | `linux-cachyos` 7.2.2 + `linux-cachyos-lts` 6.18.48 (shared `mkinitcpio.conf` — not a fallback) |
 | cmdline operator | `KERNEL_CMDLINE[default]=` | `KERNEL_CMDLINE[default]+=` — **keep the `+=`** |
-| Pre-existing cmdline | already `rd.luks.name=` | `cryptdevice=` — must be replaced in the same reboot as the `HOOKS` change |
+| Pre-existing cmdline | not recorded (only the post-migration value is) | `cryptdevice=` — must be replaced in the same reboot as the `HOOKS` change |
 | Console keymap | — | `/etc/vconsole.conf`: `KEYMAP=br-abnt2` — the PIN is typed blind |
 | Console-noise audit | stale `99-mouseless-input.rules`, removed | not applicable — only `99-hide-ipu6-raw.rules`, which is **load-bearing** |
 | Bootloader | Limine | Limine |
