@@ -174,8 +174,6 @@ run = [
   'paru -S --needed $(mise run _pkgs niri-wm)',
   '''echo -e "\033[1;33m\n2) Stowing niri config\033[0m"''',
   'stow --no-folding --dotfiles -S niri',
-  # 'echo -e "\033[1;33m\n3) Enabling GNOME display manager service\033[0m"',
-  # 'sudo systemctl enable gdm',
 ]
 
 [tasks.keybase-ssh]
