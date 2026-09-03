@@ -18,7 +18,8 @@ Two later sections cover work that rides along with this migration
 rather than being part of it —
 [oo7 replacing gnome-keyring](#secret-service-oo7-replaces-gnome-keyring),
 which autologin forces, and
-[fingerprint auth for `sudo`/`pkexec`](#fingerprint-for-sudo-and-polkit),
+[fingerprint auth for `sudo`/`pkexec` and the lock
+screen](#fingerprint-for-sudo-polkit-and-the-lock-screen),
 which is pure convenience and touches neither boot nor the greeter.
 
 !!! warning "Read the rollback section first"
@@ -1149,27 +1150,74 @@ and with autologin there is no `PAM_AUTHTOK` to capture. The
     with a guessed password — that creates an empty unlocked collection
     that masks the real one until you restart the daemon.
 
-## Fingerprint for sudo and polkit
+## Fingerprint for sudo, polkit, and the lock screen
 
 Purely a convenience layer, and deliberately **not** wired into boot or
-the display manager — the Goodix sensor is not involved in unlocking the
-disk or the session, only in not retyping your password all day.
+the display manager — the Goodix sensor never unlocks the disk and never
+stands in for the greeter. It covers `sudo`, the polkit dialog and the
+`swaylock` screen, and nothing that runs before your session does.
 
-Enroll, then confirm:
+Enroll, then confirm — one `fprintd-enroll` run per finger:
 
 ```sh
 fprintd-enroll
 fprintd-list "$USER"
 # → Fingerprints for user rdlu on Goodix MOC Fingerprint Sensor (press):
 # →  - #0: right-index-finger
+# →  - #1: right-middle-finger
 ```
 
-Add one line to the **top** of the auth stack in each of two files —
-`sufficient` means a match short-circuits to success while a failure or
-timeout falls through to the ordinary password prompt:
+### Stock `pam_fprintd` makes the polkit dialog unusable
+
+**Symptom.** With `pam_fprintd.so` first in the stack, the polkit GUI
+dialog — `pkexec` and every desktop authentication prompt — swallows the
+password. You type it, press Enter, and nothing happens until the
+fingerprint attempt times out some ten seconds later; only then is the
+password looked at.
+
+**Cause.** It is documented behaviour, in `man pam_fprintd` under
+LIMITATIONS:
+
+```text
+The PAM stack is by design a serialised authentication, so it is not
+possible for pam_fprintd to allow authentication through passwords and
+fingerprints at the same time. It is up to the application using the PAM
+services to implement separate PAM processes and run separate
+authentication stacks separately. This is the way multiple
+authentication methods are made available to users of gdm for example.
+```
+
+`pam_fprintd` holds the stack. `pam_unix` cannot issue its
+`PAM_PROMPT_ECHO_OFF` until fprintd returns — a match, a non-match with
+`max-tries` exhausted, or the timeout — so what you typed just sits in
+the agent helper's pipe with nothing reading it.
+
+!!! info "The polkit agent cannot do gdm's trick — checked, not assumed"
+
+    The man page's escape route is for the *application* to run separate
+    PAM processes with separate stacks. `polkit-kde-authentication-agent-1`
+    does not: its binary contains zero `fingerprint` or `fprint` strings,
+    and it runs a single serial `polkit-agent-helper-1` per attempt. The
+    journal shows the consequence — the only thing that reaches the
+    dialog is `showInfo → "Place your finger on the fingerprint reader"`,
+    a `PAM_TEXT_INFO` message, and never a prompt.
+
+### The fix: `pam_fprintd_grosshack`
+
+Replace the stock module with `pam_fprintd_grosshack.so` from the AUR
+package `pam-fprint-grosshack`, already declared in the manifest under
+`security` (`setup/packages.yaml:260`). It installs exactly one file,
+`/usr/lib/security/pam_fprintd_grosshack.so`.
+
+It issues a **real** `PAM_PROMPT_ECHO_OFF`, with the prompt text
+`Enter Password or Place finger on fingerprint reader: `, while scanning
+the sensor concurrently — so the password field is live from the first
+moment and the finger still works.
+
+One line at the **top** of the auth stack in each of two files:
 
 ```
-auth		sufficient	pam_fprintd.so	max-tries=1 timeout=10
+auth		sufficient	pam_fprintd_grosshack.so	max-tries=3 timeout=30
 ```
 
 - `/etc/pam.d/sudo` — ships in `sudo`, so back it up before editing.
@@ -1178,15 +1226,144 @@ auth		sufficient	pam_fprintd.so	max-tries=1 timeout=10
   line. This is the one that covers `pkexec` and every GUI authentication
   dialog.
 
-`max-tries=1 timeout=10` keeps the fallback quick: one swipe, ten
-seconds, then the password prompt. Without a bound you sit staring at a
-sensor with no visible prompt.
+!!! info "Why `sufficient` is safe — grosshack never checks the password"
+
+    It does not validate the password itself. Its only PAM calls are
+    `pam_get_item`/`pam_set_item`, `pam_prompt`, `pam_get_user` and
+    `pam_syslog`; there is no `crypt` or shadow linkage in it at all.
+    What it does with what you typed is stash it as `PAM_AUTHTOK` — and
+    the `pam_unix.so try_first_pass` line already in `system-auth` does
+    the real check further down the stack. A `sufficient` grosshack line
+    therefore cannot short-circuit to success on a password nothing
+    verified. The journal evidence below is exactly that property being
+    exercised.
+
+### Why `max-tries=3 timeout=30` and not `max-tries=1 timeout=10`
+
+The old tight bound existed for one reason: keeping the fallback quick
+for non-interactive `sudo`. That rationale is void here — grosshack's
+prompt fails immediately when there is no usable PAM conversation,
+measured at **17 ms** for `sudo -n true`.
+
+`max-tries=1` was worse than merely unnecessary. A single misread press
+retired the fingerprint option for that attempt and dropped the dialog
+to a bare `Password: ` prompt. Three tries and thirty seconds cost
+nothing and stop that.
+
+### Verified on the live machine
+
+From `journalctl` across a set of `pkexec` authentications with the
+module in place:
+
+- The request `Enter Password or Place finger on fingerprint reader: `
+  arrives **0.5 s** after auth starts — the password field is live
+  immediately, which is the whole point of the swap.
+- `fprintd: Verification was in progress, stopping it` — typing the
+  password **aborts** the in-flight verify instead of queueing behind
+  it.
+- Wrong password → `pam_unix(polkit-1:auth): authentication failure` →
+  `Completed: false`. Rejected by `pam_unix`, not by grosshack. No
+  bypass.
+- Correct fingerprint → `Completed: true`, with no `pam_unix` failure.
 
 !!! warning "Keep a root shell open while editing PAM"
 
     A malformed `/etc/pam.d/sudo` locks you out of `sudo`. Edit with an
     already-authenticated `sudo -i` shell open in another terminal, and
     test in a third before closing either.
+
+!!! danger "An out-of-tree fork, in the auth path of both `sudo` and `polkit`"
+
+    `pam-fprint-grosshack` is a fork of `pam_fprintd`: version **0.3.0**,
+    upstream last modified **2022-07-27**. After this change it sits in
+    the auth path for **both** `sudo` and `polkit-1`, so a `pam` or
+    `fprintd` ABI bump can take out privilege escalation on the whole
+    machine. **Re-test after every `pam` or `fprintd` update**, and treat
+    it as a thing to check after a big system upgrade rather than
+    something that quietly keeps working.
+
+    The two paths are each other's escape hatch: a working `pkexec` still
+    gets you root if `sudo` breaks, and a working `sudo` lets you repair
+    `/etc/pam.d/polkit-1` if the dialog breaks. Change one file, test it,
+    then change the other — never lose both at once.
+
+### The lock screen takes the opposite ordering, and no grosshack
+
+`/etc/pam.d/swaylock`, in full — `pam_unix` first, stock `pam_fprintd`
+second:
+
+```
+auth sufficient pam_unix.so try_first_pass
+auth sufficient pam_fprintd.so timeout=10
+auth include    login
+```
+
+Two paths, separated by the ordering alone:
+
+- **A typed password.** `pam_unix.so try_first_pass` matches on the
+  first line and the screen unlocks instantly. The reader is never
+  touched.
+- **A bare Enter on an empty field.** `pam_unix` fails fast on the empty
+  input and falls through to `pam_fprintd.so timeout=10`, which arms the
+  sensor for ten seconds. The empty Enter **is** the gesture that arms
+  the reader.
+
+!!! info "Why the order is inverted here — the polkit race does not exist"
+
+    In the polkit dialog the password field is live *before* you submit,
+    so a waiting `fprintd` and a typed password genuinely compete for
+    the one serialised PAM conversation. That race is the entire reason
+    for grosshack.
+
+    `swaylock` starts the PAM conversation **only on submit**. By the
+    time PAM runs you have either typed a password or you have not —
+    there is nothing to compete over. Ordering alone separates the two
+    paths, and grosshack buys nothing.
+
+!!! danger "Do not put grosshack at the top of the `swaylock` stack"
+
+    It does not merely fail to help — it breaks the fingerprint path
+    outright. `swaylock`'s conversation hands the empty buffer back
+    immediately; grosshack reads that as a submitted password, aborts
+    the in-flight scan, and the reader never arms. The password still
+    works, so the stack looks half-fine while the finger does nothing.
+
+    Everything above about grosshack applies to `sudo` and `polkit-1`
+    and stops there.
+
+!!! warning "`ignore-empty-password` must stay **absent** from the swaylock config"
+
+    In `niri/dot-config/swaylock/config` — verified absent. With it set,
+    `swaylock` swallows the empty submit, PAM never starts at all, and
+    the reader appears completely dead while the password still works.
+    That symptom sends you debugging `fprintd`, where nothing is wrong.
+
+!!! info "`/etc/pam.d/swaylock` is not in the repo — hand-write it per host"
+
+    It is a system file outside stow, so the dotfiles repo does not
+    carry it. It *is* in the `swaylock-effects-git` package's `backup`
+    array, so pacman preserves your edits and drops a `.pacnew`
+    alongside on update rather than clobbering them — check for one
+    after upgrades.
+
+!!! info "`swaylock` is not setuid — `unix_chkpwd` is"
+
+    `/usr/bin/swaylock` is `-rwxr-xr-x root root`. `pam_unix` still
+    works because it delegates to the setuid-root helper
+    `/usr/bin/unix_chkpwd` (`-rwsr-sr-x`). If password unlock ever
+    starts failing with authentication errors, check that helper's mode
+    before touching anything in `swaylock`.
+
+This stack is **verified on daisy**, which has run it for a while, and
+was applied and confirmed working on xps on **2026-09-03** — all three
+paths exercised by hand: typed password, empty Enter then finger, and a
+deliberately wrong password.
+
+It reached that state the hard way. grosshack went in here first, on the
+reasoning that if it beat stock `pam_fprintd` for the polkit dialog it
+should beat it everywhere. It does not, for the reason in the `!!! info`
+above, and the fingerprint path broke exactly as the `!!! danger` block
+describes. Reverting to daisy's ordering fixed it.
 
 ## Verification
 
@@ -1208,8 +1385,8 @@ sudo sbctl status          # Secure Boot: enabled, Setup Mode: disabled
 ```
 
 If you also did the [oo7](#secret-service-oo7-replaces-gnome-keyring)
-and [fingerprint](#fingerprint-for-sudo-and-polkit) work, five more
-checks — all five pass on xps:
+and [fingerprint](#fingerprint-for-sudo-polkit-and-the-lock-screen)
+work, five more checks — all five pass on xps:
 
 ```sh
 systemctl --user is-active oo7-daemon.service            # → active
@@ -1374,6 +1551,6 @@ guessing.
 | `SYSTEMD_CRYPTSETUP_USE_TOKEN_MODULE=0` | required | **required** — same double-prompt bug, confirmed at `sd-encrypt:29` |
 | Secret Service | oo7, TPM2-unsealed | **same** — oo7 0.6.0, 20 items migrated v0 → v1 intact, collection unlocked at start |
 | Keyring unlock mechanism | `systemd-creds` + TPM2 | **same** — `ImportCredential=` ships in the vendor unit; `pam_oo7` unused on both |
-| Fingerprint reader | not recorded | **Goodix MOC (press)**, `27c6:63bc` — `pam_fprintd` in `sudo` + `polkit-1` only, never boot or greeter |
+| Fingerprint reader | not recorded | **Goodix MOC (press)**, `27c6:63bc` — `pam_fprintd_grosshack` in `sudo` + `polkit-1` only, stock `pam_fprintd` in `swaylock`, never boot or greeter |
 
 Everything not listed transfers unchanged.

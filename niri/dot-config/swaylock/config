@@ -1,5 +1,13 @@
-# empty Enter must submit: it starts the PAM conversation, which arms the
-# fingerprint reader (pam_fprintd runs first in /etc/pam.d/swaylock)
+# empty Enter must submit: swaylock only starts the PAM conversation on
+# submit, and an empty password is what falls through pam_unix to reach
+# pam_fprintd, which then arms the reader. Never add ignore-empty-password --
+# it swallows the empty submit, PAM never runs, and the reader looks dead
+# while the password still works.
+#
+# Ordering in /etc/pam.d/swaylock is pam_unix FIRST, then pam_fprintd. That is
+# what keeps a typed password instant. Do not reorder, and do not substitute
+# pam_fprintd_grosshack.so here -- it belongs in sudo/polkit-1 only; see the
+# comments in /etc/pam.d/swaylock.
 show-failed-attempts
 daemonize
 color=232136
