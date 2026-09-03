@@ -14,6 +14,13 @@ below is labelled per machine where it differs. The divergences are not
 cosmetic: **the initramfs rebuild command, the display manager, and the
 rollback path are all different on xps.**
 
+Two later sections cover work that rides along with this migration
+rather than being part of it —
+[oo7 replacing gnome-keyring](#secret-service-oo7-replaces-gnome-keyring),
+which autologin forces, and
+[fingerprint auth for `sudo`/`pkexec`](#fingerprint-for-sudo-and-polkit),
+which is pure convenience and touches neither boot nor the greeter.
+
 !!! warning "Read the rollback section first"
 
     A wrong initramfs or kernel cmdline leaves the machine unbootable,
@@ -1041,6 +1048,146 @@ still has a disabled `gdm` on top of that — a second fallback, and
 equally harmless. Do not remove either until greetd has survived a few
 days of ordinary use.
 
+## Secret Service: oo7 replaces gnome-keyring
+
+Independent of the LUKS work, but done in the same pass on both
+machines: `gnome-keyring` is replaced by
+[oo7](https://github.com/bilelmoussaoui/oo7), a Rust Secret Service
+implementation that can unseal its keyring from the **TPM** instead of
+from your login password. That matters here because greetd's
+`initial_session` autologin never collects a password, so the
+PAM-unlocks-the-keyring-at-login trick has nothing to work with.
+
+!!! danger "`--noconfirm` silently fails this install"
+
+    `oo7` declares `Conflicts With: gnome-keyring`, and `--noconfirm`
+    answers **no** to the replace prompt, so the install aborts. Answer
+    it explicitly:
+
+    ```sh
+    yes y | sudo pacman -S oo7
+    ```
+
+`oo7` provides `org.freedesktop.secrets`, so anything speaking the
+Secret Service API (Chromium, Chrome, `libsecret` consumers) keeps
+working without changes.
+
+### Back up the keyring first — the migration is one-way
+
+On its first start the daemon migrates the old **v0** keyring to **v1**,
+consuming the original. There is no reverse path, so snapshot it before
+you start the daemon:
+
+```sh
+cp -a ~/.local/share/keyrings ~/.local/share/keyrings.bak-$(date +%Y%m%d-%H%M%S)
+sha256sum ~/.local/share/keyrings/login.keyring    # note it down
+```
+
+After a successful migration `~/.local/share/keyrings/v1/login.keyring`
+exists and the v0 `login.keyring` is gone. Count your secrets before and
+after — they must match.
+
+### Seal the keyring password to the TPM
+
+The vendor unit already carries the wiring:
+
+```sh
+systemctl --user cat oo7-daemon.service | grep ImportCredential
+# → ImportCredential=oo7.keyring-encryption-password
+```
+
+So there is **no drop-in to write** — you only have to place a
+correspondingly named encrypted credential where the user manager looks
+for it:
+
+```sh
+mkdir -p ~/.config/credstore.encrypted
+chmod 700 ~/.config/credstore.encrypted
+
+printf '%s' 'YOUR-KEYRING-PASSWORD' \
+  | systemd-creds encrypt --user --with-key=tpm2 \
+      --name=oo7.keyring-encryption-password \
+      - ~/.config/credstore.encrypted/oo7.keyring-encryption-password
+
+chmod 600 ~/.config/credstore.encrypted/oo7.keyring-encryption-password
+```
+
+Three things must line up or the daemon starts locked: `--name=` must
+equal the **filename**, the file must be `0600`, and the directory
+`0700`. Confirm the TPM is actually usable first with
+`systemd-analyze has-tpm2` (xps reports `yes` / `+firmware`).
+
+### Point the portal at oo7
+
+The packaged niri portal config still routes secrets at the now-absent
+`gnome-keyring`. The override is tracked in this repo at
+`niri/dot-config/xdg-desktop-portal/niri-portals.conf`:
+
+```ini
+org.freedesktop.impl.portal.Secret=oo7-portal;
+```
+
+### `pam_oo7` is not part of this
+
+`/usr/lib/security/pam_oo7.so` exists and is tempting, but it is **not
+used here** and is referenced in no file under `/etc/pam.d`. It works by
+capturing `PAM_AUTHTOK` — your typed login password — and handing it to
+the daemon over `/oo7-pam.sock`. It has **no TPM support** of its own,
+and with autologin there is no `PAM_AUTHTOK` to capture. The
+`systemd-creds` route above is what actually unlocks the keyring.
+
+!!! warning "A locked collection reports zero items — that is not data loss"
+
+    Two things will convince you the migration ate your secrets when it
+    did not:
+
+    - The collection path is capital **`Login`**, not `login`.
+    - A **locked** collection reports `0` items. `oo7` starts locked
+      until the credential unseals it.
+
+    Check `Locked` before you panic, and do not "fix" it by unlocking
+    with a guessed password — that creates an empty unlocked collection
+    that masks the real one until you restart the daemon.
+
+## Fingerprint for sudo and polkit
+
+Purely a convenience layer, and deliberately **not** wired into boot or
+the display manager — the Goodix sensor is not involved in unlocking the
+disk or the session, only in not retyping your password all day.
+
+Enroll, then confirm:
+
+```sh
+fprintd-enroll
+fprintd-list "$USER"
+# → Fingerprints for user rdlu on Goodix MOC Fingerprint Sensor (press):
+# →  - #0: right-index-finger
+```
+
+Add one line to the **top** of the auth stack in each of two files —
+`sufficient` means a match short-circuits to success while a failure or
+timeout falls through to the ordinary password prompt:
+
+```
+auth		sufficient	pam_fprintd.so	max-tries=1 timeout=10
+```
+
+- `/etc/pam.d/sudo` — ships in `sudo`, so back it up before editing.
+- `/etc/pam.d/polkit-1` — has **no** file in `/etc/pam.d` by default;
+  copy the vendor stack from `/usr/lib/pam.d/polkit-1` and prepend the
+  line. This is the one that covers `pkexec` and every GUI authentication
+  dialog.
+
+`max-tries=1 timeout=10` keeps the fallback quick: one swipe, ten
+seconds, then the password prompt. Without a bound you sit staring at a
+sensor with no visible prompt.
+
+!!! warning "Keep a root shell open while editing PAM"
+
+    A malformed `/etc/pam.d/sudo` locks you out of `sudo`. Edit with an
+    already-authenticated `sudo -i` shell open in another terminal, and
+    test in a third before closing either.
+
 ## Verification
 
 After a successful reboot:
@@ -1060,9 +1207,32 @@ On xps, also re-check that Secure Boot survived the rebuild:
 sudo sbctl status          # Secure Boot: enabled, Setup Mode: disabled
 ```
 
-!!! success "xps, verified end to end"
+If you also did the [oo7](#secret-service-oo7-replaces-gnome-keyring)
+and [fingerprint](#fingerprint-for-sudo-and-polkit) work, five more
+checks — all five pass on xps:
 
-    Every one of these has been checked on the live machine:
+```sh
+systemctl --user is-active oo7-daemon.service            # → active
+busctl --user get-property org.freedesktop.secrets \
+  /org/freedesktop/secrets/collection/Login \
+  org.freedesktop.Secret.Collection Locked               # → b false
+oo7-cli list | grep -c '^\['                             # item count, vs your pre-migration count
+test -f ~/.local/share/keyrings/v1/login.keyring && echo migrated
+journalctl -b | grep -ci 'bad jump'                       # → 0
+```
+
+The `Locked` check is the one that matters: `b false` means the TPM
+actually unsealed the credential. `b true` with a healthy daemon means
+the credential name, file mode, or directory mode is wrong.
+
+The `bad jump` check reads the **journal**, not command output — PAM
+reports a malformed stack there and nowhere else. Grepping the output of
+`sudo` itself always looks clean and proves nothing.
+
+!!! success "xps, verified on the live machine"
+
+    Every one of these has been checked on the running system. The
+    one item still outstanding is called out at the end of the list:
 
     - `loginctl show-session` → `Service=greetd`, `Type=wayland`;
       `sddm` inactive.
@@ -1075,9 +1245,14 @@ sudo sbctl status          # Secure Boot: enabled, Setup Mode: disabled
       `rd.luks.options=fido2-device=auto,token-timeout=1s`,
       `systemd.setenv=SYSTEMD_CRYPTSETUP_USE_TOKEN_MODULE=0`, and
       `splash`; no `cryptdevice=`.
-    - The YubiKey lives in a **direct laptop port**, not the dock —
-      without that, `token-timeout=1s` is missed on every boot. See
-      [When boot ignores the key](#when-boot-ignores-the-key-token-timeout-and-usb-topology).
+
+    Still **unverified**: the key must sit in a **direct laptop port**,
+    not the dock — behind the dock's hub chain `hidraw` appears at
+    +1.29s, well past the +0.54s check with `token-timeout=1s`, so the
+    key is ignored on every boot. That was diagnosed from the initrd
+    journal but **not yet re-tested across a reboot from a direct
+    port**; `lsusb -t` still shows the key two hubs deep. See
+    [When boot ignores the key](#when-boot-ignores-the-key-token-timeout-and-usb-topology).
 
 ## Rollback
 
@@ -1197,5 +1372,8 @@ guessing.
 | Greeter | greetd + tuigreet | same — **live and verified**, `Service=greetd` / `Type=wayland`, sddm inactive |
 | FIDO2 keys enrolled | 2 YubiKeys | **2 YubiKeys** — 3 keyslots, 2 `systemd-fido2` tokens, both PIN-required |
 | `SYSTEMD_CRYPTSETUP_USE_TOKEN_MODULE=0` | required | **required** — same double-prompt bug, confirmed at `sd-encrypt:29` |
+| Secret Service | oo7, TPM2-unsealed | **same** — oo7 0.6.0, 20 items migrated v0 → v1 intact, collection unlocked at start |
+| Keyring unlock mechanism | `systemd-creds` + TPM2 | **same** — `ImportCredential=` ships in the vendor unit; `pam_oo7` unused on both |
+| Fingerprint reader | not recorded | **Goodix MOC (press)**, `27c6:63bc` — `pam_fprintd` in `sudo` + `polkit-1` only, never boot or greeter |
 
 Everything not listed transfers unchanged.
