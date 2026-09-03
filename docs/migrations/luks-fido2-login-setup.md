@@ -4,8 +4,10 @@ Migration guide: unlock the root LUKS volume with a FIDO2 security key
 instead of typing the disk passphrase, and replace the stock display
 manager with [greetd](https://sr.ht/~kennylevinsen/greetd/) + `tuigreet`.
 
-Completed on **daisy** (AMD). Being applied to **xps** (Intel, Dell XPS
-9320, i7-1260P). Both run CachyOS with
+Completed on **daisy** (AMD) and, since a subsequent debugging session,
+**completed and verified on xps** (Intel, Dell XPS 9320, i7-1260P) —
+greetd is the live display manager, plymouth is kept and renders the LUKS
+prompt, and two YubiKeys unlock the root volume. Both run CachyOS with
 [Limine](https://limine-bootloader.org/) as the bootloader and niri as
 the compositor — but they diverge in enough places that every command
 below is labelled per machine where it differs. The divergences are not
@@ -28,7 +30,12 @@ rollback path are all different on xps.**
   of typing the LUKS passphrase.
 - With **no key inserted**, boot falls straight through to the ordinary
   passphrase prompt — no hang, no timeout to sit through. Confirmed
-  working on daisy.
+  working on daisy and on xps.
+- The flip side of that immediacy: with `token-timeout=1s` the key has to
+  be *already enumerated* when `systemd-cryptsetup` first looks. Plugged
+  into a dock behind a hub chain it is not, and boot silently behaves as
+  if no key existed — see
+  [When boot ignores the key](#when-boot-ignores-the-key-token-timeout-and-usb-topology).
 - The passphrase keyslot survives untouched, forever.
 - A minimal TUI greeter that hands straight to `niri-session`.
 
@@ -187,6 +194,14 @@ fido2-uv-required:        false    ← no biometric verification
 Those three flags are the authoritative answer to "why am I being asked
 for a PIN *and* a tap" — the behaviour is recorded in the header at
 enrollment time, not decided at boot.
+
+!!! success "xps now matches, verified"
+
+    xps's header has grown from the bare one above to exactly this
+    shape: **3 keyslots** — slot 0 argon2id (the passphrase), slots 1
+    and 2 pbkdf2/1000 — and **2 `systemd-fido2` tokens**, one per
+    YubiKey, both carrying `fido2-clientPin-required: true`. Two keys
+    enrolled, passphrase untouched.
 
 !!! warning "`Iterations: 1000` on the FIDO2 slots is correct — do not 'fix' it"
 
@@ -372,12 +387,27 @@ Two practical consequences:
 
     - **daisy: omitted.** The `plymouth` package is installed but
       deliberately left out of `HOOKS`; no boot splash is active.
-    - **xps: kept.** The hook stays, moved from its busybox position to
-      directly after `systemd`, and `splash` stays on the cmdline.
+    - **xps: kept, and confirmed working.** The hook stays, moved from
+      its busybox position to directly after `systemd`, and `splash`
+      stays on the cmdline. The journal shows
+      `Started Forward Password Requests to Plymouth`, which is the
+      handoff that makes the splash render the LUKS prompt rather than
+      swallow it.
 
     This was previously an open question. It is now settled per machine;
     the reasoning below is retained because it is what you need if the
     splash misbehaves on xps.
+
+!!! tip "That journal line is the one to grep for"
+
+    ```sh
+    journalctl -b | grep 'Forward Password Requests to Plymouth'
+    ```
+
+    Present means `systemd-ask-password` and plymouth are wired
+    together, so the PIN prompt has somewhere to be drawn. Absent, with
+    `splash` on the cmdline, means the splash will look hung — and the
+    fix is hook order, not the key.
 
 The friction is real but narrower than it first looks, and it is worth
 being precise about which half breaks:
@@ -550,7 +580,7 @@ FIDO2-specific parts:
 | --------- | --- |
 | `rd.luks.name=<UUID>=luks-<UUID>` | Names the mapped device; `root=` must match. Replaces `cryptdevice=`. |
 | `rd.luks.options=fido2-device=auto` | Enables FIDO2 unlocking for the volume. `auto` means the token's `hidraw` device is **auto-discovered as it is plugged in** — it selects *which device*, not an order of preference. `rd.luks.options=` is the analogue of crypttab's fourth (options) field, and is honored **only in the initrd**; `luks.options=` would apply in both. |
-| `token-timeout=1s` | How long to wait *at most* for a configured security device to **show up**. Once it elapses, password authentication is attempted — which is why booting with no key inserted lands on the passphrase prompt immediately instead of stalling. Default is `30s`; `0` waits forever. Note it does **not** bound the token's PIN prompt. |
+| `token-timeout=1s` | How long to wait *at most* for a configured security device to **show up**. Once it elapses, password authentication is attempted — which is why booting with no key inserted lands on the passphrase prompt immediately instead of stalling. Default is `30s`; `0` waits forever. Note it does **not** bound the token's PIN prompt. One second is only enough if the key is on a **direct port** — see [When boot ignores the key](#when-boot-ignores-the-key-token-timeout-and-usb-topology). |
 | `systemd.setenv=SYSTEMD_CRYPTSETUP_USE_TOKEN_MODULE=0` | **The parameter that made this setup usable.** Stops the double PIN prompt — see [below](#the-double-pin-prompt). Do not omit it. |
 
 ### The double PIN prompt
@@ -572,14 +602,32 @@ falls through to the built-in one — and each runs its own PIN prompt. The
 enrollment is fine; you are simply being asked twice by two different
 implementations.
 
+!!! tip "You can watch both prompts fire, in order, without rebooting"
+
+    Run the rehearsal command **without** the `env` prefix — i.e. with
+    the plugin path left enabled — and the two prompts appear one after
+    the other, live:
+
+    ```text
+    🔐 Please enter LUKS2 token PIN:        ← the plugin
+    🔐 Please enter security token PIN:     ← the built-in path, after the plugin fails
+    ```
+
+    That is the double prompt, reproduced on demand, and it is the
+    cleanest proof that `SYSTEMD_CRYPTSETUP_USE_TOKEN_MODULE=0` is doing
+    real work rather than being cargo-culted. It is also why the
+    rehearsal has to be run with the variable set — see
+    [Rehearsing the unlock](#rehearsing-the-unlock-without-rebooting).
+
 !!! warning "xps is affected too — this is not optional there"
 
     It is worth confirming rather than assuming, and xps confirms:
     `/usr/lib/initcpio/install/sd-encrypt:29` copies
     `libcryptsetup-token-systemd-fido2.so` into the initramfs. The plugin
-    will be present, so the double prompt will happen. Treat the flag as
-    a required part of the cmdline change, not a fix to apply if the
-    symptom shows up.
+    is present, and the double prompt has since been **reproduced
+    directly on xps** by running the rehearsal without the `env` prefix.
+    Treat the flag as a required part of the cmdline change, not a fix to
+    apply if the symptom shows up.
 
 **Fix.** Disable the plugin path so only the built-in one runs. Append to
 `KERNEL_CMDLINE[default]` in `/etc/default/limine`, then rebuild:
@@ -674,12 +722,55 @@ Then reboot with the key inserted, and with the passphrase to hand.
 #### Rehearsing the unlock without rebooting
 
 You can exercise the real FIDO2 path against the live volume, which is
-much faster than a reboot cycle when tuning options:
+much faster than a reboot cycle when tuning options. **The `env` prefix
+is not optional:**
 
 ```sh
-sudo systemd-cryptsetup attach lukstest \
-  /dev/disk/by-uuid/<UUID> - fido2-device=auto,token-timeout=1s
+sudo env SYSTEMD_CRYPTSETUP_USE_TOKEN_MODULE=0 systemd-cryptsetup attach \
+  lukstest /dev/disk/by-uuid/<UUID> - fido2-device=auto,token-timeout=15s
 ```
+
+!!! danger "Without `env …=0` the rehearsal tests the wrong code path and passes anyway"
+
+    This guide previously gave the command without the `env` prefix.
+    That version is worse than useless: it exercises the libcryptsetup
+    **token plugin** — precisely the path that is *disabled* at boot —
+    while boot uses systemd's **built-in** implementation.
+
+    The reason is subtle. `systemd.setenv=` puts
+    `SYSTEMD_CRYPTSETUP_USE_TOKEN_MODULE=0` into the **system manager's**
+    environment, which is what `systemd-cryptsetup` inherits when PID 1
+    runs it in the initrd. A command you type in a shell inherits your
+    shell's environment, not the manager's — so the variable is simply
+    absent, and the plugin runs.
+
+    On xps this produced a confident "the rehearsal works" conclusion
+    while boot was still failing. If you take a second thing from this
+    guide, take this one.
+
+**The prompt wording tells you which path you are on.** This is the
+fastest diagnostic in the whole setup, and it needs nothing but reading
+the line in front of you:
+
+| Prompt | Path | Meaning |
+| ------ | ---- | ------- |
+| `🔐 Please enter LUKS2 token PIN:` | libcryptsetup **token plugin** | Wrong path — the variable did not reach the process |
+| `🔐 Please enter security token PIN:` | systemd **built-in** | The path boot actually uses |
+
+The built-in path is also the only one that says, when no key is
+plugged in:
+
+```text
+Security token not present for unlocking volume root (lukstest), please plug it in.
+```
+
+The plugin instead prompts for a PIN **immediately**, before it has
+checked whether any device exists at all. So "it asked me for a PIN with
+nothing plugged in" is by itself proof you are on the plugin.
+
+Running the un-prefixed command deliberately is still useful for one
+thing: it reproduces the [double PIN prompt](#the-double-pin-prompt)
+live and in order.
 
 !!! danger "Ctrl+C at the passphrase prompt — never complete it"
 
@@ -688,17 +779,167 @@ sudo systemd-cryptsetup attach lukstest \
     touch, or the fallback), then abort at the passphrase prompt. Do not
     let it finish and do not mount the result.
 
+!!! tip "Confirm the abort actually left nothing behind"
+
+    Aborting is not the same as having aborted cleanly. Check for a
+    stray mapping:
+
+    ```sh
+    sudo dmsetup ls
+    ```
+
+    You want to see only your real `luks-<UUID>` device and no
+    `lukstest`. Verified clean on xps after several rehearsal runs, but
+    check rather than assume — a leftover mapping over a mounted
+    filesystem is exactly the thing this warning exists to prevent.
+
 Use `/dev/disk/by-uuid/` here rather than `/dev/nvme…` — NVMe
 enumeration order is not stable.
+
+The rehearsal uses `token-timeout=15s` rather than the cmdline's `1s` on
+purpose: a long window lets you start with **no key inserted**, watch the
+"please plug it in" message, then insert the key mid-wait and see whether
+hotplug detection works. On xps it does — see
+[When boot ignores the key](#when-boot-ignores-the-key-token-timeout-and-usb-topology),
+where that distinction is what separated a broken wait mechanism from a
+merely too-short deadline.
+
+### When boot ignores the key: token-timeout and USB topology
+
+!!! warning "Symptom: boot goes straight to the passphrase prompt, key plugged in, every time"
+
+    No FIDO2 prompt, no touch request, no pause. It reads as though
+    `fido2-device=auto` were being ignored entirely — or as though the
+    enrollment had not taken. Both enrollment and the cmdline can be
+    perfectly correct and still produce this.
+
+    The tell that it is *this* problem and not a broken setup: it fails
+    **deterministically**, on every boot, rather than intermittently.
+
+#### Diagnose it by correlating the initrd timeline
+
+The technique matters more than the answer, because it generalises to
+any "the initrd did not wait for X" question. The initrd journal is
+retained, so compare **when `systemd-cryptsetup` looked for the token**
+against **when the key's `hidraw` node appeared**:
+
+```sh
+journalctl -b -N -o short-precise
+```
+
+`-N` includes the initrd's own journal namespace; `-o short-precise`
+gives sub-second timestamps, without which the whole comparison is
+useless. From xps, boot starting at `13:28:41.967`:
+
+```text
+13:28:42.504  systemd-cryptsetup: Security token not present ... please plug it in
+13:28:43.062  usb 3-1.4.2: new full-speed USB device ...
+13:28:43.163  usb 3-1.4.2: New USB device found, idVendor=1050 (Yubico)
+13:28:43.252  hid-generic ...: input,hidraw0 ...
+13:28:43.848  systemd-cryptsetup: Timed out waiting for security device, aborting
+```
+
+Relative to boot start: cryptsetup checks at **+0.54s**, the key's
+`hidraw` node is ready at **+1.29s**, and the deadline expires at
+**+1.88s**. The key finished enumerating three quarters of a second
+after it was looked for.
+
+#### Root cause: two chained hubs
+
+The YubiKey was in a dock / USB switch, which put it behind **two hubs**:
+
+```text
+root hub → GenesysLogic 3-1 → GenesysLogic 3-1.4 → port 2 → YubiKey
+```
+
+Both hubs have to enumerate before the key even starts, and `hidraw`
+appearing is not the finish line either: udev still has to run
+`/usr/lib/udev/fido_id`, which **probes the device over USB HID** in
+order to set `ID_SECURITY_TOKEN=1`. A one-second deadline lands in the
+middle of that sequence, so it misses *every* time.
+
+```sh
+lsusb -t     # shows the hub chain; count the levels between root and the key
+```
+
+!!! danger "Two things this is *not* — both were chased on xps, so you needn't"
+
+    **Not missing udev rules.** They are in the initramfs. Confirm
+    rather than assume:
+
+    ```sh
+    sudo lsinitcpio -l /boot/$(cat /etc/machine-id)/linux-cachyos/initramfs \
+      | grep 'rules.d/'
+    ```
+
+    `60-fido-id.rules` and the `fido_id` binary are both present.
+
+    **Not missing USB/HID modules.** Grepping the initramfs for
+    `usbhid.ko`, `xhci_hcd.ko` or `usbcore.ko` finds nothing — and that
+    is *correct*, because CachyOS builds them **into the kernel**. They
+    are demonstrably working: the initrd journal contains
+    `usbcore: registered new interface driver usbhid`. Never conclude
+    "modules missing" from a `.ko` grep on a distro with builtins; check
+    the journal for the driver registering instead.
+
+#### The wait mechanism itself is fine
+
+Proven with the corrected rehearsal at `token-timeout=15s`, starting
+with **no key inserted** and plugging it in mid-wait:
+
+```text
+Security token not present for unlocking volume root (lukstest), please plug it in.
+Asking FIDO2 token for authentication.
+👆 Please confirm presence on security token to unlock.
+Security token requires PIN.
+```
+
+systemd noticed the hotplug and carried on. So nothing is broken in the
+detection path — the only problem was the deadline.
+
+#### The trade-off, stated plainly
+
+`token-timeout=` bounds how long to wait for a security device to
+*appear*. Nothing can distinguish "no key present" from "key still
+enumerating" — they look identical from inside the initrd. So **any**
+increase to accommodate a slow or hub-attached key is paid as dead time
+on every keyless boot, before the passphrase prompt shows up.
+
+!!! success "Decision on xps: keep `token-timeout=1s`, plug the key into a laptop port"
+
+    A direct port skips both hub enumerations, so the key is already
+    present when cryptsetup makes its first check. This is the only
+    option that keeps **both** properties the setup was built for: fast
+    FIDO2 unlock when the key is in, and an *immediate* passphrase
+    prompt when it is not.
+
+    The alternative, if the key must live in the dock, is to raise the
+    timeout — `3s` or `5s` covers the observed 1.3s enumeration with
+    margin:
+
+    ```sh
+    rd.luks.options=fido2-device=auto,token-timeout=5s
+    ```
+
+    That is a documented option, not the recommendation: it costs you
+    that many seconds of staring at nothing on every boot without the
+    key.
 
 ## greetd + tuigreet
 
 Independent of the LUKS work, and the half to do **first** — see
 [Do it in two reboots](#do-it-in-two-reboots-greetd-first).
 
+!!! success "Done on xps"
+
+    This half is complete and live on xps:
+    `loginctl show-session` reports `Service=greetd` and `Type=wayland`,
+    and `sddm` is inactive. The steps below are the record of how it got
+    there, not pending work.
+
 Both packages are declared in the manifest under `niri-wm`
-(`setup/packages.yaml:95-96`). On xps, `greetd` 0.10.3 is already
-installed; only `greetd-tuigreet` is missing (0.11.1-2.1, in
+(`setup/packages.yaml:95-96`). `greetd` 0.10.3 was already installed on
+xps; `greetd-tuigreet` was the only missing piece (0.11.1-2.1, in
 `cachyos-extra-v3` — a binary package, no AUR build):
 
 ```sh
@@ -706,9 +947,10 @@ paru -S --needed greetd-tuigreet    # narrow: just the missing piece
 # or: mise run pkg-install niri-wm  # installs the WHOLE category, oo7 included
 ```
 
-Write `/etc/greetd/config.toml`. daisy's working config — xps's is still
-the stock default (`agreety --cmd /bin/sh`, user `greeter`, vt 1), i.e.
-never configured, so this replaces it wholesale:
+Write `/etc/greetd/config.toml`. This is daisy's working config, and it
+is now xps's too — xps's was the stock default (`agreety --cmd /bin/sh`,
+user `greeter`, vt 1), i.e. never configured, so this replaced it
+wholesale:
 
 ```toml
 [terminal]
@@ -735,11 +977,12 @@ The `greeter` system user already exists on xps (uid 959), and
     already the real authentication gate. Drop the block if you want the
     greeter every time.
 
-    On xps this **preserves existing behaviour** rather than changing it:
-    the live session reports `Service=sddm-autologin`, so sddm is already
-    logging the user straight in. Keeping `initial_session` means the
-    swap is invisible on a normal boot, and the greeter only shows up
-    when you actually log out.
+    On xps this **preserved existing behaviour** rather than changing
+    it: the session reported `Service=sddm-autologin` before the swap,
+    so sddm was already logging the user straight in. Keeping
+    `initial_session` made the swap invisible on a normal boot — the
+    session now reports `Service=greetd`, and the greeter itself only
+    shows up when you actually log out.
 
 This file is **not tracked in this repo**: it is root-owned, and the
 stow tree only targets `$HOME`. It has to be written by hand on each
@@ -749,10 +992,10 @@ machine — hence its inclusion verbatim above.
 
 !!! danger "It is sddm on xps, not gdm"
 
-    daisy came from **gdm**. xps runs **sddm**:
-    `display-manager.service` resolves to
-    `/usr/lib/systemd/system/sddm.service`, `sddm` is enabled, `gdm` is
-    installed but already disabled, and `lightdm` is not installed at
+    daisy came from **gdm**. xps came from **sddm**: before the swap,
+    `display-manager.service` resolved to
+    `/usr/lib/systemd/system/sddm.service`, `sddm` was enabled, `gdm` was
+    installed but already disabled, and `lightdm` was not installed at
     all. Running daisy's `systemctl disable gdm.service` on xps disables
     an already-disabled unit, reports success, and leaves **sddm still
     enabled** — so the next boot comes up in sddm and the swap looks
@@ -817,6 +1060,25 @@ On xps, also re-check that Secure Boot survived the rebuild:
 sudo sbctl status          # Secure Boot: enabled, Setup Mode: disabled
 ```
 
+!!! success "xps, verified end to end"
+
+    Every one of these has been checked on the live machine:
+
+    - `loginctl show-session` → `Service=greetd`, `Type=wayland`;
+      `sddm` inactive.
+    - Plymouth kept and working — the journal has
+      `Started Forward Password Requests to Plymouth`, so the splash is
+      what renders the LUKS prompt.
+    - 3 keyslots (0 argon2id passphrase, 1 and 2 pbkdf2/1000 FIDO2) and
+      2 `systemd-fido2` tokens, both `fido2-clientPin-required: true`.
+    - Cmdline carries `rd.luks.name=`,
+      `rd.luks.options=fido2-device=auto,token-timeout=1s`,
+      `systemd.setenv=SYSTEMD_CRYPTSETUP_USE_TOKEN_MODULE=0`, and
+      `splash`; no `cryptdevice=`.
+    - The YubiKey lives in a **direct laptop port**, not the dock —
+      without that, `token-timeout=1s` is missed on every boot. See
+      [When boot ignores the key](#when-boot-ignores-the-key-token-timeout-and-usb-topology).
+
 ## Rollback
 
 Recovery paths, cheapest first.
@@ -829,6 +1091,14 @@ afterwards:
 ```sh
 sudo systemd-cryptenroll --wipe-slot=fido2 "$LUKS_PART"
 ```
+
+**Boot ignores the key — straight to the passphrase prompt, every
+time.** Not a rollback: the key is almost certainly enumerating too
+slowly, not misconfigured. Check the USB topology with `lsusb -t`, and
+correlate the initrd journal (`journalctl -b -N -o short-precise`) to see
+whether `hidraw` appeared after `systemd-cryptsetup` had already given
+up. Prefer a **direct laptop port** over a dock or hub. Full workup in
+[When boot ignores the key](#when-boot-ignores-the-key-token-timeout-and-usb-topology).
 
 **The cmdline is wrong (boots, but to an emergency shell).** Edit the
 entry from the Limine menu with `e`, fix or delete the offending
@@ -921,9 +1191,11 @@ guessing.
 | cmdline operator | `KERNEL_CMDLINE[default]=` | `KERNEL_CMDLINE[default]+=` — **keep the `+=`** |
 | Pre-existing cmdline | not recorded (only the post-migration value is) | `cryptdevice=` — must be replaced in the same reboot as the `HOOKS` change |
 | Console keymap | — | `/etc/vconsole.conf`: `KEYMAP=br-abnt2` — the PIN is typed blind |
+| USB / key placement | not recorded | **must be a direct laptop port, not the dock** — the dock's hub chain enumerates past `token-timeout=1s`. See [When boot ignores the key](#when-boot-ignores-the-key-token-timeout-and-usb-topology) |
 | Console-noise audit | stale `99-mouseless-input.rules`, removed | not applicable — only `99-hide-ipu6-raw.rules`, which is **load-bearing** |
 | Bootloader | Limine | Limine |
-| Greeter | greetd + tuigreet | same (`greetd` installed; `greetd-tuigreet` to add) |
+| Greeter | greetd + tuigreet | same — **live and verified**, `Service=greetd` / `Type=wayland`, sddm inactive |
+| FIDO2 keys enrolled | 2 YubiKeys | **2 YubiKeys** — 3 keyslots, 2 `systemd-fido2` tokens, both PIN-required |
 | `SYSTEMD_CRYPTSETUP_USE_TOKEN_MODULE=0` | required | **required** — same double-prompt bug, confirmed at `sd-encrypt:29` |
 
 Everything not listed transfers unchanged.
