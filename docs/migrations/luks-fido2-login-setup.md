@@ -1267,10 +1267,22 @@ What has actually been checked on xps:
   in the manager environment, and unset again afterwards.
 - `_` was confirmed to be a name systemd accepts.
 
-**A reboot/logout test is still outstanding.** The wrapper is installed
-and the config points at it, but nobody has yet watched tty1 come up
-clean. `/etc/greetd/config.toml.pre-wrapper` holds the config exactly as
-it was before this change.
+**Confirmed by reboot on 2026-09-04.** tty1 came up clean. The session
+really did run the wrapper rather than the stock script, which is worth
+checking explicitly rather than inferring from a quiet console: greetd
+logged `initial_session` as `/usr/local/bin/niri-session-local`, and the
+session leader was `/bin/sh /usr/local/bin/niri-session-local -l`.
+
+```sh
+journalctl -b -u greetd.service | grep initial_session
+pgrep -af niri-session
+```
+
+Note that the journal is *not* evidence either way here — the warning
+goes to the console, never to the journal, so `journalctl -g
+import-environment` returns nothing whether the fix works or not.
+`/etc/greetd/config.toml.pre-wrapper` holds the config exactly as it was
+before this change.
 
 Not applied on daisy: it still runs the stock `niri-session` from both
 greetd commands, and still prints the warning. The procedure below is
@@ -2065,7 +2077,7 @@ guessing.
 | Console-noise audit | stale `99-mouseless-input.rules`, removed | not applicable — only `99-hide-ipu6-raw.rules`, which is **load-bearing** |
 | Bootloader | Limine | Limine |
 | Greeter | greetd + tuigreet | same — **live and verified**, `Service=greetd` / `Type=wayland`, sddm inactive |
-| `niri-session` | **stock** `/usr/bin/niri-session` — tty1 deprecation warning still present; scripted path documented but **not yet applied**, see [Applying it on daisy](#applying-it-on-daisy) | **local wrapper** `/usr/local/bin/niri-session-local`, absolute path in both greetd commands; installed, **not yet reboot-tested**. See [the wrapper section](#the-deprecation-warning-on-tty1-and-the-local-session-wrapper) |
+| `niri-session` | **stock** `/usr/bin/niri-session` — tty1 deprecation warning still present; scripted path documented but **not yet applied**, see [Applying it on daisy](#applying-it-on-daisy) | **local wrapper** `/usr/local/bin/niri-session-local`, absolute path in both greetd commands; installed and **confirmed by reboot** on 2026-09-04. See [the wrapper section](#the-deprecation-warning-on-tty1-and-the-local-session-wrapper) |
 | FIDO2 keys enrolled | 2 YubiKeys | **2 YubiKeys** — 3 keyslots, 2 `systemd-fido2` tokens, both PIN-required |
 | `SYSTEMD_CRYPTSETUP_USE_TOKEN_MODULE=0` | required | **required** — same double-prompt bug, confirmed at `sd-encrypt:29` |
 | Secret Service | oo7, TPM2-unsealed | **same** — oo7 0.6.0, 20 items migrated v0 → v1 intact, collection unlocked at start |
