@@ -1236,19 +1236,26 @@ the warning.
     tuigreet dedupes same-named entries across those directories or just
     lists "Niri" twice.
 
-!!! danger "A frozen copy — re-diff it after every niri upgrade"
+!!! danger "The wrapper does not track the package — re-check it after every niri upgrade"
 
-    The wrapper does not track the package. A `niri` upgrade that
-    changes `niri-session` leaves the wrapper silently running the old
-    code, with no warning of any kind.
+    A `niri` upgrade that changes `niri-session` leaves the wrapper
+    silently running the old code, with no warning of any kind.
+
+    `niri-session-wrapper` is what closes that gap. `check` compares the
+    installed wrapper against the **current** stock script and exits
+    non-zero once they have diverged; `install` regenerates the wrapper
+    from the new stock script.
 
     ```sh
-    diff /usr/bin/niri-session /usr/local/bin/niri-session-local
+    ~/.local/bin/niri-session-wrapper check     # has it gone stale?
+    ~/.local/bin/niri-session-wrapper install   # regenerate if it has
     ```
 
-    Run that after every niri upgrade, and delete the wrapper outright
-    — reverting both greetd commands to plain `niri-session` — as soon
-    as a niri release carries the upstream fix.
+    `check` also reports when the workaround has become unnecessary —
+    the stock script stops carrying the bare call the moment a niri
+    release picks up the upstream fix. At that point run `remove`,
+    which reverts both greetd commands to plain `niri-session` and
+    deletes the wrapper.
 
 What has actually been checked on xps:
 
@@ -1266,7 +1273,79 @@ clean. `/etc/greetd/config.toml.pre-wrapper` holds the config exactly as
 it was before this change.
 
 Not applied on daisy: it still runs the stock `niri-session` from both
-greetd commands, and still prints the warning.
+greetd commands, and still prints the warning. The procedure below is
+how to change that.
+
+#### Applying it on daisy
+
+Nothing here has been run on daisy — this is a procedure to follow, not
+a record of work done. The cause is the section above; only the
+mechanics follow.
+
+The work is scripted as `niri-session-wrapper`, delivered by the
+`scripts` stow package:
+
+```sh
+cd ~/.dotfiles
+stow --no-folding --dotfiles -S scripts   # only if scripts isn't stowed yet
+~/.local/bin/niri-session-wrapper install
+```
+
+Both steps in one, which is the same thing:
+
+```sh
+mise run niri-session-wrapper
+```
+
+The design point that makes this portable: `install` reads the **live**
+`/usr/bin/niri-session` on the machine it runs on and applies the
+substitution to *that*, instead of shipping a copy frozen from xps. So
+daisy's niri version does not have to match xps's, and the same command
+is what regenerates the wrapper after a later upgrade. It is idempotent
+— re-running it is safe — and if the stock script no longer contains the
+bare `import-environment` call, i.e. upstream shipped the fix, it says
+so and installs nothing.
+
+!!! note "daisy's `/etc/greetd/config.toml` is not the file quoted above"
+
+    The config shown in [greetd + tuigreet](#greetd-tuigreet) is
+    **xps's**, wrapper paths and all. daisy's differs, and the script
+    does not overwrite it: it rewrites the two `command =` lines in
+    place and leaves everything else daisy carries — `[terminal]`,
+    `user =`, the tuigreet flags — exactly as it found them. The file is
+    copied to `/etc/greetd/config.toml.pre-wrapper` first, and an
+    existing backup is never clobbered. The result is validated as
+    parseable TOML before the script reports success.
+
+Verify in two stages. First, without touching the session:
+
+```sh
+~/.local/bin/niri-session-wrapper check
+```
+
+`check` is read-only and exits 0 only when every part holds: the
+workaround is still needed, the wrapper exists, it is still in sync with
+the current stock script, and **both** greetd commands point at the
+absolute wrapper path. Anything short of that is a non-zero exit naming
+the part that failed.
+
+Then the real test, which needs a session boundary: log out and watch
+tty1. A good result is the greeter coming up with no
+`calling import-environment without a list of variables is deprecated`
+line — neither at session start nor when niri exits.
+
+!!! warning "Rolling it back on daisy"
+
+    ```sh
+    ~/.local/bin/niri-session-wrapper remove
+    ```
+
+    That points both `command =` lines back at plain `niri-session` and
+    deletes `/usr/local/bin/niri-session-local`; the tty1 warning
+    returns and nothing else changes. If the config needs to go back
+    byte for byte, `/etc/greetd/config.toml.pre-wrapper` is the copy
+    `install` took before its first edit. See also
+    [Rollback](#rollback).
 
 ### Swap the display manager
 
@@ -1986,7 +2065,7 @@ guessing.
 | Console-noise audit | stale `99-mouseless-input.rules`, removed | not applicable — only `99-hide-ipu6-raw.rules`, which is **load-bearing** |
 | Bootloader | Limine | Limine |
 | Greeter | greetd + tuigreet | same — **live and verified**, `Service=greetd` / `Type=wayland`, sddm inactive |
-| `niri-session` | **stock** `/usr/bin/niri-session` — tty1 deprecation warning present, not addressed | **local wrapper** `/usr/local/bin/niri-session-local`, absolute path in both greetd commands; installed, **not yet reboot-tested**. See [the wrapper section](#the-deprecation-warning-on-tty1-and-the-local-session-wrapper) |
+| `niri-session` | **stock** `/usr/bin/niri-session` — tty1 deprecation warning still present; scripted path documented but **not yet applied**, see [Applying it on daisy](#applying-it-on-daisy) | **local wrapper** `/usr/local/bin/niri-session-local`, absolute path in both greetd commands; installed, **not yet reboot-tested**. See [the wrapper section](#the-deprecation-warning-on-tty1-and-the-local-session-wrapper) |
 | FIDO2 keys enrolled | 2 YubiKeys | **2 YubiKeys** — 3 keyslots, 2 `systemd-fido2` tokens, both PIN-required |
 | `SYSTEMD_CRYPTSETUP_USE_TOKEN_MODULE=0` | required | **required** — same double-prompt bug, confirmed at `sd-encrypt:29` |
 | Secret Service | oo7, TPM2-unsealed | **same** — oo7 0.6.0, 20 items migrated v0 → v1 intact, collection unlocked at start |
