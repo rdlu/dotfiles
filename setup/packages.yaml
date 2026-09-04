@@ -156,6 +156,7 @@ fonts:
   - ttf-ms-fonts
 
 python:
+  - python-argcomplete
   - python-duckdb
   - python-fsspec
   - python-mutagen
@@ -276,8 +277,10 @@ system:
   - fuse2fs
   - fuseiso
   - fwupd
+  - geoclue
   - gpart
   - gparted
+  - iio-sensor-proxy
   - iptables
   - nfs-utils
   - ntfs-3g
