@@ -1,0 +1,417 @@
+#!/bin/sh
+# niri-session-wrapper — install/check/remove a local copy of the niri package's
+# /usr/bin/niri-session that names the variables it hands to
+# `systemctl --user import-environment`.
+#
+# Why: systemd 261 deprecated the bare, argument-less form. The stock
+# niri-session still uses it, so under greetd the deprecation warning is
+# printed straight to tty1 at session start and again when niri exits.
+# Upstream: https://github.com/niri-wm/niri/issues/254 (PR #3572, still open).
+#
+# The wrapper is DERIVED FROM THE LIVE /usr/bin/niri-session at run time — this
+# script holds no frozen copy of it. Re-run `niri-session-wrapper install`
+# after a niri upgrade to refresh the wrapper from the new stock script;
+# `niri-session-wrapper check` reports drift.
+#
+# The enumerated form lists every environment variable name rather than an
+# allowlist, on purpose: an allowlist would drop the mise/cargo/bun/pnpm
+# entries that make up most of this user's PATH. The awk-over-ENVIRON idiom
+# mirrors what the stock script already does in its own dinit branch.
+#
+# WARNING: this rewrites /etc/greetd/config.toml, which is the boot path to a
+# graphical session. A mistake here means no login. Everything is validated
+# before it is installed, the pre-change config is kept at
+# /etc/greetd/config.toml.pre-wrapper, and `niri-session-wrapper remove`
+# reverts. Keep a TTY or a live USB reachable the first time you run this.
+set -e
+
+STOCK=/usr/bin/niri-session
+WRAPPER=/usr/local/bin/niri-session-local
+CONFIG=/etc/greetd/config.toml
+BACKUP=/etc/greetd/config.toml.pre-wrapper
+
+# The two lines, verbatim, that the substitution replaces.
+MARK_COMMENT="    # Import the login manager environment."
+MARK_CALL="    systemctl --user import-environment"
+
+TMPDIR_NSW=
+# Must not end on a false test: a non-zero status from an EXIT trap becomes the
+# script's exit status, which would make a clean `check` look like a failure.
+cleanup() {
+    if [ -n "$TMPDIR_NSW" ]; then
+        rm -rf "$TMPDIR_NSW"
+    fi
+    return 0
+}
+trap cleanup EXIT HUP INT TERM
+
+die() { echo "✗ $*" >&2; exit 1; }
+
+usage() {
+    cat <<'EOF'
+Usage: niri-session-wrapper [install|check|remove] [-h|--help]
+
+  install  (default) Regenerate /usr/local/bin/niri-session-local from the
+           live /usr/bin/niri-session and point both greetd commands at it.
+           Idempotent; safe to re-run after every niri upgrade.
+  check    Read-only. Report whether the workaround is still needed, whether
+           the wrapper exists, whether it is still in sync with the CURRENT
+           stock script, and whether greetd points at it. Exit 0 only if
+           everything is consistent.
+  remove   Point greetd back at plain `niri-session` and delete the wrapper.
+EOF
+}
+
+# ---------------------------------------------------------------------------
+# Generation
+# ---------------------------------------------------------------------------
+
+# stock_has_bare_call — true when /usr/bin/niri-session still uses the bare form
+stock_has_bare_call() {
+    [ -r "$STOCK" ] || die "cannot read $STOCK — is the niri package installed?"
+    grep -q -x -F "$MARK_CALL" "$STOCK"
+}
+
+# generate <outfile> <with_header:1|0> — derive the wrapper from the live stock
+# script. Aborts unless the substitution matches exactly once.
+generate() {
+    _out=$1
+    _hdr=$2
+
+    [ -r "$STOCK" ] || die "cannot read $STOCK — is the niri package installed?"
+
+    _hits=$(grep -c -x -F "$MARK_CALL" "$STOCK" || true)
+    [ "$_hits" = "1" ] || die "expected exactly 1 bare \`import-environment\` in $STOCK, found $_hits — refusing to guess. Nothing was changed."
+
+    _ln=$(grep -n -x -F "$MARK_CALL" "$STOCK" | cut -d: -f1)
+    [ "$_ln" -ge 3 ] || die "the bare call is at line $_ln of $STOCK, too early to be the expected block. Nothing was changed."
+
+    _prev=$(sed -n "$((_ln - 1))p" "$STOCK")
+    [ "$_prev" = "$MARK_COMMENT" ] || die "line $((_ln - 1)) of $STOCK is not the expected comment — the upstream script has changed shape. Nothing was changed."
+
+    case $(sed -n '1p' "$STOCK") in
+        '#!'*) : ;;
+        *) die "$STOCK does not start with a shebang — refusing to derive a wrapper from it." ;;
+    esac
+
+    {
+        sed -n '1p' "$STOCK"
+        if [ "$_hdr" = "1" ]; then
+            cat <<'EOF'
+#
+# GENERATED FILE — do not hand-edit; every edit is lost on regeneration.
+#
+# Derived from /usr/bin/niri-session (niri package) by `niri-session-wrapper`
+# — dotfiles: scripts/dot-local/bin/niri-session-wrapper — with exactly one
+# substitution, marked in place below. Refresh it after a niri upgrade with
+# `niri-session-wrapper install`; `niri-session-wrapper check` reports drift.
+EOF
+        fi
+        sed -n "2,$((_ln - 2))p" "$STOCK"
+        cat <<'EOF'
+    # Import the login manager environment.
+    #
+    # Local deviation from the stock /usr/bin/niri-session: the bare
+    # `systemctl --user import-environment` is deprecated as of systemd 261
+    # and prints its warning straight to the console under greetd. Naming the
+    # variables explicitly keeps the exact same "import everything" behaviour
+    # without the warning, and mirrors the awk-over-ENVIRON trick this script
+    # already uses in its dinit branch below.
+    #
+    # Upstream: https://github.com/niri-wm/niri/issues/254 (PR #3572, open).
+    # Drop this file once a niri release carries the fix.
+    #
+    # shellcheck disable=SC2046  # deliberate word splitting
+    systemctl --user import-environment $(awk 'BEGIN {
+        for (v in ENVIRON)
+            if (v ~ /^[A-Za-z_][A-Za-z0-9_]*$/ && v != "AWKPATH" && v != "AWKLIBPATH")
+                print v
+    }')
+EOF
+        sed -n "$((_ln + 1)),\$p" "$STOCK"
+    } > "$_out"
+
+    sh -n "$_out" || die "the generated wrapper does not parse as /bin/sh. Nothing was installed; the machine is unchanged."
+}
+
+# init_tmp must be called OUTSIDE a command substitution — an assignment made
+# inside `$(...)` would be lost in the subshell and the temp dir would leak.
+init_tmp() {
+    [ -n "$TMPDIR_NSW" ] || TMPDIR_NSW=$(mktemp -d) || die "cannot create a temp dir."
+}
+
+mktmp() {
+    [ -n "$TMPDIR_NSW" ] || die "internal error: init_tmp was not called."
+    echo "$TMPDIR_NSW/$1"
+}
+
+# ---------------------------------------------------------------------------
+# greetd config
+# ---------------------------------------------------------------------------
+
+# session_command <section> [file] — the `command` string of a greetd section
+session_command() {
+    awk -v sect="$1" '
+        /^[[:space:]]*\[/ { ins = ($0 ~ "^[[:space:]]*\\[" sect "\\][[:space:]]*$"); next }
+        ins && /^[[:space:]]*command[[:space:]]*=/ {
+            line = $0
+            sub(/^[^"]*"/, "", line)
+            sub(/"[^"]*$/, "", line)
+            print line
+            exit
+        }
+    ' "${2:-$CONFIG}"
+}
+
+# retarget <in> <out> <to-wrapper|to-stock> — rewrite only the `command =`
+# lines: the bare initial_session command, and the `--cmd` argument inside the
+# tuigreet default_session command. Nothing else in the file is touched.
+retarget() {
+    if [ "$3" = "to-wrapper" ]; then
+        sed \
+            -e "s|^\([[:space:]]*command[[:space:]]*=[[:space:]]*\"[^\"]*--cmd[[:space:]]\{1,\}\)\(/usr/bin/\)\{0,1\}niri-session\([\"[:space:]]\)|\1$WRAPPER\3|" \
+            -e "s|^\([[:space:]]*command[[:space:]]*=[[:space:]]*\"\)\(/usr/bin/\)\{0,1\}niri-session\"|\1$WRAPPER\"|" \
+            "$1" > "$2"
+    else
+        sed \
+            -e "s|^\([[:space:]]*command[[:space:]]*=[[:space:]]*\"[^\"]*--cmd[[:space:]]\{1,\}\)$WRAPPER\([\"[:space:]]\)|\1niri-session\2|" \
+            -e "s|^\([[:space:]]*command[[:space:]]*=[[:space:]]*\"\)$WRAPPER\"|\1niri-session\"|" \
+            "$1" > "$2"
+    fi
+}
+
+# toml_ok <file> — best-effort parse check; skipped (loudly) with no parser
+toml_ok() {
+    if command -v python3 >/dev/null 2>&1 && python3 -c 'import tomllib' >/dev/null 2>&1; then
+        python3 -c 'import sys,tomllib; tomllib.load(open(sys.argv[1],"rb"))' "$1"
+    elif command -v taplo >/dev/null 2>&1; then
+        taplo check "$1" >/dev/null
+    else
+        echo "   (no TOML parser found — skipping the syntax check)"
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# Subcommands
+# ---------------------------------------------------------------------------
+
+do_install() {
+    echo "== Installing the niri-session import-environment wrapper on $(hostname) =="
+    init_tmp
+
+    if ! stock_has_bare_call; then
+        echo "   $STOCK no longer contains the bare \`systemctl --user import-environment\`."
+        echo "   Upstream has evidently shipped the fix — this workaround is obsolete."
+        echo "✓ Nothing installed. Run \`niri-session-wrapper remove\` to drop the wrapper"
+        echo "  and point greetd back at plain \`niri-session\`."
+        exit 0
+    fi
+
+    gen=$(mktmp wrapper)
+    echo "== Deriving the wrapper from the live $STOCK =="
+    generate "$gen" 1
+    echo "   substitution applied once; \`sh -n\` clean"
+
+    echo "== Installing $WRAPPER (root:root 0755) =="
+    sudo install -o root -g root -m 0755 "$gen" "$WRAPPER"
+
+    [ -r "$CONFIG" ] || die "$CONFIG is missing or unreadable. $WRAPPER is installed but greetd was NOT repointed at it."
+
+    if [ -e "$BACKUP" ]; then
+        echo "== Backup already present at $BACKUP — left untouched =="
+    else
+        echo "== Backing up $CONFIG to $BACKUP =="
+        sudo cp -a "$CONFIG" "$BACKUP"
+    fi
+
+    new=$(mktmp config.toml)
+    retarget "$CONFIG" "$new" to-wrapper
+
+    if cmp -s "$CONFIG" "$new"; then
+        echo "== greetd config already points at the wrapper — no change =="
+    else
+        echo "== Repointing both greetd commands at $WRAPPER =="
+        toml_ok "$new" || die "the rewritten $CONFIG does not parse as TOML. It was NOT installed — the live config is untouched and greetd still works."
+        sudo install -o root -g root -m 0644 "$new" "$CONFIG"
+    fi
+
+    ds=$(session_command default_session)
+    is=$(session_command initial_session)
+    ok=1
+    case "$ds" in *"$WRAPPER"*) : ;; *) ok=0 ;; esac
+    case "$is" in *"$WRAPPER"*) : ;; *) [ -n "$is" ] && ok=0 ;; esac
+    [ "$ok" = "1" ] || die "$CONFIG still does not name $WRAPPER in both commands. The wrapper is installed; the config is at whatever the printout below shows — fix it by hand or restore $BACKUP.
+   default_session: $ds
+   initial_session: $is"
+
+    toml_ok "$CONFIG" || die "$CONFIG no longer parses as TOML. Restore it now:  sudo cp -a $BACKUP $CONFIG"
+
+    echo "   default_session: $ds"
+    echo "   initial_session: ${is:-(absent)}"
+    echo "✓ Wrapper installed and greetd repointed. Takes effect on NEXT LOGIN."
+    echo "  Re-run after any niri upgrade;  niri-session-wrapper check  reports drift."
+    echo "  Roll back with:  niri-session-wrapper remove   (original config: $BACKUP)"
+}
+
+do_check() {
+    rc=0
+    echo "== Checking the niri-session import-environment wrapper on $(hostname) =="
+    init_tmp
+
+    if stock_has_bare_call; then
+        needed=1
+        echo "   stock script:  $STOCK STILL has the bare call — workaround needed"
+    else
+        needed=0
+        echo "   stock script:  $STOCK no longer has the bare call — workaround obsolete"
+    fi
+
+    if [ -e "$WRAPPER" ]; then
+        echo "   wrapper:       $WRAPPER present ($(stat -c '%A %U:%G' "$WRAPPER"))"
+        have_wrapper=1
+    else
+        echo "   wrapper:       $WRAPPER absent"
+        have_wrapper=0
+    fi
+
+    if [ "$needed" = "1" ] && [ "$have_wrapper" = "1" ]; then
+        want=$(mktmp want)
+        generate "$want" 1
+        if cmp -s "$WRAPPER" "$want"; then
+            echo "   drift:         wrapper is byte-identical to a fresh generation — in sync"
+        else
+            bare=$(mktmp want-noheader)
+            generate "$bare" 0
+            if cmp -s "$WRAPPER" "$bare"; then
+                echo "   drift:         wrapper body matches the current $STOCK, but it lacks the"
+                echo "                  GENERATED header — it predates this script. Harmless at run"
+                echo "                  time; run \`niri-session-wrapper install\` to normalise it."
+            else
+                echo "   drift:         wrapper is OUT OF SYNC with the current $STOCK"
+                echo "                  (niri was probably upgraded). Diff, installed vs. fresh:"
+                diff -u "$WRAPPER" "$want" | sed 's/^/                  /' || true
+                echo "                  Fix with:  niri-session-wrapper install"
+            fi
+            rc=1
+        fi
+    fi
+
+    if [ -r "$CONFIG" ]; then
+        ds=$(session_command default_session)
+        is=$(session_command initial_session)
+        echo "   default_session: ${ds:-(absent)}"
+        echo "   initial_session: ${is:-(absent)}"
+        if [ "$needed" = "1" ]; then
+            want_str=$WRAPPER
+        else
+            want_str=niri-session
+        fi
+        for pair in "default_session:$ds" "initial_session:$is"; do
+            name=${pair%%:*}
+            val=${pair#*:}
+            [ -n "$val" ] || continue
+            case "$val" in
+                *"$want_str"*) : ;;
+                *)
+                    echo "   ✗ $name does not name $want_str"
+                    rc=1
+                    ;;
+            esac
+        done
+        if [ "$needed" = "0" ]; then
+            case "$ds$is" in
+                *"$WRAPPER"*)
+                    echo "   ✗ greetd still points at the wrapper, which is no longer needed"
+                    rc=1
+                    ;;
+            esac
+        fi
+    else
+        echo "   ✗ $CONFIG is missing or unreadable"
+        rc=1
+    fi
+
+    if [ "$needed" = "1" ] && [ "$have_wrapper" = "0" ]; then
+        echo "   ✗ the workaround is needed but $WRAPPER is missing"
+        echo "     Fix with:  niri-session-wrapper install"
+        rc=1
+    fi
+    if [ "$needed" = "0" ] && [ "$have_wrapper" = "1" ]; then
+        echo "   ✗ the workaround is obsolete but $WRAPPER is still installed"
+        echo "     Fix with:  niri-session-wrapper remove"
+        rc=1
+    fi
+
+    if [ "$rc" = "0" ]; then
+        echo "✓ Consistent."
+    else
+        echo "✗ Inconsistent — see the lines above. Nothing was changed."
+    fi
+    return "$rc"
+}
+
+do_remove() {
+    echo "== Removing the niri-session import-environment wrapper on $(hostname) =="
+    init_tmp
+
+    if [ -r "$CONFIG" ]; then
+        new=$(mktmp config.toml)
+        retarget "$CONFIG" "$new" to-stock
+        if cmp -s "$CONFIG" "$new"; then
+            echo "== greetd config does not name the wrapper — left untouched =="
+        else
+            toml_ok "$new" || die "the rewritten $CONFIG does not parse as TOML. It was NOT installed — the live config is untouched and greetd still works."
+            echo "== Repointing both greetd commands back at plain \`niri-session\` =="
+            sudo install -o root -g root -m 0644 "$new" "$CONFIG"
+        fi
+
+        left=$(session_command default_session)$(session_command initial_session)
+        case "$left" in
+            *"$WRAPPER"*)
+                die "$CONFIG still names $WRAPPER after the rewrite. The wrapper was NOT deleted, so greetd still works. Edit $CONFIG by hand (or restore $BACKUP) and re-run."
+                ;;
+        esac
+        echo "   default_session: $(session_command default_session)"
+        echo "   initial_session: $(session_command initial_session)"
+        echo "   (targeted substitution on the \`command =\` lines only; $BACKUP left in place"
+        echo "    as the pre-change original — a config edited since is NOT clobbered)"
+    else
+        echo "== $CONFIG missing or unreadable — greetd not touched =="
+    fi
+
+    if [ -e "$WRAPPER" ]; then
+        echo "== Deleting $WRAPPER =="
+        sudo rm -f "$WRAPPER"
+    else
+        echo "== $WRAPPER already absent =="
+    fi
+
+    echo "✓ Reverted to the stock niri-session. Takes effect on NEXT LOGIN."
+    if stock_has_bare_call; then
+        echo "  Heads up: $STOCK still uses the bare \`import-environment\`, so the"
+        echo "  systemd 261 deprecation warning will come back on tty1 at session start"
+        echo "  and again when niri exits. Re-install with:  niri-session-wrapper install"
+    fi
+}
+
+# ---------------------------------------------------------------------------
+
+cmd=install
+case "${1:-}" in
+    -h|--help) usage; exit 0 ;;
+    install|check|remove) cmd=$1; shift ;;
+    "") : ;;
+    *) echo "✗ unknown subcommand: $1" >&2; usage >&2; exit 2 ;;
+esac
+
+case "${1:-}" in
+    -h|--help) usage; exit 0 ;;
+    "") : ;;
+    *) echo "✗ unexpected argument: $1" >&2; usage >&2; exit 2 ;;
+esac
+
+case "$cmd" in
+    install) do_install ;;
+    check)   do_check ;;
+    remove)  do_remove ;;
+esac

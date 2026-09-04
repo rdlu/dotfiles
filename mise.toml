@@ -176,6 +176,19 @@ run = [
   'stow --no-folding --dotfiles -S niri',
 ]
 
+# The wrapper is derived from the LIVE /usr/bin/niri-session at run time, so
+# re-run this task after a niri upgrade to regenerate it; `niri-session-wrapper
+# check` reports when that is due. It is a no-op once upstream ships the fix
+# (niri-wm/niri#254). Needs sudo — it writes /usr/local/bin and /etc/greetd.
+[tasks.niri-session-wrapper]
+description = "Patch greetd onto a local niri-session (drops the tty1 import-environment warning)"
+run = [
+  '''echo -e "\033[1;33m1) Stowing helper scripts\033[0m"''',
+  'stow --no-folding --dotfiles -S scripts',
+  '''echo -e "\033[1;33m\n2) Generating /usr/local/bin/niri-session-local and repointing greetd\033[0m"''',
+  '~/.local/bin/niri-session-wrapper install',
+]
+
 [tasks.keybase-ssh]
 description = "Import the Keybase PGP key into GPG and expose it for SSH auth"
 run = [
