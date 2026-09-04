@@ -1,0 +1,13 @@
+# Marker file only -- podman-docker's /usr/bin/docker wrapper tests for its
+# existence, nothing reads the contents:
+#
+#   [ -e /etc/containers/nodocker ] || \
+#   [ -e "${XDG_CONFIG_HOME-$HOME/.config}/containers/nodocker" ] || \
+#     echo "Emulate Docker CLI using podman. ..." >&2
+#
+# Its presence silences that banner on every `docker ...` call. Kept here
+# rather than at /etc/containers/nodocker so it is tracked and stowed per
+# user instead of being untracked system state.
+#
+# Note there is no PODMAN_IGNORE_NODOCKER environment variable -- the wrapper
+# only ever checks for these two files.
