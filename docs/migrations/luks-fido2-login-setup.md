@@ -1109,21 +1109,32 @@ paru -S --needed greetd-tuigreet    # narrow: just the missing piece
 # or: mise run pkg-install niri-wm  # installs the WHOLE category, oo7 included
 ```
 
-Write `/etc/greetd/config.toml`. This is daisy's working config, and it
-is now xps's too — xps's was the stock default (`agreety --cmd /bin/sh`,
-user `greeter`, vt 1), i.e. never configured, so this replaced it
-wholesale:
+Write `/etc/greetd/config.toml`. This started as daisy's working config
+— xps's was the stock default (`agreety --cmd /bin/sh`, user `greeter`,
+vt 1), i.e. never configured, so this replaced it wholesale. What xps
+runs now, comment block and all; the two absolute paths are explained in
+[the wrapper section](#the-deprecation-warning-on-tty1-and-the-local-session-wrapper)
+below, and daisy still has plain `niri-session` in both places:
 
 ```toml
+# `niri-session-local` is a local copy of the niri package's
+# /usr/bin/niri-session, patched to name the variables it hands to
+# `systemctl --user import-environment`. The stock script uses the bare form,
+# deprecated as of systemd 261, which prints a warning straight to tty1 at
+# session start and again when niri exits. Absolute path on purpose: this
+# user's PATH puts /usr/bin ahead of /usr/local/bin, so a same-name shadow
+# would not win. Upstream fix pending: niri-wm/niri#254, PR #3572.
+# Revert both commands to plain `niri-session` once niri ships it.
+
 [terminal]
 vt = 1
 
 [default_session]
-command = "tuigreet --time --remember --remember-session --cmd niri-session"
+command = "tuigreet --time --remember --remember-session --cmd /usr/local/bin/niri-session-local"
 user = "greeter"
 
 [initial_session]
-command = "niri-session"
+command = "/usr/local/bin/niri-session-local"
 user = "rdlu"
 ```
 
@@ -1149,6 +1160,113 @@ The `greeter` system user already exists on xps (uid 959), and
 This file is **not tracked in this repo**: it is root-owned, and the
 stow tree only targets `$HOME`. It has to be written by hand on each
 machine — hence its inclusion verbatim above.
+
+### The deprecation warning on tty1, and the local session wrapper
+
+On xps, at niri session start and again when niri exits, tty1 shows:
+
+```text
+calling import-environment without a list of variables is deprecated
+```
+
+It comes from `/usr/bin/niri-session` (owned by the `niri` package,
+currently 26.04-1.1), which does:
+
+```sh
+# Import the login manager environment.
+systemctl --user import-environment
+```
+
+systemd 261 deprecated that bare, no-argument form. greetd runs
+`niri-session` **directly** on vt1, so the script's stderr lands on the
+console rather than in the journal — `journalctl -g import-environment`
+finds nothing, which is why the line looks like it comes from nowhere.
+It is printed once, at session start; it appears a second time at
+shutdown only because tty1 is uncovered again when niri exits.
+
+Upstream knows and has not fixed it: the tracking issue is
+[niri-wm/niri#254](https://github.com/niri-wm/niri/issues/254)
+([#3901](https://github.com/niri-wm/niri/issues/3901) was closed as a
+duplicate), and [PR #3572](https://github.com/niri-wm/niri/pull/3572) is
+**open, not merged**. No niri release carries the fix yet.
+
+The workaround is `/usr/local/bin/niri-session-local`: a root-owned 0755
+copy of the packaged script, identical except for one hunk —
+`import-environment` is handed an explicit variable list, built with the
+same awk-over-`ENVIRON` trick the script already uses in its dinit
+branch further down:
+
+```sh
+# shellcheck disable=SC2046  # deliberate word splitting
+systemctl --user import-environment $(awk 'BEGIN {
+    for (v in ENVIRON)
+        if (v ~ /^[A-Za-z_][A-Za-z0-9_]*$/ && v != "AWKPATH" && v != "AWKLIBPATH")
+            print v
+}')
+```
+
+Naming every variable is the same "import everything" behaviour, minus
+the warning.
+
+!!! note "Why a distinct name and an absolute path, not a PATH shadow"
+
+    Two reasons, either one sufficient on its own:
+
+    - This user's `PATH` puts `/usr/bin` **before** `/usr/local/bin`
+      (mise + fish path construction), so a same-name
+      `/usr/local/bin/niri-session` would not reliably win.
+    - `niri-session` re-execs itself through the login shell —
+      `exec bash -c "exec -l '$SHELL' -c '$0 -l $*'"` — so `$0` has to
+      be absolute already for the re-exec to resolve.
+
+    Hence the different filename, plus the full path in **both** greetd
+    commands.
+
+!!! warning "Known gap: the session menu still runs the stock script"
+
+    `/usr/share/wayland-sessions/niri.desktop` still carries
+    `Exec=niri-session`. Open tuigreet's session menu (the F-key list),
+    pick "Niri", and you get the unpatched script and the warning back.
+    The two paths actually used — the `initial_session` autologin and
+    tuigreet's `--cmd` default — are both covered.
+
+    Left alone deliberately: overriding it needs
+    `tuigreet --sessions /usr/local/share/wayland-sessions:/usr/share/wayland-sessions`
+    plus a local `niri.desktop`, and it is not established whether
+    tuigreet dedupes same-named entries across those directories or just
+    lists "Niri" twice.
+
+!!! danger "A frozen copy — re-diff it after every niri upgrade"
+
+    The wrapper does not track the package. A `niri` upgrade that
+    changes `niri-session` leaves the wrapper silently running the old
+    code, with no warning of any kind.
+
+    ```sh
+    diff /usr/bin/niri-session /usr/local/bin/niri-session-local
+    ```
+
+    Run that after every niri upgrade, and delete the wrapper outright
+    — reverting both greetd commands to plain `niri-session` — as soon
+    as a niri release carries the upstream fix.
+
+What has actually been checked on xps:
+
+- `sh -n` and `bash -n` are both clean on the wrapper.
+- The awk enumeration produced **125** valid variable names, and zero
+  malformed ones.
+- `systemctl --user import-environment <NAME>` with an explicit name
+  printed nothing and exited 0; the variable was then confirmed present
+  in the manager environment, and unset again afterwards.
+- `_` was confirmed to be a name systemd accepts.
+
+**A reboot/logout test is still outstanding.** The wrapper is installed
+and the config points at it, but nobody has yet watched tty1 come up
+clean. `/etc/greetd/config.toml.pre-wrapper` holds the config exactly as
+it was before this change.
+
+Not applied on daisy: it still runs the stock `niri-session` from both
+greetd commands, and still prints the warning.
 
 ### Swap the display manager
 
@@ -1827,6 +1945,14 @@ sudo systemctl enable sddm.service    # xps
 sudo reboot
 ```
 
+**The greeter is fine, but the session wrapper is not — a niri upgrade
+moved out from under it, or you want it gone.** Point both `command =`
+lines in `/etc/greetd/config.toml` back at plain `niri-session` and
+delete `/usr/local/bin/niri-session-local`; the tty1 deprecation warning
+comes back and nothing else changes. `/etc/greetd/config.toml.pre-wrapper`
+is that config as it was before the wrapper went in. See
+[the wrapper section](#the-deprecation-warning-on-tty1-and-the-local-session-wrapper).
+
 **Nothing works.** Rescue media, unlock with the passphrase,
 `arch-chroot`, `systemctl disable greetd`, revert the cmdline in
 `/etc/default/limine`, then `limine-update` + `mkinitcpio -P` (daisy) or
@@ -1860,6 +1986,7 @@ guessing.
 | Console-noise audit | stale `99-mouseless-input.rules`, removed | not applicable — only `99-hide-ipu6-raw.rules`, which is **load-bearing** |
 | Bootloader | Limine | Limine |
 | Greeter | greetd + tuigreet | same — **live and verified**, `Service=greetd` / `Type=wayland`, sddm inactive |
+| `niri-session` | **stock** `/usr/bin/niri-session` — tty1 deprecation warning present, not addressed | **local wrapper** `/usr/local/bin/niri-session-local`, absolute path in both greetd commands; installed, **not yet reboot-tested**. See [the wrapper section](#the-deprecation-warning-on-tty1-and-the-local-session-wrapper) |
 | FIDO2 keys enrolled | 2 YubiKeys | **2 YubiKeys** — 3 keyslots, 2 `systemd-fido2` tokens, both PIN-required |
 | `SYSTEMD_CRYPTSETUP_USE_TOKEN_MODULE=0` | required | **required** — same double-prompt bug, confirmed at `sd-encrypt:29` |
 | Secret Service | oo7, TPM2-unsealed | **same** — oo7 0.6.0, 20 items migrated v0 → v1 intact, collection unlocked at start |
