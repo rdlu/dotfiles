@@ -524,6 +524,82 @@ sudo udevadm control --reload
     `pacman -Qo` tells you who shipped a rule, never whether it is still
     needed — that judgement is yours, per rule.
 
+## Limine menu appearance
+
+Untracked, hand-written, per-host — the same category as `/etc/pam.d`.
+`/boot` is not in stow and **no package owns `/boot/limine.conf`** or
+`/boot/limine-splash.png`; the theme was installed by hand from
+[cachyos-limine-theme](https://github.com/diegons490/cachyos-limine-theme).
+Reinstall that theme and you re-inherit everything below.
+
+`limine-update` regenerates the entry blocks but **preserves the header**
+above `/+CachyOS`, so edits there survive kernel updates. They do not
+survive without a regeneration afterwards, though — see the warning at
+the end.
+
+xps's working header, after fixes:
+
+```
+term_palette: 1e1e2e;f38ba8;a6e3a1;f9e2af;89b4fa;f5c2e7;94e2d5;cdd6f4
+term_palette_bright: 585b70;f38ba8;a6e3a1;f9e2af;89b4fa;f5c2e7;94e2d5;cdd6f4
+term_background: 1e1e2e
+term_foreground: cdd6f4
+term_background_bright: 585b70
+term_foreground_bright: cdd6f4
+term_font_scale: 2x2
+interface_branding:
+wallpaper: boot():/limine-splash.png
+```
+
+!!! danger "The theme ships white-on-white — an upstream bug, not your config"
+
+    As installed, the theme sets `term_background: ffffffff` and
+    `term_background_bright: ffffffff` while the foreground is `cdd6f4`
+    — Catppuccin Mocha's near-white text on a white background. The menu
+    is legible only as faint ghosting.
+
+    The palette's own base is `1e1e2e`, which is what the background was
+    plainly meant to be. Fixed to `1e1e2e` / `585b70` (base / surface2)
+    above.
+
+    Six-digit values are deliberate. `ffffffff` is eight-digit
+    `AARRGGBB`, where the alpha blends with the wallpaper — so the white
+    could have come from the colour itself *or* from a light
+    `limine-splash.png` showing through. An opaque six-digit value is
+    correct under either reading and settles it without a reboot spent
+    finding out.
+
+!!! info "Font size is a resolution threshold, not a point size"
+
+    Limine has no font-size setting; `term_font_scale` multiplies the
+    built-in 8x16 glyph, each factor 1–8. From `CONFIG.md`:
+
+    > If unset, the scaling follows the resolution: `1x1` below
+    > 2560x1440, `2x2` from there, and `4x4` from 5120x2880.
+
+    xps's internal panel is **1920x1200**, just under the cutoff, so it
+    auto-selects `1x1` and the menu renders tiny. Its external display is
+    2560x1600, *above* the cutoff — so the same machine renders the menu
+    at two different sizes depending on what is plugged in. Setting
+    `term_font_scale: 2x2` explicitly makes both consistent.
+
+    A malformed value is silently ignored rather than failing to boot, so
+    this is safe to experiment with.
+
+!!! warning "Any edit here needs `limine-update`, or the machine will not boot"
+
+    With `ENABLE_VERIFICATION=yes` and `ENABLE_ENROLL_LIMINE_CONFIG=yes`,
+    `/boot/limine.conf` is hash-verified. Editing it by hand invalidates
+    the enrolled BLAKE2B and the bootloader rejects the config. Always
+    follow an edit with:
+
+    ```sh
+    pkexec limine-update
+    ```
+
+    and confirm `Config file BLAKE2B successfully enrolled` in the output
+    before rebooting.
+
 ## Kernel cmdline
 
 With Limine, the cmdline lives in `/etc/default/limine` — **not** in
@@ -913,25 +989,103 @@ enumerating" — they look identical from inside the initrd. So **any**
 increase to accommodate a slow or hub-attached key is paid as dead time
 on every keyless boot, before the passphrase prompt shows up.
 
-!!! success "Decision on xps: keep `token-timeout=1s`, plug the key into a laptop port"
+!!! failure "Superseded: `token-timeout=1s` plus a direct port is **not** sufficient"
 
-    A direct port skips both hub enumerations, so the key is already
-    present when cryptsetup makes its first check. This is the only
-    option that keeps **both** properties the setup was built for: fast
-    FIDO2 unlock when the key is in, and an *immediate* passphrase
-    prompt when it is not.
+    That was the original conclusion, and a later boot disproved it. The
+    key was on a direct root-hub port (`usb 3-3`) and it still fell
+    through to the passphrase. Kept here because the reasoning looks
+    sound and someone will re-derive it otherwise.
 
-    The alternative, if the key must live in the dock, is to raise the
-    timeout — `3s` or `5s` covers the observed 1.3s enumeration with
-    margin:
+#### Why a direct port was not enough: `hidraw` is not the finish line
+
+The second failure, on **2026-09-04**, with the key in a laptop port —
+no hubs anywhere in its path:
+
+```text
+06:59:01.458  systemd-cryptsetup: Security token not present ... please plug it in
+06:59:01.625  usb 3-3: New USB device found, idVendor=1050 (Yubico)
+06:59:01.696  hid-generic 0003:1050:0407.0002: hiddev96,hidraw1
+              ── deadline ≈ 06:59:02.458 ──
+06:59:02.538  systemd-cryptsetup: Timed out waiting for security device
+```
+
+The key enumerated **167ms** after cryptsetup looked, and its FIDO
+`hidraw` node existed **762ms before** the deadline. Enumeration was
+never the problem the second time.
+
+What `fido2-device=auto` actually waits for is a device tagged
+`ID_SECURITY_TOKEN=1`, and udev only sets that after running
+`/usr/lib/udev/fido_id`, which probes the device over USB HID. That
+probe is queued behind whatever else udev is doing — and the dock was
+still enumerating (`3-1` hub, `3-1.1`, `3-10`) while plymouth started.
+The device was present and unusable at the same time.
+
+!!! info "Note which `hidraw` matters"
+
+    The YubiKey presents two. `hidraw0` is interface 0, the OTP keyboard;
+    `hidraw1` is interface 1, the FIDO one, and only that one carries
+    `ID_SECURITY_TOKEN=1`. Confirm on a running system with:
+
+    ```sh
+    for h in /sys/class/hidraw/*; do
+      udevadm info "$h" | grep -q ID_SECURITY_TOKEN=1 && echo "$h"
+    done
+    ```
+
+    Seeing `hidraw0` appear in the boot log tells you nothing about
+    whether the token is ready.
+
+!!! danger "A third thing this is *not*: missing initramfs rules"
+
+    Worth ruling out explicitly, because it produces an identical
+    symptom and no timeout value would fix it. Check rather than assume:
+
+    ```sh
+    lsinitcpio -l /boot/$(cat /etc/machine-id)/linux-cachyos/initramfs \
+      | grep -iE 'fido'
+    ```
+
+    On xps this lists `usr/lib/udev/fido_id`,
+    `usr/lib/udev/rules.d/60-fido-id.rules`, `libfido2.so.1` and
+    `libcryptsetup-token-systemd-fido2.so` — all present, supplied by the
+    `sd-encrypt` hook. So the rules were there and it *still* timed out,
+    which is what points at udev scheduling rather than a missing file.
+
+    Note the earlier 15s rehearsal did **not** prove this: it ran in the
+    booted system, against the root filesystem's udev rules, and never
+    exercised the initrd path at all.
+
+!!! success "Decision on xps: `token-timeout=5s`, key on a direct port"
+
+    Applied 2026-09-04 in `/etc/default/limine`, followed by
+    `limine-update`:
 
     ```sh
     rd.luks.options=fido2-device=auto,token-timeout=5s
     ```
 
-    That is a documented option, not the recommendation: it costs you
-    that many seconds of staring at nothing on every boot without the
-    key.
+    Five seconds rather than three because the quantity being covered is
+    udev scheduling latency under load, which is far less predictable
+    than the well-characterised 238ms of enumeration. Tighten it only
+    against a measured successful unlock — the gap between the `hidraw1`
+    line and `Asking FIDO2 token for authentication` is the real budget.
+
+    The cost is unchanged and unavoidable: five seconds of dead time on
+    every boot *without* the key, because the initrd cannot distinguish
+    "no key present" from "key still enumerating."
+
+    Keep the key on a direct port anyway. In the dock it sits behind two
+    hubs whose second stage did not appear until **+11.8s**, which no
+    sane timeout covers.
+
+!!! warning "Snapshot entries keep the old timeout"
+
+    `limine-snapper-sync` freezes each snapshot's cmdline at creation, and
+    does not rewrite it. Every pre-existing snapshot entry in
+    `/boot/limine.conf` still carries `token-timeout=1s`, so FIDO2 will
+    likely fail when booting one and you will be on the passphrase —
+    during recovery, which is the worst time to be surprised by it. New
+    snapshots pick up the current value.
 
 ## greetd + tuigreet
 
@@ -1073,6 +1227,15 @@ PAM-unlocks-the-keyring-at-login trick has nothing to work with.
 Secret Service API (Chromium, Chrome, `libsecret` consumers) keeps
 working without changes.
 
+!!! warning "seahorse goes with it, and there is no GUI replacement"
+
+    `seahorse` hard-depends on `gnome-keyring`, so it is removed in the
+    same transaction. Nothing replaces it graphically — `oo7-cli` is the
+    interface from here on, standing in for `secret-tool`.
+
+    `qtkeychain-qt6` is unaffected: it wants the virtual
+    `org.freedesktop.secrets`, which oo7 provides.
+
 ### Back up the keyring first — the migration is one-way
 
 On its first start the daemon migrates the old **v0** keyring to **v1**,
@@ -1118,6 +1281,91 @@ equal the **filename**, the file must be `0600`, and the directory
 `0700`. Confirm the TPM is actually usable first with
 `systemd-analyze has-tpm2` (xps reports `yes` / `+firmware`).
 
+!!! danger "A trailing newline seals into the credential and there is no error"
+
+    `printf '%s'` above is load-bearing — it emits no trailing newline.
+    Seal one in and the daemon offers a password one byte too long; the
+    keyring simply stays locked, with nothing in the journal to say why.
+
+    The cost of `printf` is that the password lands in shell history.
+    Avoid both by having systemd prompt for it, where `-n` plays the same
+    role:
+
+    ```sh
+    systemd-ask-password -n \
+      | systemd-creds encrypt --user --with-key=tpm2 \
+          --name=oo7.keyring-encryption-password \
+          - ~/.config/credstore.encrypted/oo7.keyring-encryption-password
+    ```
+
+!!! success "Do not add PCR binding"
+
+    `systemd-creds encrypt` binds to **no** PCRs unless you pass
+    `--tpm2-pcrs=`, which is exactly what you want here: firmware and
+    kernel updates cannot invalidate the credential.
+
+    Adding PCR binding buys very little and will silently break unlock on
+    the next UEFI update — the keyring just stops opening, with the same
+    non-diagnostic symptom as every other failure in this section.
+
+### Take `pam_gnome_keyring` out of the PAM stacks
+
+With `gnome-keyring` gone, every `pam_gnome_keyring.so` line left in
+`/etc/pam.d` refers to a module that no longer exists. Enumerate them
+rather than working from a list — the set differs per host, because it
+depends on which display managers that machine has had:
+
+```sh
+grep -rln pam_gnome_keyring /etc/pam.d/
+```
+
+On daisy that was six files — `gdm-password`, `gdm-autologin`,
+`gdm-smartcard`, `gdm-fingerprint`, `ly` and `ly-autologin` — reflecting
+a GDM history this machine does not share. Back up each file, then
+comment its matching lines with a marker you can grep for later:
+
+```sh
+cp /etc/pam.d/FILE /etc/pam.d/FILE.pre-oo7
+# then prefix each matching line with:  # [oo7]
+```
+
+!!! danger "Commenting a PAM line breaks relative jumps — this one costs an evening"
+
+    In `gdm-fingerprint`, `gdm-smartcard` and `gdm-autologin` the line
+    immediately **before** the keyring line is:
+
+    ```
+    auth [success=ok default=1] pam_gdm.so
+    ```
+
+    `default=1` means *skip the next 1 module*. Comment out the keyring
+    line and that jump lands past the end of the auth stack. PAM logs
+    `PAM bad jump in stack` to the journal and **fingerprint login
+    fails** — while password login and `pkexec` keep working, because
+    their stacks contain no such jump. The symptom therefore points
+    everywhere except the actual cause.
+
+    **Fix:** change `default=1` to `default=ignore` on those `pam_gdm.so`
+    lines. It is equivalent now that there is no module left to skip.
+
+    This is what the `bad jump` check in
+    [Verification](#verification) is looking for.
+
+!!! warning "`.pacnew` files reintroduce the commented lines"
+
+    These are package-owned files. An update to the display manager
+    writes a `.pacnew` containing the original `pam_gnome_keyring` line,
+    and merging it carelessly puts the broken stack back — jump and all.
+    Re-run the `grep -rln` above after any upgrade that touches a login
+    manager.
+
+!!! info "Verified on daisy, not re-verified here"
+
+    The enumeration, the jump trap and its fix were worked out on daisy.
+    xps reached oo7 by a different route and may never have carried
+    these lines at all. Run the `grep -rln` before assuming either way —
+    it costs nothing and settles it.
+
 ### Point the portal at oo7
 
 The packaged niri portal config still routes secrets at the now-absent
@@ -1127,6 +1375,10 @@ The packaged niri portal config still routes secrets at the now-absent
 ```ini
 org.freedesktop.impl.portal.Secret=oo7-portal;
 ```
+
+Flatpaks that hold `talk=org.freedesktop.secrets` directly — Bitwarden
+and Komikku among them — reach the daemon without going through the
+portal at all, so they need nothing here.
 
 ### `pam_oo7` is not part of this
 
@@ -1149,6 +1401,31 @@ and with autologin there is no `PAM_AUTHTOK` to capture. The
     Check `Locked` before you panic, and do not "fix" it by unlocking
     with a guessed password — that creates an empty unlocked collection
     that masks the real one until you restart the daemon.
+
+### Optional hardening, not done on either host
+
+Rotate the keyring to a random password held only in the TPM credential.
+That fully decouples it from the login password — at present the two
+merely happen to be equal, which is a coincidence the design does not
+require and nothing enforces.
+
+!!! failure "The superseded approach — do not go back to it"
+
+    Before the credential existed, the Login keyring password was set
+    **blank** via Seahorse so it would auto-unlock. That leaves every
+    secret in plaintext on disk, and it regressed **twice**, because:
+
+    ```
+    password optional pam_gnome_keyring.so use_authtok
+    ```
+
+    silently re-encrypted the blank keyring on any password change.
+
+    This is structurally the same bug described in
+    [`pam_oo7` is not part of this](#pam_oo7-is-not-part-of-this) — a
+    `password` stack that re-keys the keyring behind your back. The
+    credential exists precisely so the keyring password is independent of
+    the login password.
 
 ## Fingerprint for sudo, polkit, and the lock screen
 
@@ -1353,6 +1630,42 @@ Two paths, separated by the ordering alone:
     `/usr/bin/unix_chkpwd` (`-rwsr-sr-x`). If password unlock ever
     starts failing with authentication errors, check that helper's mode
     before touching anything in `swaylock`.
+
+!!! warning "Do not switch lockers, and do not add a per-second clock"
+
+    Both break screen blanking, for the same reason. `swaylock` draws a
+    **static** surface, so the display still DPMS-blanks while locked.
+    `hyprlock` and the `rustlock` fork both render continuously, which
+    keeps the panel lit under niri's session-lock surface and defeats
+    swayidle's `power-off-monitors`. That is a niri limitation (issues
+    #205 / #2439), not a misconfiguration — no locker config fixes it.
+
+    The same reasoning fixes the clock at minute resolution
+    (`timestr=%H:%M`). A per-second clock reintroduces the continuous
+    redraw and the screen stops blanking, which is a battery problem
+    disguised as a cosmetic preference.
+
+!!! info "A lockout gives no on-screen explanation"
+
+    `swaylock` discards PAM text, so when `faillock` locks the account
+    the lock screen simply stops accepting input — no message, no reason.
+    `show-failed-attempts` in the config is the mitigation.
+
+    The `rdlu/rustlock` fork (branch `pam-message-display`) renders PAM
+    `text_info`/`error_msg` and synthesizes an "Account locked" notice.
+    It is kept as a **testing tool, not the active locker**, for the
+    blanking reason above.
+
+    On xps, `/etc/security/faillock.conf` sets only `deny = 6`; with
+    `unlock_time` unset the effective value is the **600s default**. Note
+    daisy's notes claim `unlock_time=10` — that is unverified and should
+    be checked there rather than assumed, since ten seconds would be a
+    surprisingly permissive lockout.
+
+    ```sh
+    faillock --user "$USER"           # inspect counters
+    faillock --user "$USER" --reset   # clear them
+    ```
 
 This stack is **verified on daisy**, which has run it for a while, and
 was applied and confirmed working on xps on **2026-09-03** — all three
