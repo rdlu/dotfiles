@@ -47,6 +47,44 @@ function _hsize --argument-names path # human size of a path, '-' if absent
     end
 end
 
+function _aur_patched --argument-names root # clones under $root with modified TRACKED files
+    test -d "$root"; or return 0
+    for d in $root/*
+        test -d "$d"; and test -d "$d/.git"; or continue
+        # untracked-files=no is the whole trick: src/, pkg/ and tarballs are
+        # build spoil, not a patch. Only a dirty TRACKED file means work of ours.
+        set -l dirty (git -C "$d" status --porcelain --untracked-files=no 2>/dev/null)
+        test (count $dirty) -gt 0; and path basename $d
+    end
+end
+
+function _aur_rows --argument-names root limit # sized clones, biggest first, patched ones flagged
+    test -d "$root"; or begin; echo '  (nothing cached)'; return; end
+    set -l keep (_aur_patched $root)
+    set -l dirs
+    for d in $root/*
+        test -d "$d"; and set -a dirs $d
+    end
+    test (count $dirs) -eq 0; and begin; echo '  (nothing cached)'; return; end
+    set -l shown 0
+    set -l hidden 0
+    for l in (du -xsh $dirs 2>/dev/null | sort -rh)
+        set -l f (string split \t -- $l)
+        set -l name (path basename $f[2])
+        if contains -- $name $keep # never truncated away — this is the safety line
+            set_color -o green
+            printf '  %8s  %-28s PROTECTED — local patch, kept\n' $f[1] $name
+            set_color normal
+        else if test -z "$limit"; or test $shown -lt "$limit"
+            printf '  %8s  %s\n' $f[1] $name
+            set shown (math $shown + 1)
+        else
+            set hidden (math $hidden + 1)
+        end
+    end
+    test $hidden -gt 0; and echo "  … and $hidden more"
+end
+
 # --- target registry ---------------------------------------------------------
 # A target is available (shown) only when `avail` succeeds. `size` is a short
 # string for the row, `preview` prints the dry-run, `clean` does the work.
@@ -59,6 +97,7 @@ function target_ids
     echo flatpak
     echo journal
     echo yay-cache
+    echo paru-cache
     echo npm-cache
     echo bun-cache
     echo cargo-cache
@@ -74,7 +113,8 @@ function target_label --argument-names id
         case snapshots;           echo 'Snapper snapshots'
         case flatpak;             echo 'Flatpak unused runtimes'
         case journal;             echo 'Systemd journal'
-        case yay-cache;           echo 'Yay/AUR build cache'
+        case yay-cache;           echo 'Yay/AUR build cache (keeps patches)'
+        case paru-cache;          echo 'Paru/AUR cache (keeps patches)'
         case npm-cache;           echo 'npm cache'
         case bun-cache;           echo 'bun install cache'
         case cargo-cache;         echo 'cargo registry cache'
@@ -91,6 +131,7 @@ function target_avail --argument-names id
         case flatpak;     command -q flatpak
         case journal;     command -q journalctl
         case yay-cache;   test -d ~/.cache/yay
+        case paru-cache;  test -d ~/.cache/paru/clone
         case npm-cache;   command -q npm; and test -d ~/.npm
         case bun-cache;   test -d ~/.bun/install/cache
         case cargo-cache; test -d ~/.cargo/registry/cache
@@ -107,6 +148,7 @@ function target_size --argument-names id
         case flatpak;     echo 'scan'
         case journal;     journalctl --disk-usage 2>/dev/null | string match -rg '([0-9.,]+[KMGTi]+)'; or echo '?'
         case yay-cache;   _hsize ~/.cache/yay
+        case paru-cache;  _hsize ~/.cache/paru
         case npm-cache;   _hsize ~/.npm
         case bun-cache;   _hsize ~/.bun/install/cache
         case cargo-cache; _hsize ~/.cargo/registry/cache
@@ -157,7 +199,16 @@ function target_preview --argument-names id
         case yay-cache
             echo 'Cloned AUR sources & built packages under ~/.cache/yay:'
             echo
-            du -xh -d1 ~/.cache/yay 2>/dev/null | sort -rh | head -15
+            _aur_rows ~/.cache/yay 15
+            echo
+            echo 'A clone with a modified tracked file is a patch of yours — it stays.'
+        case paru-cache
+            echo 'AUR clones under ~/.cache/paru/clone. Patched ones are never touched:'
+            echo
+            _aur_rows ~/.cache/paru/clone
+            echo
+            echo 'Clean removes only the untouched clones — the whole cache is small,'
+            echo 'so a patched one keeps its src/, pkg/ and tarballs too.'
         case npm-cache
             echo 'npm cache (~/.npm). Clean runs: npm cache clean --force'
         case bun-cache
@@ -194,7 +245,9 @@ function target_clean --argument-names id
         case journal
             _confirm 'Trim journal to the last 200M?'; and sudo journalctl --vacuum-size=200M
         case yay-cache
-            _confirm 'Clear ~/.cache/yay?'; and rm -rf ~/.cache/yay/*
+            clean_aur_cache ~/.cache/yay
+        case paru-cache
+            clean_aur_cache ~/.cache/paru/clone
         case npm-cache
             _confirm 'Clean npm cache?'; and npm cache clean --force
         case bun-cache
@@ -206,6 +259,27 @@ function target_clean --argument-names id
         case podman
             _confirm 'Run podman system prune?'; and podman system prune
     end
+end
+
+# AUR cache cleaner — a hand-patched PKGBUILD is not re-downloadable, so any
+# clone with a dirty tracked file is skipped whole: sources, build dirs and all.
+function clean_aur_cache --argument-names root
+    test -d "$root"; or begin; echo "$root is already gone."; return; end
+    set -l keep (_aur_patched $root)
+    set -l doomed
+    for d in $root/*
+        contains -- (path basename $d) $keep; and continue
+        set -a doomed $d
+    end
+    if test (count $keep) -gt 0
+        set_color -o green
+        echo "Keeping "(count $keep)" patched clone(s) — modified tracked files:"
+        set_color normal
+        printf '  %s\n' $keep
+    end
+    test (count $doomed) -eq 0; and begin; echo 'Nothing else to remove.'; return; end
+    printf '  %s\n' (path basename $doomed)
+    _confirm "Remove "(count $doomed)" clone(s) from $root?"; and rm -rf $doomed
 end
 
 # snapshot picker — its own little fzf, the way you like it
