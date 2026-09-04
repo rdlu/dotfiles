@@ -8,7 +8,6 @@ abbr -a dkc-start 'docker compose start'
 abbr -a dkc-stop 'docker compose stop'
 abbr -a dkcup 'docker compose up -d'
 abbr -a dkcdn 'docker compose down'
-abbr -a dkcsu 'sudo systemctl start docker && docker compose up -d'
 abbr -a docker-clean-exit 'docker rm (docker ps -a -q -f status=exited)'
 
 # Docker functions
