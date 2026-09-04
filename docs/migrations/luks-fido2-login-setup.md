@@ -1568,12 +1568,75 @@ cp /etc/pam.d/FILE /etc/pam.d/FILE.pre-oo7
     Re-run the `grep -rln` above after any upgrade that touches a login
     manager.
 
-!!! info "Verified on daisy, not re-verified here"
+!!! success "xps resolved this by deletion instead — 2026-09-04"
 
-    The enumeration, the jump trap and its fix were worked out on daisy.
-    xps reached oo7 by a different route and may never have carried
-    these lines at all. Run the `grep -rln` before assuming either way —
-    it costs nothing and settles it.
+    The procedure above is daisy's, and it is correct there. xps needed
+    none of it. The `grep -rln` found six files —
+    `sddm`, `sddm-autologin`, `gdm-autologin`, `gdm-fingerprint`,
+    `gdm-password`, `gdm-smartcard` — all with their keyring lines
+    **uncommented**, so no relative jump had ever been disturbed and
+    `journalctl -b | grep -i 'bad jump'` was empty.
+
+    They also produced no `unable to dlopen` noise despite
+    `pam_gnome_keyring.so` being absent, because nothing traverses those
+    stacks: the machine boots through greetd, and a PAM stack only
+    dlopens its modules when a service actually authenticates through it.
+
+    `gdm` and `sddm` were both still installed, both disabled, and
+    neither was in `setup/packages.yaml`. Removing them deleted all six
+    files outright — strictly better than commenting lines and then
+    repairing `default=1` jumps, because the trap becomes structurally
+    impossible rather than merely avoided.
+
+!!! danger "`-Rns` on a display manager drags the whole desktop stack with it"
+
+    `pacman -Rns gdm sddm` initially proposed **20 packages, 364 MiB** —
+    far past two unused greeters. Three of them were things the machine
+    actively uses, and pacman said so in its own output:
+
+    ```text
+    :: xdg-desktop-portal optionally requires geoclue: Location portal
+    :: ansible optionally requires python-argcomplete: shell completions
+    ```
+
+    plus `iio-sensor-proxy`, which is unrelated to display managers and
+    is what exposes this laptop's accelerometer and ambient-light sensor.
+
+    Protect what you are keeping **before** removing, so pacman stops
+    treating it as a discardable dependency:
+
+    ```sh
+    pkexec pacman -D --asexplicit geoclue iio-sensor-proxy python-argcomplete
+    pacman -Rs --print gdm sddm    # re-preview; no root needed
+    ```
+
+    That brought it to 15 packages, all genuinely GNOME-only
+    (`gnome-shell`, `mutter`, `gnome-session`, `gnome-settings-daemon`,
+    `libgdm`, `webkitgtk-6.0`, `egl-wayland` and their support libs).
+    Verify each survivor's `Required By` before trusting the list.
+
+!!! warning "`ibus` was gdm baggage, and it hid a real gap"
+
+    `ibus` appeared in that removal list and looked worth saving — this
+    machine is used for occasional Japanese input. It was not worth
+    saving. `ibus` was a **gdm dependency**, its `Required By` was empty
+    once gdm went, and **no engine was installed** alongside it: no
+    `ibus-anthy`, no `ibus-mozc`, no `libkkc`. The framework was present
+    and could not have done Japanese at all.
+
+    `setup/packages.yaml` had the real answer under `input-method:` —
+    `fcitx5` with `fcitx5-mozc` — and **none of those six packages were
+    installed**. Japanese input had been quietly broken, and the removal
+    is what surfaced it. Installed 2026-09-04; `ibus` removed.
+
+    The lesson generalises: when a removal list contains something you
+    believe you use, check what is actually installed behind it against
+    the manifest before protecting it. A framework with no engine looks
+    identical to a working setup in `pacman -Q`.
+
+    Still outstanding: fcitx5 needs autostart and `XMODIFIERS=@im=fcitx`
+    (niri speaks `text-input-v3` natively, but XWayland apps do not).
+    Neither is in this repo yet.
 
 ### Point the portal at oo7
 
