@@ -1,0 +1,315 @@
+#!/usr/bin/env fish
+
+# clean-all - Interactive TUI for reclaiming disk space, with fzf.
+#
+# Each row is a cleanup target showing its current footprint. The preview
+# pane shows EXACTLY what would be removed (a dry-run) before you commit.
+#
+# Main view keys:
+#   tab     multi-select targets
+#   enter   clean the selected target(s) — asks to confirm each
+#   ctrl-r  refresh sizes
+#   esc     quit
+#
+# Flags:
+#   --dry-run   print every target's size + what it would remove, then exit
+#   --help      this help
+#
+# Targets that need root (pacman cache, orphans, snapshots, journal) call
+# sudo only at clean time — never while just browsing or previewing.
+
+set -g SELF (status filename)
+set -g TMPDIR_TUI (mktemp -d /tmp/clean-all.XXXXXX)
+
+function _cleanup --on-event fish_exit
+    test -d "$TMPDIR_TUI"; and rm -rf $TMPDIR_TUI
+end
+
+function _die
+    echo "clean-all: $argv" >&2
+    exit 1
+end
+
+function pause
+    read -P (set_color -d)'-- enter to continue --'(set_color normal) >/dev/null
+end
+
+function _confirm --argument-names q
+    read -l -P (set_color -o yellow)"$q [y/N] "(set_color normal) a
+    test "$a" = y -o "$a" = Y -o "$a" = yes
+end
+
+function _hsize --argument-names path # human size of a path, '-' if absent
+    if test -e "$path"
+        du -xsh "$path" 2>/dev/null | string split -f1 \t
+    else
+        echo '-'
+    end
+end
+
+# --- target registry ---------------------------------------------------------
+# A target is available (shown) only when `avail` succeeds. `size` is a short
+# string for the row, `preview` prints the dry-run, `clean` does the work.
+
+function target_ids
+    echo pacman-cache
+    echo pacman-uninstalled
+    echo orphans
+    echo snapshots
+    echo flatpak
+    echo journal
+    echo yay-cache
+    echo npm-cache
+    echo bun-cache
+    echo cargo-cache
+    echo docker
+    echo podman
+end
+
+function target_label --argument-names id
+    switch $id
+        case pacman-cache;        echo 'Pacman cache (keep latest 2)'
+        case pacman-uninstalled;  echo 'Pacman cache (uninstalled pkgs)'
+        case orphans;             echo 'Orphan packages'
+        case snapshots;           echo 'Snapper snapshots'
+        case flatpak;             echo 'Flatpak unused runtimes'
+        case journal;             echo 'Systemd journal'
+        case yay-cache;           echo 'Yay/AUR build cache'
+        case npm-cache;           echo 'npm cache'
+        case bun-cache;           echo 'bun install cache'
+        case cargo-cache;         echo 'cargo registry cache'
+        case docker;              echo 'Docker dangling/build cache'
+        case podman;              echo 'Podman unused data'
+    end
+end
+
+function target_avail --argument-names id
+    switch $id
+        case pacman-cache pacman-uninstalled; command -q paccache
+        case orphans;     test (pacman -Qtdq 2>/dev/null | count) -gt 0
+        case snapshots;   command -q snapper
+        case flatpak;     command -q flatpak
+        case journal;     command -q journalctl
+        case yay-cache;   test -d ~/.cache/yay
+        case npm-cache;   command -q npm; and test -d ~/.npm
+        case bun-cache;   test -d ~/.bun/install/cache
+        case cargo-cache; test -d ~/.cargo/registry/cache
+        case docker;      command -q docker
+        case podman;      command -q podman
+    end
+end
+
+function target_size --argument-names id
+    switch $id
+        case pacman-cache pacman-uninstalled; _hsize /var/cache/pacman/pkg
+        case orphans;     echo (pacman -Qtdq 2>/dev/null | count)' pkgs'
+        case snapshots;   echo 'sudo'
+        case flatpak;     echo 'scan'
+        case journal;     journalctl --disk-usage 2>/dev/null | string match -rg '([0-9.,]+[KMGTi]+)'; or echo '?'
+        case yay-cache;   _hsize ~/.cache/yay
+        case npm-cache;   _hsize ~/.npm
+        case bun-cache;   _hsize ~/.bun/install/cache
+        case cargo-cache; _hsize ~/.cargo/registry/cache
+        case docker;      echo 'scan'
+        case podman;      echo 'scan'
+    end
+end
+
+# --- previews (dry-run; no sudo, no mutation) --------------------------------
+
+function target_preview --argument-names id
+    set_color -o cyan; echo (target_label $id); set_color normal
+    echo
+    switch $id
+        case pacman-cache
+            echo 'Would remove all but the latest 2 versions of each package:'
+            echo
+            paccache -dvk2 2>/dev/null | tail -n +1
+        case pacman-uninstalled
+            echo 'Would remove every cached version of packages no longer installed:'
+            echo
+            paccache -dvuk0 2>/dev/null
+        case orphans
+            echo 'Dependencies nothing needs anymore — clean picks which ones, largest first:'
+            echo
+            set -l o (pacman -Qtdq 2>/dev/null)
+            if command -q expac; and test (count $o) -gt 0
+                expac -Q '%m\t%n' $o | sort -rn \
+                    | numfmt --to=iec --field=1 --delimiter=\t | sed 's/^/  /'
+            else
+                pacman -Qtdq 2>/dev/null | sed 's/^/  /'
+            end
+        case snapshots
+            echo 'Snapper root snapshots (selected at clean time):'
+            echo
+            sudo -n snapper -c root list 2>/dev/null
+            or echo '  (run the target to authenticate with sudo and pick snapshots)'
+        case flatpak
+            echo 'Unused flatpak runtimes (declining the prompt to list them):'
+            echo
+            printf 'n\n' | flatpak uninstall --unused 2>/dev/null | string match -rv 'Proceed'
+        case journal
+            echo 'Current journal disk usage:'
+            echo
+            journalctl --disk-usage 2>/dev/null
+            echo
+            echo 'Clean trims it to the last 200M.'
+        case yay-cache
+            echo 'Cloned AUR sources & built packages under ~/.cache/yay:'
+            echo
+            du -xh -d1 ~/.cache/yay 2>/dev/null | sort -rh | head -15
+        case npm-cache
+            echo 'npm cache (~/.npm). Clean runs: npm cache clean --force'
+        case bun-cache
+            echo 'bun download cache (~/.bun/install/cache).'
+        case cargo-cache
+            echo 'cargo registry download cache. Source crates re-download on demand.'
+            echo
+            du -xh -d2 ~/.cargo/registry/cache 2>/dev/null | sort -rh | head
+        case docker
+            echo 'Docker reclaimable space:'
+            echo
+            docker system df 2>/dev/null
+        case podman
+            echo 'Podman reclaimable space:'
+            echo
+            podman system df 2>/dev/null
+    end
+end
+
+# --- cleaners ----------------------------------------------------------------
+
+function target_clean --argument-names id
+    switch $id
+        case pacman-cache
+            _confirm 'Keep only the latest 2 versions of each package?'; and sudo paccache -rk2
+        case pacman-uninstalled
+            _confirm 'Remove all cached versions of uninstalled packages?'; and sudo paccache -ruk0
+        case orphans
+            clean_orphans
+        case snapshots
+            clean_snapshots
+        case flatpak
+            _confirm 'Remove unused flatpak runtimes?'; and flatpak uninstall --unused
+        case journal
+            _confirm 'Trim journal to the last 200M?'; and sudo journalctl --vacuum-size=200M
+        case yay-cache
+            _confirm 'Clear ~/.cache/yay?'; and rm -rf ~/.cache/yay/*
+        case npm-cache
+            _confirm 'Clean npm cache?'; and npm cache clean --force
+        case bun-cache
+            _confirm 'Clear bun install cache?'; and rm -rf ~/.bun/install/cache/*
+        case cargo-cache
+            _confirm 'Clear cargo registry cache?'; and rm -rf ~/.cargo/registry/cache/*
+        case docker
+            _confirm 'Run docker system prune?'; and docker system prune
+        case podman
+            _confirm 'Run podman system prune?'; and podman system prune
+    end
+end
+
+# snapshot picker — its own little fzf, the way you like it
+function clean_snapshots
+    set -l rows (sudo snapper -c root list 2>/dev/null \
+        | string match -r '^\s*[0-9]' | string match -rv '^\s*0\s*│')
+    test (count $rows) -eq 0; and begin; echo 'No deletable snapshots.'; return; end
+    set -l picked (printf '%s\n' $rows | fzf --multi --reverse --height 60% \
+        --header 'TAB select snapshots to DELETE | enter confirm | esc cancel' \
+        --prompt 'snapshots> ')
+    test (count $picked) -eq 0; and return
+    set -l nums
+    for l in $picked
+        set -a nums (string trim (string split '│' -- $l)[1])
+    end
+    echo "Selected: $nums"
+    _confirm "Delete "(count $nums)" snapshot(s)?"; and sudo snapper -c root delete $nums
+end
+
+# orphan picker — same little fzf, biggest first, so the build tools can stay
+function clean_orphans
+    set -l orphans (pacman -Qtdq 2>/dev/null)
+    test (count $orphans) -eq 0; and begin; echo 'No orphans.'; return; end
+    set -l rows
+    if command -q expac # sizes if we can get them, bare names if we can't
+        for l in (expac -Q '%m\t%n' $orphans | sort -rn | numfmt --to=iec --field=1 --delimiter=\t)
+            set -l f (string split \t -- $l)
+            set -a rows (printf '%s\t'(set_color cyan)'%8s'(set_color normal)'  %s' $f[2] $f[1] $f[2])
+        end
+    else
+        for n in $orphans
+            set -a rows (printf '%s\t%s' $n $n)
+        end
+    end
+    set -l picked (printf '%s\n' $rows | fzf --ansi --multi --reverse --height 70% \
+        --delimiter \t --with-nth 2.. --nth 2.. \
+        --header 'TAB select orphans to REMOVE | ctrl-a all | enter confirm | esc cancel' \
+        --prompt 'orphans> ' \
+        --bind 'ctrl-a:select-all' \
+        --preview 'pacman -Qi {1}' --preview-window 'right:55%:wrap')
+    test (count $picked) -eq 0; and return
+    set -l names
+    for l in $picked
+        set -a names (string split -f1 \t -- $l)
+    end
+    printf '  %s\n' $names
+    _confirm "Remove "(count $names)" orphan(s)?"; and sudo pacman -Rns $names
+end
+
+# --- views -------------------------------------------------------------------
+
+function menu_lines
+    for id in (target_ids)
+        target_avail $id 2>/dev/null; or continue
+        set -l lbl (target_label $id)
+        set -l sz (target_size $id)
+        printf '%s\t%-34s '(set_color cyan)'%10s'(set_color normal)'\n' $id $lbl $sz
+    end
+end
+
+function main
+    command -q fzf; or _die 'fzf is required'
+    while true
+        set -l lines (menu_lines)
+        test (count $lines) -eq 0; and begin; echo 'Nothing to clean. ✓'; break; end
+        set -l out (printf '%s\n' $lines | fzf --ansi --multi --reverse \
+            --delimiter \t --with-nth 2.. --nth 2.. \
+            --header 'tab: select | enter: clean selected | esc: quit' \
+            --prompt 'clean> ' \
+            --preview "$SELF __preview {1}" --preview-window 'right:58%:wrap')
+        test (count $out) -eq 0; and break
+        for line in $out
+            set -l id (string split -f1 \t -- $line)
+            echo
+            set_color -o magenta; echo "▶ "(target_label $id); set_color normal
+            target_clean $id
+        end
+        pause
+    end
+    echo
+    df -h / | tail -1 | string replace -ra ' +' ' '
+end
+
+function dry_run
+    set_color -o magenta; echo '── clean-all --dry-run ──'; set_color normal
+    for id in (target_ids)
+        target_avail $id 2>/dev/null; or continue
+        echo
+        set_color -o; echo (target_label $id)" ["(target_size $id)"]"; set_color normal
+        target_preview $id | tail -n +3 | head -12 | sed 's/^/  /'
+    end
+end
+
+# --- entrypoint --------------------------------------------------------------
+
+switch "$argv[1]"
+    case __preview
+        target_preview $argv[2]
+    case --dry-run -n
+        dry_run
+    case --help -h
+        sed -n '3,24{/^#/p}' $SELF | string replace -r '^# ?' ''
+    case ''
+        main
+    case '*'
+        _die "unknown argument: $argv[1]"
+end
