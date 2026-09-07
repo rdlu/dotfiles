@@ -247,9 +247,9 @@ run = 'scripts/dot-local/bin/pacman-drift'
 description = "Interactive manifest manager: browse categories, install/remove/audit (fzf TUI)"
 run = 'scripts/dot-local/bin/pkg-tui'
 
-[tasks.burn-tui]
-description = "Browse disk images and burn one to a removable drive via caligula (fzf TUI)"
-run = 'scripts/dot-local/bin/burn-tui'
+[tasks.images-disk-tui]
+description = "Browse disk images and write one to a removable drive via caligula (fzf TUI)"
+run = 'scripts/dot-local/bin/images-disk-tui'
 
 # Register the herdr native plugins (idempotent; needs herdr running + network).
 [tasks.herdr-plugins]

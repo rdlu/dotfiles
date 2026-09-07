@@ -1,14 +1,15 @@
 #!/usr/bin/env fish
 
-# burn-tui - launch-and-browse front-end for caligula (disk imaging).
+# images-disk-tui - launch-and-browse front-end for caligula (disk imaging).
+# Also installed as disk-images-tui; both names run this same script.
 #
 # caligula is excellent but entry is always `caligula burn <image>`, so you
 # have to know the path before you start. This wraps it the way pkg-tui wraps
-# pacman: run it bare, browse what you already have, pick a target, burn.
+# pacman: run it bare, browse what you already have, pick a target, write it.
 #
 # Image view:   burnable images from ~/Downloads/Images first, then
 #               ~/Downloads, each newest-first. ctrl-o widens to ~/ISOs,
-#               ~/Images, the cwd and $BURN_TUI_DIRS. Preview shows size,
+#               ~/Images, the cwd and $DISK_IMAGE_DIRS. Preview shows size,
 #               detected compression, and whether a checksum file is
 #               sitting next to it.
 # Disk view:    removable/hotplug disks only. The disks backing /, /boot and
@@ -16,17 +17,20 @@
 #               never listed -- kernel names (nvme0n1 vs nvme1n1) are not
 #               stable across boots, so they're never hardcoded.
 # Confirm:      shows the exact caligula command before anything is written.
+#               (caligula's subcommand is literally `burn`; that's its word,
+#               not ours -- everything user-facing here says write.)
 #
 # Keys
 #   image view   enter pick | ctrl-o more folders | ctrl-z include plain .zip
 #                | ctrl-r rescan | esc quit
-#   disk view    enter pick | ctrl-a also show internal disks | ctrl-r rescan
+#   disk view    enter write | ctrl-a also show internal disks | ctrl-r rescan
 #                | esc back
 #
 # Env
-#   BURN_TUI_DIRS   colon-separated extra roots, added to the ctrl-o set
+#   DISK_IMAGE_DIRS   colon-separated extra roots, added to the ctrl-o set
 
 set -g SELF (status filename)
+set -g PROG (basename -- (status filename))
 # bare .zip is off by default -- a Downloads folder is mostly zips that are
 # not disk images. ctrl-z in the image view widens to include them.
 set -g IMG_RE '\.(img|iso|raw|wic)(\.(xz|gz|zst|bz2|lz4|zip))?$'
@@ -38,10 +42,10 @@ set -g IMG_RE_LOOSE '(\.(img|iso|raw|wic)(\.(xz|gz|zst|bz2|lz4|zip))?|\.zip)$'
 # default list stays short enough to read.
 set -g ROOTS_PRIMARY $HOME/Downloads/Images $HOME/Downloads
 set -g ROOTS_EXTRA $HOME/ISOs $HOME/isos $HOME/Images (pwd)
-set -q BURN_TUI_DIRS; and set -a ROOTS_EXTRA (string split -- ':' $BURN_TUI_DIRS)
+set -q DISK_IMAGE_DIRS; and set -a ROOTS_EXTRA (string split -- ':' $DISK_IMAGE_DIRS)
 
 function _die
-    echo "burn-tui: $argv" >&2
+    echo "$PROG: $argv" >&2
     exit 1
 end
 
@@ -171,7 +175,7 @@ function img_preview --argument-names img
     echo
     if test $comp = zip
         set_color yellow
-        echo "caligula cannot read zip; burn-tui unpacks it first."
+        echo "caligula cannot read zip; $PROG unpacks it first."
         set_color normal
         echo
         bsdtar -tf $img 2>/dev/null | head -20
@@ -268,13 +272,13 @@ function unpack_zip --argument-names img
         set entry (printf '%s\n' $entries | fzf --prompt 'entry to burn> ' --height 40% --reverse)
         test -z "$entry"; and return 1
     end
-    set -l dest (mktemp -d -t burn-tui.XXXXXX)
+    set -l dest (mktemp -d -t images-disk-tui.XXXXXX)
     echo "unpacking $entry -> $dest" >&2
     bsdtar -xf $img -C $dest -- $entry; or return 1
     echo $dest/$entry
 end
 
-function do_burn --argument-names img dev usehash
+function do_write --argument-names img dev usehash
     set -l target $img
     set -l scratch ''
     if test (detect_comp $img) = zip
@@ -309,9 +313,9 @@ function confirm_view --argument-names img dev
     set -l h (find_hash $img)
     set -l menu
     if test -n "$h"
-        set -a menu "burn, verifying the image against its sha256 first"
+        set -a menu "write, verifying the image against its sha256 first"
     end
-    set -a menu "burn (skip the image hash check)"
+    set -a menu "write (skip the image hash check)"
     set -a menu cancel
 
     set -l hdr "$(basename -- $img)  ->  /dev/$dev"
@@ -319,10 +323,10 @@ function confirm_view --argument-names img dev
         | fzf --prompt 'confirm> ' --height 40% --reverse \
             --header (printf '%s\n%s' "$hdr" 'caligula still asks its own confirmation before it writes.'))
     switch "$choice"
-        case 'burn, verifying*'
-            do_burn $img $dev 1
-        case 'burn (skip*'
-            do_burn $img $dev 0
+        case 'write, verifying*'
+            do_write $img $dev 1
+        case 'write (skip*'
+            do_write $img $dev 0
     end
 end
 
@@ -344,8 +348,8 @@ function disk_view --argument-names img
             return
         end
 
-        set -l hdr "target for: $(basename -- $img) | enter burn | ctrl-a toggle internal disks | ctrl-r rescan | esc back"
-        test $showall = 1; and set hdr \e"[31mINTERNAL DISKS SHOWN -- these are not removable\e[0m"\n"$hdr"
+        set -l hdr "target for: $(basename -- $img) | enter write | ctrl-a toggle internal disks | ctrl-r rescan | esc back"
+        test $showall = 1; and set hdr \e"[31mINTERNAL DISKS SHOWN -- these are not removable"\e"[0m"\n"$hdr"
 
         set -l out (printf '%s\n' $lines | fzf --ansi --reverse --delimiter \t --with-nth 1 \
             --expect=ctrl-a,ctrl-r --header "$hdr" --prompt 'disk> ' \
@@ -377,7 +381,7 @@ function main
     while true
         set -l lines (image_lines $loose $extra)
         if test (count $lines) -eq 0
-            echo "burn-tui: no images found under:" >&2
+            echo "$PROG: no images found under:" >&2
             for d in (_roots $extra)
                 echo "  $d" >&2
             end
@@ -385,7 +389,7 @@ function main
             echo "drop an image in ~/Downloads/Images, or:" >&2
             test $extra = 1; or echo "  ctrl-o in the image view searches more folders" >&2
             test $loose = 1; or echo "  ctrl-z shows plain .zip archives too" >&2
-            echo "  BURN_TUI_DIRS=/some/dir:/other adds your own roots" >&2
+            echo "  DISK_IMAGE_DIRS=/some/dir:/other adds your own roots" >&2
             return 1
         end
 
