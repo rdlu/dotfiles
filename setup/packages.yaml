@@ -269,7 +269,8 @@ security:
   - yubikey-touch-detector
 
 system:
-  - caligula # TUI disk imager; writes compressed images (gz/bz2/xz/lz4/zst) + verifies
+  - cachyos-plymouth-bootanimation # boot-splash theme; needs the plymouth hook
+  - caligula # disk imager TUI; handles compressed images
   - firewall-config
   - firewalld
   - fuse-overlayfs
@@ -285,8 +286,9 @@ system:
   - iptables
   - nfs-utils
   - ntfs-3g
+  - plymouth # boot splash; kept deliberately
   - rebuild-detector
-  - rpi-imager # native pkg; the flathub build went EOL stuck on 1.9.6
+  - rpi-imager # native, not the EOL flathub build
   - samba
   - solaar
   - squashfuse

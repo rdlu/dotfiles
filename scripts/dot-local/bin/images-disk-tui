@@ -1,24 +1,14 @@
 #!/usr/bin/env fish
 
-# images-disk-tui - launch-and-browse front-end for caligula (disk imaging).
-# Also installed as disk-images-tui; both names run this same script.
+# images-disk-tui - browse disk images and write one to a disk, via caligula.
+# Also installed as disk-images-tui; both names run this script.
 #
-# caligula is excellent but entry is always `caligula burn <image>`, so you
-# have to know the path before you start. This wraps it the way pkg-tui wraps
-# pacman: run it bare, browse what you already have, pick a target, write it.
-#
-# Image view:   burnable images from ~/Downloads/Images first, then
-#               ~/Downloads, each newest-first. ctrl-o widens to ~/ISOs,
-#               ~/Images, the cwd and $DISK_IMAGE_DIRS. Preview shows size,
-#               detected compression, and whether a checksum file is
-#               sitting next to it.
-# Disk view:    removable/hotplug disks only. The disks backing /, /boot and
-#               active swap are resolved through LUKS/LVM at runtime and are
-#               never listed -- kernel names (nvme0n1 vs nvme1n1) are not
-#               stable across boots, so they're never hardcoded.
-# Confirm:      shows the exact caligula command before anything is written.
-#               (caligula's subcommand is literally `burn`; that's its word,
-#               not ours -- everything user-facing here says write.)
+# Image view:  images from ~/Downloads/Images, then ~/Downloads, newest first.
+#              ctrl-o widens to ~/ISOs, ~/Images, cwd and $DISK_IMAGE_DIRS.
+# Disk view:   removable disks only. The disks backing /, /boot and swap are
+#              resolved through LUKS/LVM at runtime, never hardcoded -- nvme
+#              names are not stable across boots.
+# Confirm:     shows the exact caligula command before anything is written.
 #
 # Keys
 #   image view   enter pick | ctrl-o more folders | ctrl-z include plain .zip
@@ -31,15 +21,13 @@
 
 set -g SELF (status filename)
 set -g PROG (basename -- (status filename))
-# bare .zip is off by default -- a Downloads folder is mostly zips that are
-# not disk images. ctrl-z in the image view widens to include them.
+# bare .zip is off by default; a Downloads folder is mostly zips that aren't
+# disk images. ctrl-z widens to include them.
 set -g IMG_RE '\.(img|iso|raw|wic)(\.(xz|gz|zst|bz2|lz4|zip))?$'
 set -g IMG_RE_LOOSE '(\.(img|iso|raw|wic)(\.(xz|gz|zst|bz2|lz4|zip))?|\.zip)$'
 
-# Search roots in preference order. ~/Downloads/Images is the place to drop an
-# image you mean to burn; ~/Downloads is the fallback because that's where a
-# browser leaves things. Everything else is opt-in behind ctrl-o, so the
-# default list stays short enough to read.
+# Search roots in preference order: a deliberate drop-spot first, then wherever
+# the browser left things. The rest is opt-in behind ctrl-o.
 set -g ROOTS_PRIMARY $HOME/Downloads/Images $HOME/Downloads
 set -g ROOTS_EXTRA $HOME/ISOs $HOME/isos $HOME/Images (pwd)
 set -q DISK_IMAGE_DIRS; and set -a ROOTS_EXTRA (string split -- ':' $DISK_IMAGE_DIRS)
@@ -53,8 +41,7 @@ function _pause
     read -P (set_color -d)'-- enter to continue --'(set_color normal) >/dev/null
 end
 
-# existing, de-duplicated search roots, in preference order;
-# extra=1 appends the opt-in ones
+# existing, de-duplicated roots in preference order; extra=1 adds the opt-in set
 function _roots --argument-names extra
     set -l dirs $ROOTS_PRIMARY
     test "$extra" = 1; and set -a dirs $ROOTS_EXTRA
@@ -109,8 +96,7 @@ function find_hash --argument-names img
     return 1
 end
 
-# "<display>\t<fullpath>", grouped by root preference then newest-first;
-# loose=1 also lists bare .zip, extra=1 also searches the opt-in roots
+# "<display>\t<fullpath>", by root preference then newest-first
 function image_lines --argument-names loose extra
     set -l roots (_roots $extra)
     test (count $roots) -eq 0; and return
@@ -132,9 +118,8 @@ function image_lines --argument-names loose extra
                 while (b >= 1024 && i < 5) { b /= 1024; i++ }
                 return sprintf("%.1f%s", b, u[i])
             }
-            # ~/Downloads/Images sits inside ~/Downloads, so the same file
-            # turns up twice; sorted by rank, the first sighting is the
-            # one from the more-preferred root.
+            # Images nests inside Downloads, so a file turns up twice;
+            # ranked by root, the first sighting is the preferred one.
             seen[$4]++ { next }
             {
                 path = $4
@@ -256,7 +241,7 @@ function disk_preview --argument-names name
         | sed 's/^ID_/  /'
 end
 
-# --- burning -----------------------------------------------------------------
+# --- writing -----------------------------------------------------------------
 
 # caligula has no zip reader; unpack the image out of the archive first
 function unpack_zip --argument-names img
@@ -372,8 +357,7 @@ function main
     command -v fd >/dev/null; or _die "fd is required"
     command -v caligula >/dev/null; or _die "caligula is required (pacman -S caligula)"
 
-    # create the documented drop-spot so the empty-state advice is actionable,
-    # and so a fresh machine behaves the same as this one
+    # create the drop-spot, so a fresh machine gets the same layout
     test -d $ROOTS_PRIMARY[1]; or mkdir -p $ROOTS_PRIMARY[1] 2>/dev/null
 
     set -l loose 0
