@@ -43,6 +43,15 @@ function _die
     exit 1
 end
 
+# shorten to N chars with an ellipsis, so a long filename can't blow out a header
+function _ellip --argument-names str n
+    if test (string length -- $str) -gt $n
+        echo (string sub -l (math $n - 1) -- $str)…
+    else
+        echo $str
+    end
+end
+
 function _pause
     read -P (set_color -d)'-- enter to continue --'(set_color normal) >/dev/null
 end
@@ -398,11 +407,11 @@ function confirm_view --argument-names img dev
 
     # one variable, not a command substitution -- fish splits those on newlines
     # and fzf would see the second line as a stray option
-    set -l hdr "$(basename -- $img)  ->  /dev/$dev"
+    set -l hdr (_ellip (basename -- $img) 34)" -> /dev/$dev"
     for line in (disk_mounts $dev)
-        set hdr "$hdr"\n"mounted: $line -- will be unmounted first"
+        set hdr "$hdr"\n"unmounting "(_ellip $line 42)
     end
-    set hdr "$hdr"\n"caligula still asks its own confirmation before it writes."
+    set hdr "$hdr"\n'caligula confirms again before writing'
     set -l choice (printf '%s\n' $menu \
         | fzf --prompt 'confirm> ' --height 40% --reverse --header "$hdr")
     switch "$choice"
@@ -484,11 +493,11 @@ end
 function erase_confirm --argument-names name
     set -l size (lsblk -dno SIZE /dev/$name 2>/dev/null | string trim)
     set -l model (lsblk -dno MODEL /dev/$name 2>/dev/null | string trim)
-    set -l hdr "ERASE /dev/$name  $size  $model"
+    set -l hdr "ERASE /dev/$name  $size  "(_ellip "$model" 20)
     for line in (disk_mounts $name)
-        set hdr "$hdr"\n"mounted: $line -- will be unmounted first"
+        set hdr "$hdr"\n"unmounting "(_ellip $line 42)
     end
-    set hdr "$hdr"\n"everything on this disk will be destroyed"
+    set hdr "$hdr"\n'everything on this disk is destroyed'
 
     set -l choice (printf '%s\n' \
         "erase to one exfat partition (GPT)" \
@@ -528,8 +537,8 @@ function erase_view
             return
         end
 
-        set -l hdr 'pick a disk to ERASE | ctrl-a internal disks | ctrl-r rescan | esc back'
-        test $showall = 1; and set hdr \e"[31mINTERNAL DISKS SHOWN -- these are not removable"\e"[0m"\n"$hdr"
+        set -l hdr 'pick a disk to ERASE'\n'ctrl-a internal disks · ctrl-r rescan'\n'esc back'
+        test $showall = 1; and set hdr \e"[31mINTERNAL DISKS SHOWN"\e"[0m"\n"$hdr"
 
         set -l out (printf '%s\n' $lines | fzf --ansi --reverse --delimiter \t --with-nth 1 \
             --expect=ctrl-a,ctrl-r --header "$hdr" --prompt 'erase which disk> ' \
@@ -565,8 +574,8 @@ function disk_view --argument-names img
             return
         end
 
-        set -l hdr "target for: $(basename -- $img) | enter write | ctrl-a toggle internal disks | ctrl-r rescan | esc back"
-        test $showall = 1; and set hdr \e"[31mINTERNAL DISKS SHOWN -- these are not removable"\e"[0m"\n"$hdr"
+        set -l hdr "writing: "(_ellip (basename -- $img) 34)\n'enter write · ctrl-a internal disks'\n'ctrl-r rescan · esc back'
+        test $showall = 1; and set hdr \e"[31mINTERNAL DISKS SHOWN"\e"[0m"\n"$hdr"
 
         set -l out (printf '%s\n' $lines | fzf --ansi --reverse --delimiter \t --with-nth 1 \
             --expect=ctrl-a,ctrl-r --header "$hdr" --prompt 'disk> ' \
@@ -610,11 +619,11 @@ function main
             return 1
         end
 
-        set -l zt 'ctrl-z: include plain .zip'
-        test $loose = 1; and set zt 'ctrl-z: hide plain .zip'
-        set -l ot 'ctrl-o: search more folders'
-        test $extra = 1; and set ot 'ctrl-o: back to ~/Downloads only'
-        set -l hdr "enter: pick target disk | $zt | $ot | ctrl-e: erase a disk | ctrl-r: rescan | esc: quit"
+        set -l zt 'ctrl-z +zip'
+        test $loose = 1; and set zt 'ctrl-z -zip'
+        set -l ot 'ctrl-o +folders'
+        test $extra = 1; and set ot 'ctrl-o -folders'
+        set -l hdr 'enter write · ctrl-e erase · ctrl-r rescan'\n"$ot · $zt · esc quit"
 
         set -l out (printf '%s\n' $lines | fzf --ansi --reverse --delimiter \t --with-nth 1 \
             --expect=ctrl-r,ctrl-z,ctrl-o,ctrl-e \
