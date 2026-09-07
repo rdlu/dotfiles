@@ -1,0 +1,397 @@
+#!/usr/bin/env fish
+
+# burn-tui - launch-and-browse front-end for caligula (disk imaging).
+#
+# caligula is excellent but entry is always `caligula burn <image>`, so you
+# have to know the path before you start. This wraps it the way pkg-tui wraps
+# pacman: run it bare, browse what you already have, pick a target, burn.
+#
+# Image view:   every burnable image under the search roots, newest first
+#               ($HOME/Downloads leads -- that's where images land).
+#               Preview shows size, detected compression, and whether a
+#               checksum file is sitting next to it.
+# Disk view:    removable/hotplug disks only. The disks backing /, /boot and
+#               active swap are resolved through LUKS/LVM at runtime and are
+#               never listed -- kernel names (nvme0n1 vs nvme1n1) are not
+#               stable across boots, so they're never hardcoded.
+# Confirm:      shows the exact caligula command before anything is written.
+#
+# Keys
+#   image view   enter pick | ctrl-r rescan | esc quit
+#   disk view    enter pick | ctrl-a also show internal disks | ctrl-r rescan
+#                | esc back
+#
+# Env
+#   BURN_TUI_DIRS   colon-separated search roots, replacing the defaults
+
+set -g SELF (status filename)
+# bare .zip is off by default -- a Downloads folder is mostly zips that are
+# not disk images. ctrl-z in the image view widens to include them.
+set -g IMG_RE '\.(img|iso|raw|wic)(\.(xz|gz|zst|bz2|lz4|zip))?$'
+set -g IMG_RE_LOOSE '(\.(img|iso|raw|wic)(\.(xz|gz|zst|bz2|lz4|zip))?|\.zip)$'
+
+if set -q BURN_TUI_DIRS
+    set -g ROOTS (string split -- ':' $BURN_TUI_DIRS)
+else
+    set -g ROOTS $HOME/Downloads $HOME/ISOs $HOME/isos $HOME/Images (pwd)
+end
+
+function _die
+    echo "burn-tui: $argv" >&2
+    exit 1
+end
+
+function _pause
+    read -P (set_color -d)'-- enter to continue --'(set_color normal) >/dev/null
+end
+
+# existing, de-duplicated search roots
+function _roots
+    set -l seen
+    for d in $ROOTS
+        test -d "$d"; or continue
+        set -l abs (realpath -- $d 2>/dev/null; or echo $d)
+        contains -- $abs $seen; and continue
+        set -a seen $abs
+        echo $abs
+    end
+end
+
+# --- image side --------------------------------------------------------------
+
+function detect_comp --argument-names img
+    switch (string lower -- $img)
+        case '*.xz'
+            echo xz
+        case '*.gz'
+            echo gz
+        case '*.zst'
+            echo zst
+        case '*.bz2'
+            echo bz2
+        case '*.lz4'
+            echo lz4
+        case '*.zip'
+            echo zip
+        case '*'
+            echo none
+    end
+end
+
+# a sha256 for $img from a sidecar or a SHA256SUMS-style file, if there is one
+function find_hash --argument-names img
+    set -l dir (dirname -- $img)
+    set -l base (basename -- $img)
+    for f in "$img.sha256" "$img.sha256sum" "$img.SHA256" \
+        $dir/SHA256SUMS $dir/SHA256SUMS.txt $dir/sha256sum.txt
+        test -r "$f"; or continue
+        # a line naming this image wins; otherwise a bare one-line digest
+        set -l cand (grep -F -- $base $f 2>/dev/null | head -1 | string split -n -- ' ')
+        set -a cand (head -1 $f | string split -n -- ' ')
+        for c in $cand
+            if string match -qr '^[0-9a-fA-F]{64}$' -- $c
+                echo $c
+                return 0
+            end
+        end
+    end
+    return 1
+end
+
+# "<display>\t<fullpath>", newest first; loose=1 also lists bare .zip
+function image_lines --argument-names loose
+    set -l roots (_roots)
+    test (count $roots) -eq 0; and return
+    set -l re $IMG_RE
+    test "$loose" = 1; and set re $IMG_RE_LOOSE
+    fd --type f --absolute-path --regex $re . $roots -0 2>/dev/null \
+        | xargs -0 -r stat --printf '%Y\t%s\t%n\n' 2>/dev/null \
+        | sort -rn -k1,1 \
+        | awk -F'\t' '
+            function human(b,   u, i) {
+                split("B K M G T", u, " "); i = 1
+                while (b >= 1024 && i < 5) { b /= 1024; i++ }
+                return sprintf("%.1f%s", b, u[i])
+            }
+            {
+                path = $3
+                n = split(path, seg, "/")
+                base = seg[n]
+                dir = substr(path, 1, length(path) - length(base) - 1)
+                printf "%-9s %s  \033[1m%s\033[0m  \033[2m%s\033[0m\t%s\n", \
+                    human($2), strftime("%Y-%m-%d", $1), base, dir, path
+            }'
+end
+
+function img_preview --argument-names img
+    test -r "$img"; or begin
+        echo "unreadable: $img"
+        return
+    end
+    set_color cyan
+    echo (basename -- $img)
+    set_color normal
+    set_color -d
+    echo (dirname -- $img)
+    set_color normal
+    echo
+    set -l comp (detect_comp $img)
+    printf 'size         %s\n' (stat --printf '%s' $img | numfmt --to=iec)
+    printf 'modified     %s\n' (date -r $img '+%Y-%m-%d %H:%M')
+    printf 'compression  %s\n' $comp
+    set -l h (find_hash $img)
+    if test -n "$h"
+        set_color green
+        printf 'sha256       %s\n' $h
+        set_color normal
+    else
+        set_color yellow
+        printf 'sha256       no checksum file alongside\n'
+        set_color normal
+    end
+    echo
+    if test $comp = zip
+        set_color yellow
+        echo "caligula cannot read zip; burn-tui unpacks it first."
+        set_color normal
+        echo
+        bsdtar -tf $img 2>/dev/null | head -20
+        echo
+    end
+    file -b -- $img
+end
+
+# --- disk side ---------------------------------------------------------------
+
+# disks backing /, /boot or active swap -- resolved through LUKS/LVM, never
+# hardcoded, because nvme enumeration order is not stable across boots
+function protected_disks
+    begin
+        for mp in / /boot /boot/efi /efi
+            findmnt -no SOURCE $mp 2>/dev/null | sed 's/\[.*\]//'
+        end
+        swapon --noheadings --show=NAME 2>/dev/null
+    end | while read -l src
+        test -n "$src"; and test -b "$src"; or continue
+        lsblk -nso NAME,TYPE --raw $src 2>/dev/null | awk '$2 == "disk" { print $1 }'
+    end | sort -u
+end
+
+function _lsblk_field --argument-names line key
+    set -l m (string match -r "$key=\"([^\"]*)\"" -- $line)
+    test (count $m) -ge 2; and echo $m[2]
+end
+
+# "<display>\t<name>"; showall=1 also lists internal disks
+function disk_lines --argument-names showall
+    set -l prot (protected_disks)
+    lsblk -dn -P -o NAME,SIZE,TYPE,RM,HOTPLUG,TRAN,MODEL 2>/dev/null | while read -l line
+        set -l name (_lsblk_field $line NAME)
+        test "$(_lsblk_field $line TYPE)" = disk; or continue
+        contains -- $name $prot; and continue
+        string match -q 'zram*' -- $name; and continue
+
+        set -l size (_lsblk_field $line SIZE)
+        set -l tran (_lsblk_field $line TRAN)
+        set -l model (_lsblk_field $line MODEL)
+        set -l removable no
+        if test "$(_lsblk_field $line RM)" = 1 -o "$(_lsblk_field $line HOTPLUG)" = 1
+            set removable yes
+        end
+        test $removable = no -a "$showall" != 1; and continue
+
+        # flag a disk that currently has something mounted from it
+        set -l mnt (lsblk -nlo MOUNTPOINTS /dev/$name 2>/dev/null | string match -rv '^\s*$')
+        set -l tag ''
+        test (count $mnt) -gt 0; and set tag \e"[31m [MOUNTED]"\e"[0m"
+        test $removable = no; and set tag "$tag"\e"[31m [INTERNAL]"\e"[0m"
+
+        printf '%-10s %-9s %-6s \033[1m%s\033[0m%s\t%s\n' \
+            $name $size $tran "$model" "$tag" $name
+    end
+end
+
+function disk_preview --argument-names name
+    set_color cyan
+    echo "/dev/$name"
+    set_color normal
+    echo
+    lsblk -o NAME,SIZE,TYPE,FSTYPE,LABEL,MOUNTPOINTS /dev/$name 2>/dev/null
+    echo
+    set -l mnt (lsblk -nlo MOUNTPOINTS /dev/$name 2>/dev/null | string match -rv '^\s*$')
+    if test (count $mnt) -gt 0
+        set_color red
+        echo "MOUNTED -- unmount before burning:"
+        for m in $mnt
+            echo "  $m"
+        end
+        set_color normal
+        echo
+    end
+    udevadm info --query=property --name=/dev/$name 2>/dev/null \
+        | grep -E '^(ID_VENDOR|ID_MODEL|ID_SERIAL_SHORT|ID_BUS)=' \
+        | sed 's/^ID_/  /'
+end
+
+# --- burning -----------------------------------------------------------------
+
+# caligula has no zip reader; unpack the image out of the archive first
+function unpack_zip --argument-names img
+    set -l entries (bsdtar -tf $img 2>/dev/null | string match -r '.*\.(img|iso|raw|wic)$')
+    if test (count $entries) -eq 0
+        set_color red
+        echo "no .img/.iso/.raw/.wic entry inside $img" >&2
+        set_color normal
+        return 1
+    end
+    set -l entry $entries[1]
+    if test (count $entries) -gt 1
+        set entry (printf '%s\n' $entries | fzf --prompt 'entry to burn> ' --height 40% --reverse)
+        test -z "$entry"; and return 1
+    end
+    set -l dest (mktemp -d -t burn-tui.XXXXXX)
+    echo "unpacking $entry -> $dest" >&2
+    bsdtar -xf $img -C $dest -- $entry; or return 1
+    echo $dest/$entry
+end
+
+function do_burn --argument-names img dev usehash
+    set -l target $img
+    set -l scratch ''
+    if test (detect_comp $img) = zip
+        set target (unpack_zip $img); or begin
+            _pause
+            return 1
+        end
+        set scratch (dirname -- $target)
+    end
+
+    set -l args burn $target -o /dev/$dev -z auto
+    if test "$usehash" = 1
+        set -a args -s (find_hash $img)
+    else
+        set -a args -s skip
+    end
+
+    echo
+    set_color -d
+    echo "> caligula $args"
+    set_color normal
+    echo
+    caligula $args
+    set -l rc $status
+
+    test -n "$scratch"; and rm -rf -- $scratch
+    _pause
+    return $rc
+end
+
+function confirm_view --argument-names img dev
+    set -l h (find_hash $img)
+    set -l menu
+    if test -n "$h"
+        set -a menu "burn, verifying the image against its sha256 first"
+    end
+    set -a menu "burn (skip the image hash check)"
+    set -a menu cancel
+
+    set -l hdr "$(basename -- $img)  ->  /dev/$dev"
+    set -l choice (printf '%s\n' $menu \
+        | fzf --prompt 'confirm> ' --height 40% --reverse \
+            --header (printf '%s\n%s' "$hdr" 'caligula still asks its own confirmation before it writes.'))
+    switch "$choice"
+        case 'burn, verifying*'
+            do_burn $img $dev 1
+        case 'burn (skip*'
+            do_burn $img $dev 0
+    end
+end
+
+# --- views -------------------------------------------------------------------
+
+function disk_view --argument-names img
+    set -l showall 0
+    while true
+        set -l lines (disk_lines $showall)
+        if test (count $lines) -eq 0
+            echo
+            if test $showall = 1
+                echo "no eligible disks found."
+            else
+                echo "no removable disk found -- plug one in, or press ctrl-a in"
+                echo "the disk view to include internal disks."
+            end
+            _pause
+            return
+        end
+
+        set -l hdr "target for: $(basename -- $img) | enter burn | ctrl-a toggle internal disks | ctrl-r rescan | esc back"
+        test $showall = 1; and set hdr \e"[31mINTERNAL DISKS SHOWN -- these are not removable\e[0m"\n"$hdr"
+
+        set -l out (printf '%s\n' $lines | fzf --ansi --reverse --delimiter \t --with-nth 1 \
+            --expect=ctrl-a,ctrl-r --header "$hdr" --prompt 'disk> ' \
+            --preview "$SELF __diskpreview {2}" --preview-window 'right:55%:wrap')
+        test (count $out) -lt 2; and return
+
+        switch $out[1]
+            case ctrl-a
+                set showall (test $showall = 1; and echo 0; or echo 1)
+            case ctrl-r
+                continue
+            case ''
+                confirm_view $img (string split -m1 -- \t $out[2])[2]
+        end
+    end
+end
+
+function main
+    command -v fzf >/dev/null; or _die "fzf is required"
+    command -v fd >/dev/null; or _die "fd is required"
+    command -v caligula >/dev/null; or _die "caligula is required (pacman -S caligula)"
+
+    set -l loose 0
+    while true
+        set -l lines (image_lines $loose)
+        if test (count $lines) -eq 0
+            echo "burn-tui: no images found under:" >&2
+            for d in (_roots)
+                echo "  $d" >&2
+            end
+            echo "set BURN_TUI_DIRS to search elsewhere." >&2
+            test $loose = 1; or echo "(plain .zip archives are hidden; ctrl-z shows them)" >&2
+            return 1
+        end
+
+        set -l hdr 'enter: pick target disk | ctrl-z: include plain .zip | ctrl-r: rescan | esc: quit'
+        test $loose = 1; and set hdr 'enter: pick target disk | ctrl-z: hide plain .zip | ctrl-r: rescan | esc: quit'
+
+        set -l out (printf '%s\n' $lines | fzf --ansi --reverse --delimiter \t --with-nth 1 \
+            --expect=ctrl-r,ctrl-z \
+            --header "$hdr" \
+            --prompt 'image> ' \
+            --preview "$SELF __imgpreview {2}" --preview-window 'right:55%:wrap')
+        test (count $out) -lt 2; and break
+
+        switch $out[1]
+            case ctrl-r
+                continue
+            case ctrl-z
+                set loose (test $loose = 1; and echo 0; or echo 1)
+            case ''
+                disk_view (string split -m1 -- \t $out[2])[2]
+        end
+    end
+end
+
+# --- entrypoint --------------------------------------------------------------
+
+switch "$argv[1]"
+    case __imgpreview
+        img_preview $argv[2]
+    case __diskpreview
+        disk_preview $argv[2]
+    case ''
+        main
+    case '*'
+        _die "unknown argument: $argv[1]"
+end
