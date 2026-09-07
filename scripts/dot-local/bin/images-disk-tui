@@ -185,6 +185,11 @@ function protected_disks
     end | sort -u
 end
 
+function disk_bytes --argument-names name
+    set -l b (lsblk -dnbo SIZE /dev/$name 2>/dev/null | string trim)
+    string match -qr '^[0-9]+$' -- "$b"; and echo $b; or echo 0
+end
+
 function _lsblk_field --argument-names line key
     set -l m (string match -r "$key=\"([^\"]*)\"" -- $line)
     test (count $m) -ge 2; and echo $m[2]
@@ -213,6 +218,8 @@ function disk_lines --argument-names showall
         set -l tag ''
         test (count $mnt) -gt 0; and set tag \e"[31m [MOUNTED]"\e"[0m"
         test $removable = no; and set tag "$tag"\e"[31m [INTERNAL]"\e"[0m"
+        # a card reader with no card enumerates as a 0-byte disk
+        test (disk_bytes $name) -eq 0; and set tag "$tag"\e"[31m [NO MEDIA]"\e"[0m"
 
         printf '%-10s %-9s %-6s \033[1m%s\033[0m%s\t%s\n' \
             $name $size $tran "$model" "$tag" $name
@@ -226,10 +233,16 @@ function disk_preview --argument-names name
     echo
     lsblk -o NAME,SIZE,TYPE,FSTYPE,LABEL,MOUNTPOINTS /dev/$name 2>/dev/null
     echo
+    if test (disk_bytes $name) -eq 0
+        set_color red
+        echo "NO MEDIA -- 0 bytes; this is an empty reader, not a writable disk."
+        set_color normal
+        echo
+    end
     set -l mnt (lsblk -nlo MOUNTPOINTS /dev/$name 2>/dev/null | string match -rv '^\s*$')
     if test (count $mnt) -gt 0
         set_color red
-        echo "MOUNTED -- unmount before burning:"
+        echo "MOUNTED -- unmount before writing:"
         for m in $mnt
             echo "  $m"
         end
@@ -295,6 +308,15 @@ function do_write --argument-names img dev usehash
 end
 
 function confirm_view --argument-names img dev
+    if test (disk_bytes $dev) -eq 0
+        echo
+        set_color red
+        echo "/dev/$dev reports 0 bytes -- no card or stick in it?"
+        set_color normal
+        echo "Insert the media, then press ctrl-r in the disk view to rescan."
+        _pause
+        return
+    end
     set -l h (find_hash $img)
     set -l menu
     if test -n "$h"
@@ -303,10 +325,11 @@ function confirm_view --argument-names img dev
     set -a menu "write (skip the image hash check)"
     set -a menu cancel
 
-    set -l hdr "$(basename -- $img)  ->  /dev/$dev"
+    # one variable, not a command substitution -- fish splits those on newlines
+    # and fzf would see the second line as a stray option
+    set -l hdr "$(basename -- $img)  ->  /dev/$dev"\n"caligula still asks its own confirmation before it writes."
     set -l choice (printf '%s\n' $menu \
-        | fzf --prompt 'confirm> ' --height 40% --reverse \
-            --header (printf '%s\n%s' "$hdr" 'caligula still asks its own confirmation before it writes.'))
+        | fzf --prompt 'confirm> ' --height 40% --reverse --header "$hdr")
     switch "$choice"
         case 'write, verifying*'
             do_write $img $dev 1
