@@ -6,10 +6,11 @@
 # have to know the path before you start. This wraps it the way pkg-tui wraps
 # pacman: run it bare, browse what you already have, pick a target, burn.
 #
-# Image view:   every burnable image under the search roots, newest first
-#               ($HOME/Downloads leads -- that's where images land).
-#               Preview shows size, detected compression, and whether a
-#               checksum file is sitting next to it.
+# Image view:   burnable images from ~/Downloads/Images first, then
+#               ~/Downloads, each newest-first. ctrl-o widens to ~/ISOs,
+#               ~/Images, the cwd and $BURN_TUI_DIRS. Preview shows size,
+#               detected compression, and whether a checksum file is
+#               sitting next to it.
 # Disk view:    removable/hotplug disks only. The disks backing /, /boot and
 #               active swap are resolved through LUKS/LVM at runtime and are
 #               never listed -- kernel names (nvme0n1 vs nvme1n1) are not
@@ -17,12 +18,13 @@
 # Confirm:      shows the exact caligula command before anything is written.
 #
 # Keys
-#   image view   enter pick | ctrl-r rescan | esc quit
+#   image view   enter pick | ctrl-o more folders | ctrl-z include plain .zip
+#                | ctrl-r rescan | esc quit
 #   disk view    enter pick | ctrl-a also show internal disks | ctrl-r rescan
 #                | esc back
 #
 # Env
-#   BURN_TUI_DIRS   colon-separated search roots, replacing the defaults
+#   BURN_TUI_DIRS   colon-separated extra roots, added to the ctrl-o set
 
 set -g SELF (status filename)
 # bare .zip is off by default -- a Downloads folder is mostly zips that are
@@ -30,11 +32,13 @@ set -g SELF (status filename)
 set -g IMG_RE '\.(img|iso|raw|wic)(\.(xz|gz|zst|bz2|lz4|zip))?$'
 set -g IMG_RE_LOOSE '(\.(img|iso|raw|wic)(\.(xz|gz|zst|bz2|lz4|zip))?|\.zip)$'
 
-if set -q BURN_TUI_DIRS
-    set -g ROOTS (string split -- ':' $BURN_TUI_DIRS)
-else
-    set -g ROOTS $HOME/Downloads $HOME/ISOs $HOME/isos $HOME/Images (pwd)
-end
+# Search roots in preference order. ~/Downloads/Images is the place to drop an
+# image you mean to burn; ~/Downloads is the fallback because that's where a
+# browser leaves things. Everything else is opt-in behind ctrl-o, so the
+# default list stays short enough to read.
+set -g ROOTS_PRIMARY $HOME/Downloads/Images $HOME/Downloads
+set -g ROOTS_EXTRA $HOME/ISOs $HOME/isos $HOME/Images (pwd)
+set -q BURN_TUI_DIRS; and set -a ROOTS_EXTRA (string split -- ':' $BURN_TUI_DIRS)
 
 function _die
     echo "burn-tui: $argv" >&2
@@ -45,10 +49,13 @@ function _pause
     read -P (set_color -d)'-- enter to continue --'(set_color normal) >/dev/null
 end
 
-# existing, de-duplicated search roots
-function _roots
+# existing, de-duplicated search roots, in preference order;
+# extra=1 appends the opt-in ones
+function _roots --argument-names extra
+    set -l dirs $ROOTS_PRIMARY
+    test "$extra" = 1; and set -a dirs $ROOTS_EXTRA
     set -l seen
-    for d in $ROOTS
+    for d in $dirs
         test -d "$d"; or continue
         set -l abs (realpath -- $d 2>/dev/null; or echo $d)
         contains -- $abs $seen; and continue
@@ -98,28 +105,40 @@ function find_hash --argument-names img
     return 1
 end
 
-# "<display>\t<fullpath>", newest first; loose=1 also lists bare .zip
-function image_lines --argument-names loose
-    set -l roots (_roots)
+# "<display>\t<fullpath>", grouped by root preference then newest-first;
+# loose=1 also lists bare .zip, extra=1 also searches the opt-in roots
+function image_lines --argument-names loose extra
+    set -l roots (_roots $extra)
     test (count $roots) -eq 0; and return
     set -l re $IMG_RE
     test "$loose" = 1; and set re $IMG_RE_LOOSE
-    fd --type f --absolute-path --regex $re . $roots -0 2>/dev/null \
-        | xargs -0 -r stat --printf '%Y\t%s\t%n\n' 2>/dev/null \
-        | sort -rn -k1,1 \
+    set -l tab (printf '\t')
+    set -l rank 0
+    begin
+        for d in $roots
+            set rank (math $rank + 1)
+            fd --type f --absolute-path --regex $re . $d -0 2>/dev/null \
+                | xargs -0 -r stat --printf "$rank\t%Y\t%s\t%n\n" 2>/dev/null
+        end
+    end \
+        | sort -t $tab -k1,1n -k2,2rn \
         | awk -F'\t' '
             function human(b,   u, i) {
                 split("B K M G T", u, " "); i = 1
                 while (b >= 1024 && i < 5) { b /= 1024; i++ }
                 return sprintf("%.1f%s", b, u[i])
             }
+            # ~/Downloads/Images sits inside ~/Downloads, so the same file
+            # turns up twice; sorted by rank, the first sighting is the
+            # one from the more-preferred root.
+            seen[$4]++ { next }
             {
-                path = $3
+                path = $4
                 n = split(path, seg, "/")
                 base = seg[n]
                 dir = substr(path, 1, length(path) - length(base) - 1)
                 printf "%-9s %s  \033[1m%s\033[0m  \033[2m%s\033[0m\t%s\n", \
-                    human($2), strftime("%Y-%m-%d", $1), base, dir, path
+                    human($3), strftime("%Y-%m-%d", $2), base, dir, path
             }'
 end
 
@@ -349,24 +368,35 @@ function main
     command -v fd >/dev/null; or _die "fd is required"
     command -v caligula >/dev/null; or _die "caligula is required (pacman -S caligula)"
 
+    # create the documented drop-spot so the empty-state advice is actionable,
+    # and so a fresh machine behaves the same as this one
+    test -d $ROOTS_PRIMARY[1]; or mkdir -p $ROOTS_PRIMARY[1] 2>/dev/null
+
     set -l loose 0
+    set -l extra 0
     while true
-        set -l lines (image_lines $loose)
+        set -l lines (image_lines $loose $extra)
         if test (count $lines) -eq 0
             echo "burn-tui: no images found under:" >&2
-            for d in (_roots)
+            for d in (_roots $extra)
                 echo "  $d" >&2
             end
-            echo "set BURN_TUI_DIRS to search elsewhere." >&2
-            test $loose = 1; or echo "(plain .zip archives are hidden; ctrl-z shows them)" >&2
+            echo >&2
+            echo "drop an image in ~/Downloads/Images, or:" >&2
+            test $extra = 1; or echo "  ctrl-o in the image view searches more folders" >&2
+            test $loose = 1; or echo "  ctrl-z shows plain .zip archives too" >&2
+            echo "  BURN_TUI_DIRS=/some/dir:/other adds your own roots" >&2
             return 1
         end
 
-        set -l hdr 'enter: pick target disk | ctrl-z: include plain .zip | ctrl-r: rescan | esc: quit'
-        test $loose = 1; and set hdr 'enter: pick target disk | ctrl-z: hide plain .zip | ctrl-r: rescan | esc: quit'
+        set -l zt 'ctrl-z: include plain .zip'
+        test $loose = 1; and set zt 'ctrl-z: hide plain .zip'
+        set -l ot 'ctrl-o: search more folders'
+        test $extra = 1; and set ot 'ctrl-o: back to ~/Downloads only'
+        set -l hdr "enter: pick target disk | $zt | $ot | ctrl-r: rescan | esc: quit"
 
         set -l out (printf '%s\n' $lines | fzf --ansi --reverse --delimiter \t --with-nth 1 \
-            --expect=ctrl-r,ctrl-z \
+            --expect=ctrl-r,ctrl-z,ctrl-o \
             --header "$hdr" \
             --prompt 'image> ' \
             --preview "$SELF __imgpreview {2}" --preview-window 'right:55%:wrap')
@@ -377,6 +407,8 @@ function main
                 continue
             case ctrl-z
                 set loose (test $loose = 1; and echo 0; or echo 1)
+            case ctrl-o
+                set extra (test $extra = 1; and echo 0; or echo 1)
             case ''
                 disk_view (string split -m1 -- \t $out[2])[2]
         end
