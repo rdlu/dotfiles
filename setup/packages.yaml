@@ -269,6 +269,7 @@ security:
   - yubikey-touch-detector
 
 system:
+  - caligula # TUI disk imager; writes compressed images (gz/bz2/xz/lz4/zst) + verifies
   - firewall-config
   - firewalld
   - fuse-overlayfs
@@ -285,6 +286,7 @@ system:
   - nfs-utils
   - ntfs-3g
   - rebuild-detector
+  - rpi-imager # native pkg; the flathub build went EOL stuck on 1.9.6
   - samba
   - solaar
   - squashfuse
