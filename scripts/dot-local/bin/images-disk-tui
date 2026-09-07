@@ -185,6 +185,23 @@ function protected_disks
     end | sort -u
 end
 
+# "<partition> <mountpoint>" for every mounted partition of a disk
+function disk_mounts --argument-names name
+    lsblk -nlpo NAME,MOUNTPOINT /dev/$name 2>/dev/null | awk 'NF > 1'
+end
+
+# udisks first: it unmounts user-mounted media without asking for root
+function unmount_disk --argument-names name
+    for line in (disk_mounts $name)
+        set -l part (string split -n -- ' ' $line)[1]
+        echo "unmounting $part"
+        udisksctl unmount -b $part >/dev/null 2>&1
+        or umount $part 2>/dev/null
+        or pkexec umount $part
+    end
+    test (count (disk_mounts $name)) -eq 0
+end
+
 function disk_bytes --argument-names name
     set -l b (lsblk -dnbo SIZE /dev/$name 2>/dev/null | string trim)
     string match -qr '^[0-9]+$' -- "$b"; and echo $b; or echo 0
@@ -277,6 +294,15 @@ function unpack_zip --argument-names img
 end
 
 function do_write --argument-names img dev usehash
+    if test (count (disk_mounts $dev)) -gt 0
+        if not unmount_disk $dev
+            set_color red
+            echo "could not unmount /dev/$dev -- something is still using it"
+            set_color normal
+            _pause
+            return 1
+        end
+    end
     set -l target $img
     set -l scratch ''
     if test (detect_comp $img) = zip
@@ -327,7 +353,11 @@ function confirm_view --argument-names img dev
 
     # one variable, not a command substitution -- fish splits those on newlines
     # and fzf would see the second line as a stray option
-    set -l hdr "$(basename -- $img)  ->  /dev/$dev"\n"caligula still asks its own confirmation before it writes."
+    set -l hdr "$(basename -- $img)  ->  /dev/$dev"
+    for line in (disk_mounts $dev)
+        set hdr "$hdr"\n"mounted: $line -- will be unmounted first"
+    end
+    set hdr "$hdr"\n"caligula still asks its own confirmation before it writes."
     set -l choice (printf '%s\n' $menu \
         | fzf --prompt 'confirm> ' --height 40% --reverse --header "$hdr")
     switch "$choice"
