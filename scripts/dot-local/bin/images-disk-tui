@@ -9,6 +9,8 @@
 #              resolved through LUKS/LVM at runtime, never hardcoded -- nvme
 #              names are not stable across boots.
 # Confirm:     shows the exact caligula command before anything is written.
+#              caligula runs under pkexec rather than escalating itself; see
+#              do_write for why.
 #
 # Keys
 #   image view   enter pick | ctrl-o more folders | ctrl-z include plain .zip
@@ -56,6 +58,24 @@ function _roots --argument-names extra
 end
 
 # --- image side --------------------------------------------------------------
+
+# the decompressor for a given compression, for the verify hint
+function decomp_cmd --argument-names comp
+    switch $comp
+        case gz
+            echo 'gzip -dc'
+        case xz
+            echo 'xz -dc'
+        case zst
+            echo 'zstd -dc'
+        case bz2
+            echo 'bzip2 -dc'
+        case lz4
+            echo 'lz4 -dc'
+        case '*'
+            echo cat
+    end
+end
 
 function detect_comp --argument-names img
     switch (string lower -- $img)
@@ -320,15 +340,36 @@ function do_write --argument-names img dev usehash
         set -a args -s skip
     end
 
+    # Run as root up front rather than letting caligula escalate itself. Its own
+    # escalation writes from a privileged child, and the parent unwraps the EOF
+    # when that child exits -- upstream ifd3f/caligula#271 -- so a perfectly good
+    # write ends in SIGABRT. Already-root skips that path entirely.
     echo
     set_color -d
-    echo "> caligula $args"
+    echo "> pkexec caligula $args"
     set_color normal
     echo
-    caligula $args
+    pkexec (command -v caligula) $args
     set -l rc $status
 
     test -n "$scratch"; and rm -rf -- $scratch
+
+    if test $rc -ne 0
+        echo
+        set_color red
+        echo "caligula exited $rc"
+        set_color normal
+        if test $rc -eq 126 -o $rc -eq 127
+            echo "pkexec was dismissed or could not authorise."
+        else
+            set -l log (ls -td /tmp/caligula-* 2>/dev/null)[1]
+            test -n "$log"; and echo "log: $log/caligula.log"
+            echo "to check whether the disk was written anyway:"
+            echo "  "(decomp_cmd (detect_comp $img))" $img | sudo cmp - /dev/$dev"
+            echo "  (\"EOF on -\" means it matches; \"differ: byte N\" means it does not)"
+        end
+    end
+
     _pause
     return $rc
 end
