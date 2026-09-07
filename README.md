@@ -51,7 +51,6 @@ HTML site + PDFs ([rdlu.github.io/dotfiles](https://rdlu.github.io/dotfiles/)):
 - [niri shortcuts](./docs/shortcuts/niri.md) — generated from `binds.kdl`
 - [shell shortcuts](./docs/shortcuts/shell.md) — fish binds (generated) + atuin/fzf
 - [wl-kbptr](./docs/wl-kbptr.md) — keyboard-driven mouse pointer for niri
-- [LUKS FIDO2 + greetd](./docs/migrations/luks-fido2-login-setup.md) — security-key disk unlock and the greetd login swap (daisy done, xps in progress)
 
 The shortcut tables are **generated from the real configs** by
 [`tools/gen-docs.py`](./tools/gen-docs.py); [Zensical](https://zensical.org)
