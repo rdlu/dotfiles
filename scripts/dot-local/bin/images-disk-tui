@@ -451,8 +451,26 @@ else
 fi | sfdisk --quiet --wipe always "$disk"
 partprobe "$disk" 2>/dev/null || true
 udevadm settle 2>/dev/null || true
+# Wiping the disk clears the partition table, not a filesystem signature
+# sitting inside it. Recreating a partition at the same offset resurrects
+# the old one, the desktop automounts it, and mkfs then finds it busy --
+# so clear the new partition too, before anything can latch onto it.
+wipefs -a "$part" >/dev/null 2>&1 || true
+udevadm settle 2>/dev/null || true
 echo "formatting $part as exfat, label $label"
-mkfs.exfat -L "$label" "$part" >/dev/null
+ok=""
+for _ in 1 2 3 4 5; do
+    umount "$part" 2>/dev/null || true
+    if err=$(mkfs.exfat -L "$label" "$part" 2>&1); then
+        ok=1
+        break
+    fi
+    sleep 1
+done
+if [ -z "$ok" ]; then
+    echo "$err" >&2
+    exit 1
+fi
 echo "done"
 '
     echo
