@@ -26,9 +26,6 @@ nav = [
     { "niri" = "shortcuts/niri.md" },
     { "shell (fish)" = "shortcuts/shell.md" },
   ] },
-  { "Migrations" = [
-    { "LUKS FIDO2 + greetd" = "migrations/luks-fido2-login-setup.md" },
-  ] },
   { "tmux → herdr" = "tmux-vs-herdr.md" },
   { "wl-kbptr" = "wl-kbptr.md" },
 ]
