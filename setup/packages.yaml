@@ -271,6 +271,7 @@ security:
 system:
   - cachyos-plymouth-bootanimation # boot-splash theme; needs the plymouth hook
   - caligula # disk imager TUI; handles compressed images
+  - exfatprogs # mkfs.exfat, for images-disk-tui erase
   - firewall-config
   - firewalld
   - fuse-overlayfs

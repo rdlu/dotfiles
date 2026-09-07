@@ -12,9 +12,13 @@
 #              caligula runs under pkexec rather than escalating itself; see
 #              do_write for why.
 #
+# Erase:       `images-disk-tui erase`, or ctrl-e from the image view: wipe a
+#              card back to one empty exfat partition, GPT or MBR, so a reused
+#              card is recognisable as blank.
+#
 # Keys
 #   image view   enter pick | ctrl-o more folders | ctrl-z include plain .zip
-#                | ctrl-r rescan | esc quit
+#                | ctrl-e erase a disk | ctrl-r rescan | esc quit
 #   disk view    enter write | ctrl-a also show internal disks | ctrl-r rescan
 #                | esc back
 #
@@ -409,6 +413,122 @@ function confirm_view --argument-names img dev
     end
 end
 
+# --- erasing ------------------------------------------------------------------
+
+# partition node: sda -> /dev/sda1, mmcblk0/nvme0n1 -> /dev/mmcblk0p1
+function part_dev --argument-names name
+    if string match -qr '[0-9]$' -- $name
+        echo "/dev/$name"p1
+    else
+        echo "/dev/$name"1
+    end
+end
+
+# One pkexec for the whole job: several would mean several polkit prompts.
+# Arguments are passed to sh rather than interpolated, so a label can't inject.
+function erase_disk --argument-names name scheme label
+    set -l disk /dev/$name
+    set -l part (part_dev $name)
+
+    if test (count (disk_mounts $name)) -gt 0
+        unmount_disk $name; or begin
+            set_color red
+            echo "could not unmount $disk -- something is still using it"
+            set_color normal
+            return 1
+        end
+    end
+
+    set -l plan 'set -e
+disk="$1"; part="$2"; label="$3"; scheme="$4"
+echo "clearing old signatures"
+wipefs -a "$disk" >/dev/null
+echo "writing $scheme partition table"
+if [ "$scheme" = gpt ]; then
+    printf "label: gpt\n,,EBD0A0A2-B9E5-4433-87C0-68B6B72699C7\n"
+else
+    printf "label: dos\n,,7\n"
+fi | sfdisk --quiet --wipe always "$disk"
+partprobe "$disk" 2>/dev/null || true
+udevadm settle 2>/dev/null || true
+echo "formatting $part as exfat, label $label"
+mkfs.exfat -L "$label" "$part" >/dev/null
+echo "done"
+'
+    echo
+    set_color -d
+    echo "> pkexec sh -c <erase plan> $disk $part $label $scheme"
+    set_color normal
+    echo
+    pkexec sh -c $plan _ $disk $part $label $scheme
+end
+
+function erase_confirm --argument-names name
+    set -l size (lsblk -dno SIZE /dev/$name 2>/dev/null | string trim)
+    set -l model (lsblk -dno MODEL /dev/$name 2>/dev/null | string trim)
+    set -l hdr "ERASE /dev/$name  $size  $model"
+    for line in (disk_mounts $name)
+        set hdr "$hdr"\n"mounted: $line -- will be unmounted first"
+    end
+    set hdr "$hdr"\n"everything on this disk will be destroyed"
+
+    set -l choice (printf '%s\n' \
+        "erase to one exfat partition (GPT)" \
+        "erase to one exfat partition (MBR)" \
+        cancel \
+        | fzf --prompt 'erase> ' --height 40% --reverse --header "$hdr")
+
+    set -l scheme
+    switch "$choice"
+        case '*(GPT)'
+            set scheme gpt
+        case '*(MBR)'
+            set scheme mbr
+        case '*'
+            return
+    end
+
+    # exfat labels are 11 characters, uppercased by convention
+    read -P 'volume label [CLEARED]: ' -l label
+    set label (string upper -- (string replace -ra '[^A-Za-z0-9_-]' '' -- "$label"))
+    test -z "$label"; and set label CLEARED
+    set label (string sub -l 11 -- $label)
+
+    erase_disk $name $scheme $label
+    _pause
+end
+
+function erase_view
+    set -l showall 0
+    while true
+        set -l lines (disk_lines $showall)
+        if test (count $lines) -eq 0
+            echo
+            echo "no removable disk found -- plug one in, or ctrl-a to include"
+            echo "internal disks."
+            _pause
+            return
+        end
+
+        set -l hdr 'pick a disk to ERASE | ctrl-a internal disks | ctrl-r rescan | esc back'
+        test $showall = 1; and set hdr \e"[31mINTERNAL DISKS SHOWN -- these are not removable"\e"[0m"\n"$hdr"
+
+        set -l out (printf '%s\n' $lines | fzf --ansi --reverse --delimiter \t --with-nth 1 \
+            --expect=ctrl-a,ctrl-r --header "$hdr" --prompt 'erase which disk> ' \
+            --preview "$SELF __diskpreview {2}" --preview-window 'right:55%:wrap')
+        test (count $out) -lt 2; and return
+
+        switch $out[1]
+            case ctrl-a
+                set showall (test $showall = 1; and echo 0; or echo 1)
+            case ctrl-r
+                continue
+            case ''
+                erase_confirm (string split -m1 -- \t $out[2])[2]
+        end
+    end
+end
+
 # --- views -------------------------------------------------------------------
 
 function disk_view --argument-names img
@@ -468,6 +588,7 @@ function main
             test $extra = 1; or echo "  ctrl-o in the image view searches more folders" >&2
             test $loose = 1; or echo "  ctrl-z shows plain .zip archives too" >&2
             echo "  DISK_IMAGE_DIRS=/some/dir:/other adds your own roots" >&2
+            echo "to wipe a card instead of writing one: $PROG erase" >&2
             return 1
         end
 
@@ -475,10 +596,10 @@ function main
         test $loose = 1; and set zt 'ctrl-z: hide plain .zip'
         set -l ot 'ctrl-o: search more folders'
         test $extra = 1; and set ot 'ctrl-o: back to ~/Downloads only'
-        set -l hdr "enter: pick target disk | $zt | $ot | ctrl-r: rescan | esc: quit"
+        set -l hdr "enter: pick target disk | $zt | $ot | ctrl-e: erase a disk | ctrl-r: rescan | esc: quit"
 
         set -l out (printf '%s\n' $lines | fzf --ansi --reverse --delimiter \t --with-nth 1 \
-            --expect=ctrl-r,ctrl-z,ctrl-o \
+            --expect=ctrl-r,ctrl-z,ctrl-o,ctrl-e \
             --header "$hdr" \
             --prompt 'image> ' \
             --preview "$SELF __imgpreview {2}" --preview-window 'right:55%:wrap')
@@ -491,6 +612,8 @@ function main
                 set loose (test $loose = 1; and echo 0; or echo 1)
             case ctrl-o
                 set extra (test $extra = 1; and echo 0; or echo 1)
+            case ctrl-e
+                erase_view
             case ''
                 disk_view (string split -m1 -- \t $out[2])[2]
         end
@@ -504,6 +627,8 @@ switch "$argv[1]"
         img_preview $argv[2]
     case __diskpreview
         disk_preview $argv[2]
+    case erase
+        erase_view
     case ''
         main
     case '*'
