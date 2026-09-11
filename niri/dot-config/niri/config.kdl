@@ -42,9 +42,9 @@ workspace "brain" {
   open-on-output "Invalid Vendor Codename - RTK HG540T40 0x01010101"
 }
 workspace "comms"
+// Same screen as brain, same reason: the connector varies, the EDID doesn't.
 workspace "games" {
-  open-on-output "HDMI-A-1"
-  // open-on-output "DP-1"
+  open-on-output "Invalid Vendor Codename - RTK HG540T40 0x01010101"
 }
 
 // Window rules
