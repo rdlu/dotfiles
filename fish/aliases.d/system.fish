@@ -1,6 +1,8 @@
 # Utils
 abbr -a date-iso 'date -u +"%Y-%m-%dT%H:%M:%S%Z"'
 abbr -a date-timestamp 'date +%s'
+abbr -a date-ntp 'sntp -K /dev/null pool.ntp.org'   # Time from an NTP server + our clock's offset
+abbr -a date-ntp2 'ntpdate -q pool.ntp.org'         # Same, via ntpdate query-only mode
 
 # Terminal management
 abbr -a mux tmux new -A -s mux0 fish

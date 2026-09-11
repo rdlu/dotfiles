@@ -237,6 +237,7 @@ network:
   - localsend
   - mosh
   - nmap
+  - ntp # sntp/ntpdate for the date-ntp abbrs (ntpd itself stays off; timesyncd syncs)
   - openbsd-netcat
   - rclone
   - socat
