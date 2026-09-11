@@ -27,9 +27,22 @@ window-rule {
 }
 
 // Ghostty/kitty launched via the Herdr .desktop entries (app-id set with
-// --class/--app-id): open full-width. Regular terminals are unaffected.
+// --class/--app-id): open full-width on the brain workspace. Regular
+// terminals are unaffected.
 window-rule {
     match app-id="Herdr"
+    open-on-workspace "brain"
+    default-column-width { proportion 1.0; }
+}
+
+// Tidewave keeps Herdr company on brain, also full-width. Two app-ids to
+// catch: the localhost Phoenix connect page (Chromium derives the app-id
+// from the URL, so any port/path spelling still contains "tidewave") and
+// the installed web app, whose app-id carries the extension id instead.
+window-rule {
+    match app-id="tidewave"
+    match app-id="mopifomhjlccmedaicjailclodeajdfd"
+    open-on-workspace "brain"
     default-column-width { proportion 1.0; }
 }
 
