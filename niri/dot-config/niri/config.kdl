@@ -36,7 +36,11 @@ include "layer-rules.kdl"
 
 // workspaces
 workspace "base"
-workspace "brain"
+// Follow the external screen by EDID name, the way outputs.kdl addresses it,
+// so brain lands there whichever connector the dock hands it (DP-1/DP-2/...).
+workspace "brain" {
+  open-on-output "Invalid Vendor Codename - RTK HG540T40 0x01010101"
+}
 workspace "comms"
 workspace "games" {
   open-on-output "HDMI-A-1"
