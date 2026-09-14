@@ -11,8 +11,10 @@ include "environment.kdl"
 // Input devices (keyboard, mouse, touchpad, cursor)
 include "inputs.kdl"
 
-// Display outputs
-include "outputs.kdl"
+// Display outputs — per-host, since every machine has its own screens and
+// layout. host.kdl is stowed in from hosts/<hostname>/dot-config/niri/host.kdl
+// by the host overlay, so each machine gets its own and niri finds one here.
+include "host.kdl"
 
 // Layout configuration (gaps, borders, shadows, struts)
 include "layout.kdl"
