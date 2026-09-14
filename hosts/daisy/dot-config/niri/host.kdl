@@ -1,3 +1,7 @@
+// daisy display layout — carried over unchanged from the old shared
+// outputs.kdl, back when outputs were not yet per-host. No positions here:
+// niri lays the outputs out itself, which is what daisy has always done.
+
 output "Invalid Vendor Codename - RTK HG540T40 0x01010101" {
   focus-at-startup
   scale 1.5
@@ -22,9 +26,6 @@ output "Invalid Vendor Codename - RTK HG540T40 0x01010101" {
 //   // variable-refresh-rate on-demand=true
 //   variable-refresh-rate
 // }
-output "DP-2" {
-   position x=0 y=0
-}
 
 output "eDP-1" {
   scale 1.0
