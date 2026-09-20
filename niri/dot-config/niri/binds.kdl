@@ -116,9 +116,16 @@ binds {
     Mod+Shift+Ctrl+Up    { move-column-to-monitor-up; }
     Mod+Shift+Ctrl+Right { move-column-to-monitor-right; }
     Mod+Shift+Ctrl+H     { move-column-to-monitor-left; }
-    Mod+Shift+Ctrl+J hotkey-overlay-title="Move Workspace to Monitor Left"     { move-workspace-to-monitor-left; }
-    Mod+Shift+Ctrl+K hotkey-overlay-title="Move Workspace to Monitor Right"   { move-workspace-to-monitor-right; }
+    Mod+Shift+Ctrl+J     { move-column-to-monitor-down; }
+    Mod+Shift+Ctrl+K     { move-column-to-monitor-up; }
     Mod+Shift+Ctrl+L     { move-column-to-monitor-right; }
+
+    // A whole workspace to the other monitor. Next/previous rather than a
+    // direction, so the same two keys work whether the monitors sit side by
+    // side or stacked; with two monitors both keys just mean "the other one".
+    // U/I is the workspace row (Mod+U/I focuses, Mod+Shift+U/I reorders).
+    Mod+Shift+Ctrl+U hotkey-overlay-title="Move Workspace to Previous Monitor" { move-workspace-to-monitor-previous; }
+    Mod+Shift+Ctrl+I hotkey-overlay-title="Move Workspace to Next Monitor"     { move-workspace-to-monitor-next; }
 
     // Exchange both monitors' workspaces at once; the two above move one.
     Mod+Shift+Ctrl+S hotkey-overlay-title="Swap Workspaces Between Monitors" { spawn "~/.local/bin/niri-swap-monitors"; }
