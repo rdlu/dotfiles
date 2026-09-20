@@ -24,6 +24,9 @@
 # dimensions -- but outputs already placed around it keep their positions and
 # can end up overlapping or gapped. Re-place them and the numbers come right.
 #
+# On start every output is pinned to where it already is -- no visible
+# change, but it stops niri auto-placing the ones you are not moving.
+#
 # Nothing is written until ctrl-s. Every other action is applied live through
 # `niri msg output`, which niri forgets on the next config reload -- so ctrl-z,
 # or just quitting, leaves the saved config untouched.
@@ -88,90 +91,81 @@ end
 
 # --- placement ---------------------------------------------------------------
 
+# niri reports logical sizes truncated: a 2560x1600 panel at scale 1.5 is
+# 1706.67x1066.67 but comes back as 1706x1066. Butt an output against those
+# numbers and it overlaps its neighbour by a fraction of a pixel, whereupon
+# niri silently discards the position and auto-places the output instead --
+# exit status 0, no message. So extents are recomputed from mode/scale and
+# rounded up, and a 90/270 transform swaps them.
+set -g JQ_EXT 'def ext: .modes[.current_mode] as $m | .logical.scale as $s |
+    (if (.logical.transform | ascii_downcase | test("90|270"))
+     then [$m.height, $m.width] else [$m.width, $m.height] end)
+    | [(.[0] / $s | ceil), (.[1] / $s | ceil)];'
+
+# Apply a whole arrangement, given "<name> <x> <y>" lines.
+function apply_targets
+    # Furthest corner first. Every position here is final and valid, but an
+    # output moved early can still overlap one that has not moved yet, so the
+    # order matters; a second pass settles whatever the first had to refuse.
+    set -l sorted (printf '%s\n' $argv \
+        | awk '{ print $2 + $3, $0 }' | sort -k1,1nr | cut -d' ' -f2-)
+    for pass in 1 2
+        for l in $sorted
+            set -l f (string split ' ' -- $l)
+            niri msg output $f[1] position set -- $f[2] $f[3] >/dev/null 2>&1
+        end
+    end
+    refresh
+end
+
+# Pin every output to where it already is. An output with no explicit
+# position is placed by niri itself, and it slides to a new spot whenever a
+# neighbour moves -- so moving one output would shove the others around.
+# Pinning first makes a placement affect only the output it names.
+function pin_all
+    apply_targets (jq -r 'to_entries[] | select(.value.logical != null)
+        | "\(.key) \(.value.logical.x) \(.value.logical.y)"' $STATE)
+end
+
 # shift the whole arrangement so its top-left corner is 0,0
 function normalize
     refresh
-    set -l minx (jq '[.[] | select(.logical != null) | .logical.x] | min' $STATE)
-    set -l miny (jq '[.[] | select(.logical != null) | .logical.y] | min' $STATE)
-    test "$minx" = 0 -a "$miny" = 0; and return
-    for o in (active_outputs)
-        set -l x (logical $o x)
-        set -l y (logical $o y)
-        niri msg output $o position set (math "$x - $minx") (math "$y - $miny") >/dev/null
-    end
-    refresh
+    apply_targets (jq -r '[to_entries[] | select(.value.logical != null)
+        | {name: .key, x: .value.logical.x, y: .value.logical.y}]
+        | ([.[].x] | min) as $mx | ([.[].y] | min) as $my
+        | .[] | "\(.name) \(.x - $mx) \(.y - $my)"' $STATE)
 end
 
 # rel is above|below|left|right; align is the cross-axis edge to line up on,
 # centre when unset. Side placements align top/bottom, stacked ones left/right.
+# The full arrangement is computed and normalised here, then applied in one
+# go -- niri never sees a half-finished layout with outputs overlapping
 function place --argument-names out rel ref align
     test -z "$align"; and set align center
-    set -l xy (jq -r --arg a $out --arg b $ref --arg rel $rel --arg al $align '
-        .[$a].logical as $A | .[$b].logical as $B |
-        (if $rel == "left" or $rel == "right" then
-            (if   $al == "top"    then $B.y
-             elif $al == "bottom" then $B.y + $B.height - $A.height
-             else                      $B.y + (($B.height - $A.height) / 2 | round) end)
-         else
-            (if   $al == "left"  then $B.x
-             elif $al == "right" then $B.x + $B.width - $A.width
-             else                     $B.x + (($B.width - $A.width) / 2 | round) end)
-         end) as $off |
-        if   $rel == "above" then "\($off) \($B.y - $A.height)"
-        elif $rel == "below" then "\($off) \($B.y + $B.height)"
-        elif $rel == "left"  then "\($B.x - $A.width) \($off)"
-        else                      "\($B.x + $B.width) \($off)" end' $STATE)
-    niri msg output $out position set (string split ' ' $xy) >/dev/null
-    normalize
-end
-
-function pick_placement --argument-names out
-    set -l menu
-    for other in (active_outputs)
-        test "$other" = "$out"; and continue
-        set -a menu "above    $other" "below    $other" \
-            "left of  $other" "right of $other"
-    end
-    test (count $menu) -eq 0; and return
-    set -l choice (printf '%s\n' $menu \
-        | fzf --prompt "place $out> " --height 40% --reverse)
-    test -z "$choice"; and return
-    set -l parts (string split -n ' ' $choice)
-    set -l rel $parts[1]
-    set -l ref $parts[-1]
-
-    # centre first, so enter-enter is the common case
-    set -l opts center top bottom
-    test "$rel" = above -o "$rel" = below; and set opts center left right
-    set -l align (printf '%s\n' $opts \
-        | fzf --prompt "align $out ($rel $ref)> " --height 40% --reverse)
-    test -z "$align"; and return
-    place $out $rel $ref $align
-end
-
-function pick_transform --argument-names out
-    set -l choice (printf '%s\n' normal 90 180 270 \
-            flipped flipped-90 flipped-180 flipped-270 \
-        | fzf --prompt "rotate $out> " --height 40% --reverse)
-    test -z "$choice"; and return
-    niri msg output $out transform $choice >/dev/null
-    normalize
-end
-
-function pick_scale --argument-names out
-    set -l choice (printf '%s\n' auto 1 1.25 1.5 1.75 2 2.5 3 'custom...' \
-        | fzf --prompt "scale $out> " --height 40% --reverse)
-    test -z "$choice"; and return
-    if test "$choice" = custom...
-        read -P (set_color cyan)"scale factor> "(set_color normal) choice
-        test -z "$choice"; and return
-    end
-    if not niri msg output $out scale $choice >/dev/null 2>&1
-        echo "niri rejected scale '$choice'"
-        pause
-        return
-    end
-    normalize
+    apply_targets (jq -r --arg a $out --arg b $ref --arg rel $rel --arg al $align \
+        "$JQ_EXT"'
+        . as $all
+        | ($all[$a] | ext) as $A | ($all[$b] | ext) as $B
+        | $all[$b].logical as $BL
+        | (if $rel == "left" or $rel == "right" then
+              (if   $al == "top"    then $BL.y
+               elif $al == "bottom" then $BL.y + $B[1] - $A[1]
+               else                      $BL.y + (($B[1] - $A[1]) / 2 | round) end)
+           else
+              (if   $al == "left"  then $BL.x
+               elif $al == "right" then $BL.x + $B[0] - $A[0]
+               else                     $BL.x + (($B[0] - $A[0]) / 2 | round) end)
+           end) as $off
+        | (if   $rel == "above" then [$off, $BL.y - $A[1]]
+           elif $rel == "below" then [$off, $BL.y + $B[1]]
+           elif $rel == "left"  then [$BL.x - $A[0], $off]
+           else                       [$BL.x + $B[0], $off] end) as $new
+        | [ $all | to_entries[] | select(.value.logical != null)
+            | {name: .key,
+               x: (if .key == $a then $new[0] else .value.logical.x end),
+               y: (if .key == $a then $new[1] else .value.logical.y end)} ]
+        | ([.[].x] | min) as $mx | ([.[].y] | min) as $my
+        | .[] | "\(.name) \(.x - $mx) \(.y - $my)"' $STATE)
 end
 
 # --- the map -----------------------------------------------------------------
@@ -245,19 +239,35 @@ end
 # manages -- position, transform, scale -- are replaced; every other line,
 # comments and commented-out blocks included, survives untouched. A block
 # that does not exist yet is appended.
-function kdl_write --argument-names file target props
+function kdl_write --argument-names file target
+    # The properties arrive as separate arguments and are re-joined here.
+    # Passing them as one newline-joined string does not survive: fish
+    # splits a command substitution on newlines, so only the first line
+    # would reach awk -- which, with the strip below, silently deleted the
+    # rest of the block's properties.
+    set -l props $argv[3..-1]
+    set -l blob (string join \n $props | string collect)
     set -l tmp $TMPDIR_TUI/host.kdl.new
-    awk -v target="$target" -v props="$props" '
+    awk -v target="$target" -v props="$blob" '
         function emit(   k, i, arr) {
             k = split(props, arr, "\n")
             for (i = 1; i <= k; i++) if (arr[i] != "") print "  " arr[i]
+        }
+        # Only the properties this call is about to re-emit are stripped, so
+        # a short props list can leave a line stale but can never delete one.
+        BEGIN {
+            k = split(props, arr, "\n")
+            for (i = 1; i <= k; i++) {
+                key = arr[i]; sub(/[[:space:]].*$/, "", key)
+                if (key != "") managed[key] = 1
+            }
         }
         /^[[:space:]]*\/\// { print; next }          # comments are structure-free
         !inblk && /^[[:space:]]*output[[:space:]]+"/ {
             s=$0; sub(/^[^"]*"/,"",s); nm=s; sub(/".*$/,"",nm)
             if (nm == target) { inblk=1; found=1; print; next }
         }
-        inblk && /^[[:space:]]*(position|transform|scale)[[:space:]]/ { next }
+        inblk && ($1 in managed) { next }
         inblk && /^[[:space:]]*}/ { emit(); inblk=0; print; next }
         { print }
         END {
@@ -276,11 +286,12 @@ function save_layout
     refresh
     for o in (active_outputs)
         set -l name (block_name $o)
-        set -l props "position x="(logical $o x)" y="(logical $o y)
-        set -a props "scale "(scale_of $o)
-        set -l xf (transform_of $o)
-        test "$xf" != normal; and set -a props "transform \"$xf\""
-        kdl_write $HOSTKDL $name (string join \n $props)
+        # All three are always written: an omitted transform would leave a
+        # stale rotation behind when an output is turned back to normal.
+        set -l props "position x="(logical $o x)" y="(logical $o y) \
+            "scale "(scale_of $o) \
+            "transform \""(transform_of $o)"\""
+        kdl_write $HOSTKDL $name $props
         echo "  $name"
         for p in $props
             echo "    $p"
@@ -311,7 +322,7 @@ function revert_live
             | ascii_downcase | sub("^_"; "") | sub("^flipped_"; "flipped-")' $ORIGINAL)
         niri msg output $o transform $t >/dev/null
         niri msg output $o scale $sc >/dev/null
-        niri msg output $o position set $x $y >/dev/null
+        niri msg output $o position set -- $x $y >/dev/null
     end
     refresh
 end
@@ -346,13 +357,16 @@ function main_view
                 return
             case ctrl-r
                 refresh
+                pin_all
             case ctrl-s
                 save_layout
             case ctrl-z
                 revert_live
             case ctrl-a
+                # deliberately no normalize/pin: that would hand the output
+                # an explicit position again and undo the auto
                 niri msg output $out position auto >/dev/null
-                normalize
+                refresh
             case ctrl-t
                 pick_transform $out
             case ctrl-x
@@ -376,4 +390,5 @@ type -q fzf; or _die "fzf not found"
 
 refresh
 snapshot_original
+pin_all
 main_view
