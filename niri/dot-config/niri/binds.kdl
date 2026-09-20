@@ -120,6 +120,9 @@ binds {
     Mod+Shift+Ctrl+K hotkey-overlay-title="Move Workspace to Monitor Right"   { move-workspace-to-monitor-right; }
     Mod+Shift+Ctrl+L     { move-column-to-monitor-right; }
 
+    // Exchange both monitors' workspaces at once; the two above move one.
+    Mod+Shift+Ctrl+S hotkey-overlay-title="Swap Workspaces Between Monitors" { spawn "~/.local/bin/niri-swap-monitors"; }
+
     // Alternatively, there are commands to move just a single window:
     // Mod+Shift+Ctrl+Left  { move-window-to-monitor-left; }
     // ...

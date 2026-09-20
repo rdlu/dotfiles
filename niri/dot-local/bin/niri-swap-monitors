@@ -1,0 +1,91 @@
+#!/usr/bin/fish
+
+# niri-swap-monitors — swap the workspaces of the two monitors, wholesale.
+#
+# niri can move one workspace at a time (move-workspace-to-monitor, bound on
+# Mod+Shift+Ctrl+J/K), but has nothing that exchanges two monitors' contents.
+# This walks every workspace that carries something and sends it the other way.
+#
+# Empty unnamed workspaces are left alone: niri keeps a trailing empty one per
+# monitor by itself, so moving them would just shuffle scratch space.
+#
+# open-on-output is not disturbed. That rule only applies when a workspace is
+# first opened, so a swapped "brain" stays where it was put -- but a brain
+# created later still lands on the output config names. This is a runtime
+# toggle; it does not survive a niri restart, and does not edit any config.
+#
+# Workspace references are awkward on purpose: `--reference <name>` is global
+# and stable, while a numeric reference is an INDEX resolved against the
+# FOCUSED monitor, and indices shift as workspaces move. So named workspaces
+# go by name, and an unnamed one carrying windows is moved by focusing its
+# monitor and re-reading its index immediately beforehand.
+
+function _notify --argument-names title body
+    command -q notify-send; or return
+    notify-send -a niri-swap-monitors -i video-display "$title" "$body"
+end
+
+set -l ws (niri msg --json workspaces)
+set -l outputs (printf '%s' $ws | jq -r '[.[].output] | unique | .[]')
+
+if test (count $outputs) -ne 2
+    _notify "Nothing to swap" "Needs exactly two monitors; found "(count $outputs)"."
+    echo "niri-swap-monitors: need exactly two outputs, found "(count $outputs) >&2
+    exit 1
+end
+
+set -l a $outputs[1]
+set -l b $outputs[2]
+
+# Remember what was focused, to put focus back where the user left it.
+set -l focused_id (printf '%s' $ws | jq -r '.[] | select(.is_focused) | .id')
+
+# Workspaces worth moving: named, or holding at least one window.
+set -l occupied (niri msg --json windows | jq -c '[.[].workspace_id] | unique')
+set -l movable (printf '%s' $ws | jq -r --argjson occ "$occupied" '
+    sort_by(.output, .idx)[]
+    | select(.name != null or (.id as $i | $occ | index($i)))
+    | "\(.id)\t\(.name // "")\t\(.output)"')
+
+if test (count $movable) -eq 0
+    _notify "Nothing to swap" "Both monitors hold only empty workspaces."
+    exit 0
+end
+
+for row in $movable
+    set -l f (string split \t -- $row)
+    set -l id $f[1]
+    set -l name $f[2]
+    set -l from $f[3]
+    set -l to $a
+    test "$from" = "$a"; and set to $b
+
+    if test -n "$name"
+        niri msg action move-workspace-to-monitor $to --reference $name >/dev/null
+    else
+        # Index references resolve against the focused monitor and move as
+        # workspaces do, so focus first and read the index back right now.
+        niri msg action focus-monitor $from >/dev/null
+        set -l idx (niri msg --json workspaces \
+            | jq -r --argjson id $id '.[] | select(.id == $id) | .idx')
+        test -z "$idx"; and continue
+        niri msg action move-workspace-to-monitor $to --reference $idx >/dev/null
+    end
+end
+
+# Put focus back on the workspace that had it, wherever it now lives.
+if test -n "$focused_id"
+    set -l now (niri msg --json workspaces \
+        | jq -r --argjson id $focused_id '.[] | select(.id == $id) | "\(.output)\t\(.name // "")\t\(.idx)"')
+    if test -n "$now"
+        set -l f (string split \t -- $now)
+        niri msg action focus-monitor $f[1] >/dev/null
+        if test -n "$f[2]"
+            niri msg action focus-workspace $f[2] >/dev/null
+        else
+            niri msg action focus-workspace $f[3] >/dev/null
+        end
+    end
+end
+
+_notify "Monitors swapped" "$a ⇄ $b"
