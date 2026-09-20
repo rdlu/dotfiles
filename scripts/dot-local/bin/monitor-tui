@@ -168,6 +168,55 @@ function place --argument-names out rel ref align
         | .[] | "\(.name) \(.x - $mx) \(.y - $my)"' $STATE)
 end
 
+function pick_placement --argument-names out
+    set -l menu
+    for other in (active_outputs)
+        test "$other" = "$out"; and continue
+        set -a menu "above    $other" "below    $other" \
+            "left of  $other" "right of $other"
+    end
+    test (count $menu) -eq 0; and return
+    set -l choice (printf '%s\n' $menu \
+        | fzf --prompt "place $out> " --height 40% --reverse)
+    test -z "$choice"; and return
+    set -l parts (string split -n ' ' $choice)
+    set -l rel $parts[1]
+    set -l ref $parts[-1]
+
+    # centre first, so enter-enter is the common case
+    set -l opts center top bottom
+    test "$rel" = above -o "$rel" = below; and set opts center left right
+    set -l align (printf '%s\n' $opts \
+        | fzf --prompt "align $out ($rel $ref)> " --height 40% --reverse)
+    test -z "$align"; and return
+    place $out $rel $ref $align
+end
+
+function pick_transform --argument-names out
+    set -l choice (printf '%s\n' normal 90 180 270 \
+            flipped flipped-90 flipped-180 flipped-270 \
+        | fzf --prompt "rotate $out> " --height 40% --reverse)
+    test -z "$choice"; and return
+    niri msg output $out transform $choice >/dev/null
+    normalize
+end
+
+function pick_scale --argument-names out
+    set -l choice (printf '%s\n' auto 1 1.25 1.5 1.75 2 2.5 3 'custom...' \
+        | fzf --prompt "scale $out> " --height 40% --reverse)
+    test -z "$choice"; and return
+    if test "$choice" = custom...
+        read -P (set_color cyan)"scale factor> "(set_color normal) choice
+        test -z "$choice"; and return
+    end
+    if not niri msg output $out scale $choice >/dev/null 2>&1
+        echo "niri rejected scale '$choice'"
+        pause
+        return
+    end
+    normalize
+end
+
 # --- the map -----------------------------------------------------------------
 
 # Drawn from a fresh IPC read rather than $STATE: fzf runs the preview in its
