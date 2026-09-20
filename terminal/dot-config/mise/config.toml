@@ -41,6 +41,7 @@ usage = "latest"
 "github:ogulcancelik/herdr" = "latest"
 "cargo:ghzinga" = "latest"   # GitHub PR/issue viewer (gzg); herdr plugin via `just herdr-plugins`
 "cargo:lazyrsync" = "latest"
+"cargo:mandible" = "latest"
 
 # Removed from mise — now installed via pacman (see justfile fish-shell recipe):
 #   bottom, zellij, jaq, jnv, ttyper, monolith, jujutsu(jj), lazyjj, lazydocker, duckdb
