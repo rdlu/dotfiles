@@ -1,0 +1,379 @@
+#!/usr/bin/env fish
+
+# monitor-tui - place, rotate and scale niri outputs, then write the result
+#               straight into hosts/<hostname>/dot-config/niri/host.kdl.
+#
+# Why this exists rather than nwg-displays/monique/kanshi: every one of those
+# owns its own generated config file, which then fights the hand-written
+# host.kdl for the same outputs -- niri validates the duplicate without a
+# word and one side silently wins. This edits host.kdl in place instead, so
+# comments, EDID output names and focus-at-startup all survive.
+#
+# Output view:  every connected output, its logical geometry, scale and
+#               transform. The preview pane draws the arrangement to scale.
+# Placement:    relative -- "above DP-2", "left of eDP-1" -- then an
+#               alignment on the cross axis, centre by default. Exact logical
+#               pixels come from the live mode, scale and transform, so there
+#               is no hand-derived 1707 to get wrong. The arrangement is then
+#               normalised so its top-left corner sits at 0,0.
+# Rotation:     the eight niri transforms.
+# Scale:        niri's own list, "auto", or a typed factor.
+#
+# Rotating or rescaling changes an output's logical width and height. Every
+# action re-reads from niri, so later placement maths always sees the new
+# dimensions -- but outputs already placed around it keep their positions and
+# can end up overlapping or gapped. Re-place them and the numbers come right.
+#
+# Nothing is written until ctrl-s. Every other action is applied live through
+# `niri msg output`, which niri forgets on the next config reload -- so ctrl-z,
+# or just quitting, leaves the saved config untouched.
+#
+# Keys
+#   enter   place this output relative to another
+#   ctrl-t  rotate           ctrl-x  scale
+#   ctrl-a  hand placement back to niri (position auto)
+#   ctrl-s  save to host.kdl ctrl-z  revert live changes to the startup layout
+#   ctrl-r  rescan           esc     quit
+
+set -g DOTFILES (set -q DOTFILES; and echo $DOTFILES; or echo $HOME/.dotfiles)
+set -g HOST (hostname)
+set -g HOSTKDL $DOTFILES/hosts/$HOST/dot-config/niri/host.kdl
+set -g SELF (realpath (status filename))
+set -g TMPDIR_TUI (mktemp -d /tmp/monitor-tui.XXXXXX)
+set -g STATE $TMPDIR_TUI/outputs.json
+set -g ORIGINAL $TMPDIR_TUI/original.json
+
+function _cleanup --on-event fish_exit
+    test -d "$TMPDIR_TUI"; and rm -rf $TMPDIR_TUI
+end
+
+function _die
+    echo "monitor-tui: $argv" >&2
+    exit 1
+end
+
+# --- niri state --------------------------------------------------------------
+
+function refresh
+    niri msg --json outputs >$STATE 2>/dev/null
+    or _die "niri is not running, or its IPC is unavailable"
+end
+
+# connector names of every output that is currently on
+function active_outputs
+    jq -r 'to_entries[] | select(.value.logical != null) | .key' $STATE
+end
+
+# the name niri prints for an output: "make model serial", serial-less
+# panels rendering as "Unknown" -- this is the EDID form host.kdl prefers,
+# because connector names move when a cable changes port.
+function edid_name --argument-names out
+    jq -r --arg o $out '.[$o] | "\(.make) \(.model) \(.serial // "Unknown")"' $STATE
+end
+
+function logical --argument-names out field
+    jq -r --arg o $out --arg f $field '.[$o].logical[$f]' $STATE
+end
+
+function scale_of --argument-names out
+    jq -r --arg o $out '.[$o].logical.scale' $STATE
+end
+
+# niri reports transforms capitalised ("Normal", "_90"); host.kdl wants the
+# lowercase CLI spelling ("normal", "90").
+function transform_of --argument-names out
+    jq -r --arg o $out '.[$o].logical.transform
+        | ascii_downcase | sub("^_"; "") | sub("^flipped_"; "flipped-")' $STATE
+end
+
+# --- placement ---------------------------------------------------------------
+
+# shift the whole arrangement so its top-left corner is 0,0
+function normalize
+    refresh
+    set -l minx (jq '[.[] | select(.logical != null) | .logical.x] | min' $STATE)
+    set -l miny (jq '[.[] | select(.logical != null) | .logical.y] | min' $STATE)
+    test "$minx" = 0 -a "$miny" = 0; and return
+    for o in (active_outputs)
+        set -l x (logical $o x)
+        set -l y (logical $o y)
+        niri msg output $o position set (math "$x - $minx") (math "$y - $miny") >/dev/null
+    end
+    refresh
+end
+
+# rel is above|below|left|right; align is the cross-axis edge to line up on,
+# centre when unset. Side placements align top/bottom, stacked ones left/right.
+function place --argument-names out rel ref align
+    test -z "$align"; and set align center
+    set -l xy (jq -r --arg a $out --arg b $ref --arg rel $rel --arg al $align '
+        .[$a].logical as $A | .[$b].logical as $B |
+        (if $rel == "left" or $rel == "right" then
+            (if   $al == "top"    then $B.y
+             elif $al == "bottom" then $B.y + $B.height - $A.height
+             else                      $B.y + (($B.height - $A.height) / 2 | round) end)
+         else
+            (if   $al == "left"  then $B.x
+             elif $al == "right" then $B.x + $B.width - $A.width
+             else                     $B.x + (($B.width - $A.width) / 2 | round) end)
+         end) as $off |
+        if   $rel == "above" then "\($off) \($B.y - $A.height)"
+        elif $rel == "below" then "\($off) \($B.y + $B.height)"
+        elif $rel == "left"  then "\($B.x - $A.width) \($off)"
+        else                      "\($B.x + $B.width) \($off)" end' $STATE)
+    niri msg output $out position set (string split ' ' $xy) >/dev/null
+    normalize
+end
+
+function pick_placement --argument-names out
+    set -l menu
+    for other in (active_outputs)
+        test "$other" = "$out"; and continue
+        set -a menu "above    $other" "below    $other" \
+            "left of  $other" "right of $other"
+    end
+    test (count $menu) -eq 0; and return
+    set -l choice (printf '%s\n' $menu \
+        | fzf --prompt "place $out> " --height 40% --reverse)
+    test -z "$choice"; and return
+    set -l parts (string split -n ' ' $choice)
+    set -l rel $parts[1]
+    set -l ref $parts[-1]
+
+    # centre first, so enter-enter is the common case
+    set -l opts center top bottom
+    test "$rel" = above -o "$rel" = below; and set opts center left right
+    set -l align (printf '%s\n' $opts \
+        | fzf --prompt "align $out ($rel $ref)> " --height 40% --reverse)
+    test -z "$align"; and return
+    place $out $rel $ref $align
+end
+
+function pick_transform --argument-names out
+    set -l choice (printf '%s\n' normal 90 180 270 \
+            flipped flipped-90 flipped-180 flipped-270 \
+        | fzf --prompt "rotate $out> " --height 40% --reverse)
+    test -z "$choice"; and return
+    niri msg output $out transform $choice >/dev/null
+    normalize
+end
+
+function pick_scale --argument-names out
+    set -l choice (printf '%s\n' auto 1 1.25 1.5 1.75 2 2.5 3 'custom...' \
+        | fzf --prompt "scale $out> " --height 40% --reverse)
+    test -z "$choice"; and return
+    if test "$choice" = custom...
+        read -P (set_color cyan)"scale factor> "(set_color normal) choice
+        test -z "$choice"; and return
+    end
+    if not niri msg output $out scale $choice >/dev/null 2>&1
+        echo "niri rejected scale '$choice'"
+        pause
+        return
+    end
+    normalize
+end
+
+# --- the map -----------------------------------------------------------------
+
+# Drawn from a fresh IPC read rather than $STATE: fzf runs the preview in its
+# own process, which never sees this shell's temp files.
+function render_map
+    niri msg --json outputs 2>/dev/null | jq -r '
+        to_entries[] | select(.value.logical != null)
+        | "\(.key) \(.value.logical.x) \(.value.logical.y) \(.value.logical.width) \(.value.logical.height) \(.value.logical.transform)"' \
+    | awk '
+    { n[NR]=$1; x[NR]=$2; y[NR]=$3; w[NR]=$4; h[NR]=$5; t[NR]=$6; c=NR
+      if (NR==1 || $2 < minx) minx=$2
+      if (NR==1 || $3 < miny) miny=$3
+      if (NR==1 || $2+$4 > maxx) maxx=$2+$4
+      if (NR==1 || $3+$5 > maxy) maxy=$3+$5 }
+    END {
+      if (c == 0) { print "  (no active outputs)"; exit }
+      gw = 62; gh = 16
+      sx = gw / (maxx - minx); sy = gh / (maxy - miny)
+      s  = (sx < sy) ? sx : sy
+      for (r = 0; r <= gh; r++) for (col = 0; col <= gw; col++) g[r,col] = " "
+      for (i = 1; i <= c; i++) {
+        c0 = int((x[i]-minx)*s); r0 = int((y[i]-miny)*s)
+        c1 = int((x[i]+w[i]-minx)*s); r1 = int((y[i]+h[i]-miny)*s)
+        if (c1 <= c0+1) c1 = c0+2
+        if (r1 <= r0+1) r1 = r0+2
+        for (col = c0; col <= c1; col++) { g[r0,col]="-"; g[r1,col]="-" }
+        for (r = r0; r <= r1; r++)       { g[r,c0]="|";  g[r,c1]="|" }
+        g[r0,c0]="+"; g[r0,c1]="+"; g[r1,c0]="+"; g[r1,c1]="+"
+        lab = n[i]; if (t[i] != "Normal") lab = lab " " t[i]
+        if (length(lab) > c1-c0-1) lab = substr(lab, 1, c1-c0-1)
+        for (k = 1; k <= length(lab); k++) g[r0+1, c0+k] = substr(lab, k, 1)
+        dim = w[i] "x" h[i]
+        if (length(dim) <= c1-c0-1 && r0+2 < r1)
+          for (k = 1; k <= length(dim); k++) g[r0+2, c0+k] = substr(dim, k, 1)
+      }
+      for (r = 0; r <= gh; r++) {
+        line = ""
+        for (col = 0; col <= gw; col++) line = line g[r,col]
+        sub(/ +$/, "", line)
+        print "  " line
+      }
+    }'
+end
+
+# --- host.kdl ----------------------------------------------------------------
+
+# The block name to write for an output: whichever spelling host.kdl already
+# uses, so an existing hand-written block is edited rather than duplicated.
+# Failing that, the EDID name.
+function block_name --argument-names out
+    set -l edid (edid_name $out)
+    if test -f $HOSTKDL
+        for candidate in $out $edid
+            if awk -v t="$candidate" '
+                /^[[:space:]]*\/\// { next }
+                /^[[:space:]]*output[[:space:]]+"/ {
+                    s=$0; sub(/^[^"]*"/,"",s); nm=s; sub(/".*$/,"",nm)
+                    if (nm == t) { found=1} }
+                END { exit !found }' $HOSTKDL
+                echo $candidate
+                return
+            end
+        end
+    end
+    echo $edid
+end
+
+# Rewrite one output block in place. Only the three properties this tool
+# manages -- position, transform, scale -- are replaced; every other line,
+# comments and commented-out blocks included, survives untouched. A block
+# that does not exist yet is appended.
+function kdl_write --argument-names file target props
+    set -l tmp $TMPDIR_TUI/host.kdl.new
+    awk -v target="$target" -v props="$props" '
+        function emit(   k, i, arr) {
+            k = split(props, arr, "\n")
+            for (i = 1; i <= k; i++) if (arr[i] != "") print "  " arr[i]
+        }
+        /^[[:space:]]*\/\// { print; next }          # comments are structure-free
+        !inblk && /^[[:space:]]*output[[:space:]]+"/ {
+            s=$0; sub(/^[^"]*"/,"",s); nm=s; sub(/".*$/,"",nm)
+            if (nm == target) { inblk=1; found=1; print; next }
+        }
+        inblk && /^[[:space:]]*(position|transform|scale)[[:space:]]/ { next }
+        inblk && /^[[:space:]]*}/ { emit(); inblk=0; print; next }
+        { print }
+        END {
+            if (!found) {
+                print ""
+                print "output \"" target "\" {"
+                emit()
+                print "}"
+            }
+        }' $file >$tmp
+    and mv $tmp $file
+end
+
+function save_layout
+    test -f $HOSTKDL; or _die "no host.kdl for '$HOST' at $HOSTKDL"
+    refresh
+    for o in (active_outputs)
+        set -l name (block_name $o)
+        set -l props "position x="(logical $o x)" y="(logical $o y)
+        set -a props "scale "(scale_of $o)
+        set -l xf (transform_of $o)
+        test "$xf" != normal; and set -a props "transform \"$xf\""
+        kdl_write $HOSTKDL $name (string join \n $props)
+        echo "  $name"
+        for p in $props
+            echo "    $p"
+        end
+    end
+    echo
+    if niri validate -c $HOME/.config/niri/config.kdl 2>&1 | grep -q "config is valid"
+        set_color green; echo "written to $HOSTKDL and niri accepts it"; set_color normal
+    else
+        set_color red; echo "written, but niri rejects the result -- check $HOSTKDL"; set_color normal
+    end
+    pause
+end
+
+# --- live changes ------------------------------------------------------------
+
+function snapshot_original
+    cp $STATE $ORIGINAL
+end
+
+function revert_live
+    for o in (active_outputs)
+        set -l x (jq -r --arg o $o '.[$o].logical.x' $ORIGINAL)
+        test "$x" = null; and continue
+        set -l y (jq -r --arg o $o '.[$o].logical.y' $ORIGINAL)
+        set -l sc (jq -r --arg o $o '.[$o].logical.scale' $ORIGINAL)
+        set -l t (jq -r --arg o $o '.[$o].logical.transform
+            | ascii_downcase | sub("^_"; "") | sub("^flipped_"; "flipped-")' $ORIGINAL)
+        niri msg output $o transform $t >/dev/null
+        niri msg output $o scale $sc >/dev/null
+        niri msg output $o position set $x $y >/dev/null
+    end
+    refresh
+end
+
+# --- views -------------------------------------------------------------------
+
+function pause
+    read -P (set_color -d)'-- enter to continue --'(set_color normal) >/dev/null
+end
+
+function output_lines
+    for o in (active_outputs)
+        printf '%-10s %5sx%-5s at %5s,%-5s  x%-5s %-11s %s\n' \
+            $o (logical $o width) (logical $o height) \
+            (logical $o x) (logical $o y) \
+            (scale_of $o) (transform_of $o) (edid_name $o)
+    end
+end
+
+function main_view
+    while true
+        set -l res (output_lines | fzf \
+            --prompt 'output> ' --reverse --height 100% --header-first \
+            --header 'enter place · ctrl-t rotate · ctrl-x scale · ctrl-a auto · ctrl-s save · ctrl-z revert · ctrl-r rescan · esc quit' \
+            --preview "$SELF __map" --preview-window 'up,19,border-bottom' \
+            --expect 'ctrl-t,ctrl-x,ctrl-a,ctrl-s,ctrl-z,ctrl-r,esc')
+        test (count $res) -lt 2; and return
+        set -l key $res[1]
+        set -l out (string split -n ' ' $res[2])[1]
+        switch $key
+            case esc
+                return
+            case ctrl-r
+                refresh
+            case ctrl-s
+                save_layout
+            case ctrl-z
+                revert_live
+            case ctrl-a
+                niri msg output $out position auto >/dev/null
+                normalize
+            case ctrl-t
+                pick_transform $out
+            case ctrl-x
+                pick_scale $out
+            case '*'
+                pick_placement $out
+        end
+    end
+end
+
+# --- entry -------------------------------------------------------------------
+
+if test "$argv[1]" = __map
+    render_map
+    exit 0
+end
+
+type -q niri; or _die "niri not found"
+type -q jq; or _die "jq not found"
+type -q fzf; or _die "fzf not found"
+
+refresh
+snapshot_original
+main_view
