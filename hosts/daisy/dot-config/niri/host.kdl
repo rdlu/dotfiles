@@ -1,11 +1,21 @@
-// daisy display layout — carried over unchanged from the old shared
-// outputs.kdl, back when outputs were not yet per-host. No positions here:
-// niri lays the outputs out itself, which is what daisy has always done.
+// daisy display layout — external on top, laptop below, horizontally centred.
+// eDP-1 is 1920x1200 at scale 1.0, so 1920x1200 logical; the external is
+// 2560x1600 at scale 1.5, so 1706.67x1066.67 logical. niri reports that
+// truncated to 1706x1066, but a position derived from the truncated figure
+// overlaps its neighbour by a fraction of a pixel, and niri then discards the
+// position and auto-places the output instead — silently, exit status 0.
+// Hence y=1067, the height rounded up, and x=107 ((1920 - 1707) / 2), which
+// centres the external over the laptop.
+//
+// position, scale and transform are monitor-tui's to rewrite; everything else
+// in this file is hand-kept and it leaves those lines alone.
 
 output "Invalid Vendor Codename - RTK HG540T40 0x01010101" {
   focus-at-startup
-  scale 1.5
   variable-refresh-rate
+  position x=107 y=0
+  scale 1.5
+  transform "normal"
 }
 
 // output "HDMI-A-1" {
@@ -28,7 +38,9 @@ output "Invalid Vendor Codename - RTK HG540T40 0x01010101" {
 // }
 
 output "eDP-1" {
-  scale 1.0
   variable-refresh-rate
   // variable-refresh-rate on-demand=true
+  position x=0 y=1067
+  scale 1.0
+  transform "normal"
 }
