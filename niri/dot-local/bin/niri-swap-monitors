@@ -3,7 +3,7 @@
 # niri-swap-monitors — swap the workspaces of the two monitors, wholesale.
 #
 # niri can move one workspace at a time (move-workspace-to-monitor, bound on
-# Mod+Shift+Ctrl+J/K), but has nothing that exchanges two monitors' contents.
+# Mod+Shift+Ctrl+U/I), but has nothing that exchanges two monitors' contents.
 # This walks every workspace that carries something and sends it the other way.
 #
 # Empty unnamed workspaces are left alone: niri keeps a trailing empty one per
