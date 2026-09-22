@@ -9,8 +9,12 @@ That stays the right default everywhere else. It does not apply here.
 
 - **Commit and push directly to `main`.** No feature branch, no PR. A PR
   needs a reviewer, and there isn't one — the branch is pure overhead.
-- **The remote is named `github`, not `origin`.** `git push origin main`
-  fails; there is no `origin`. Use `git push github main`.
+- **Three remotes: `origin`, `github`, `gitlab`.** `origin` fetches from
+  gitlab and has *two* push URLs, so `git push origin main` publishes to
+  both — that's the normal push. `github` and `gitlab` address one each,
+  for when they've diverged. Only github runs the docs CI.
+- **Pushing needs a tap on the hardware SSH key** (ED25519-SK), so it can't
+  complete unattended — leave it to the user: `! git push origin main`.
 - Pushing here is pre-authorized, same as the global rule. Don't ask, and
   don't offer to open a PR instead.
 
