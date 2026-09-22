@@ -1,0 +1,888 @@
+#!/usr/bin/env fish
+
+# cf-token-rotate - rotate, extend and retire account-owned Cloudflare API
+#                   tokens, with fzf. Run from daisy only.
+#
+# Why this exists, and why it lives here
+#   A Cloudflare API token cannot rotate itself. `Account API Tokens Write`
+#   refuses to coexist with zone permissions on one token -- the API answers
+#   error 1001, "sub-token is not allowed to have permissions to manage other
+#   tokens". So rotating the DNS-01 token needs a SECOND, more privileged
+#   management credential, and that credential deliberately lives neither on
+#   the work laptop nor on the router: only here, only during a rotation
+#   session, and `--forget` wipes it again afterwards.
+#
+# Why create-new-then-delete-old, and not roll
+#   The in-place roll endpoint (PUT .../tokens/{id}/value) has ZERO overlap:
+#   the old secret dies the instant the new one is issued. Roll-then-deploy
+#   therefore has a real failure mode -- new secret issued, deploy fails,
+#   DNS-01 broken until someone repairs it by hand. This tool instead does
+#   create -> verify -> deploy -> verify -> delete-old, so the working secret stays
+#   working until its replacement is proven. Rolling is not offered.
+#
+# Why "extend" is a separate, boring action
+#   Rolling does NOT push out expires_on, and conversely a token that is
+#   merely about to expire does not need a new secret at all. PUT expires_on
+#   keeps the same secret alive -- nothing to deploy, nothing to break. If
+#   all you want is another year, use ctrl-e, not enter.
+#
+# Views
+#   Token list  every account token, soonest expiry first, expired and
+#               near-expiry rows coloured. The preview pane shows that
+#               token's policies and condition, pretty-printed, plus which
+#               deploy target is configured for it.
+#   Confirm     before anything is created, changed or deleted: a screen
+#               naming the exact API calls and the exact deploy command.
+#
+# Keys
+#   token list  enter  rotate  (create -> verify -> deploy -> verify -> delete old)
+#               ctrl-e extend expiry only (no new secret, no deploy)
+#               ctrl-d delete a token (asks you to type its name)
+#               ctrl-r refresh from the API
+#               esc    quit
+#
+# Flags
+#   --list      print the token table and exit; no TUI, nothing written
+#   --forget    delete the stored management credential from the keyring
+#   --help      this help
+#
+# Config  $XDG_CONFIG_HOME/cf-token-tools/config.fish  (default ~/.config),
+#         sourced if present, untracked. Nothing identifying is ever
+#         committed to this repo -- account id, hostnames and UUIDs all come
+#         from that file or the environment at runtime. Example:
+#
+#           set -g CF_ACCOUNT_ID       <32-hex account id>
+#           set -g CF_TOKEN_DAYS       365          # default validity
+#           set -g CF_DEPLOY_DEFAULT   manual       # when no per-token rule
+#           set -g CF_OPNSENSE_HOST    root@<router host>
+#           set -g CF_OPNSENSE_PHP     /usr/local/bin/php
+#           set -g CF_OPNSENSE_VALIDATION_UUID <AcmeClient validation uuid>
+#           # per-token override, keyed on the token name upper-snake-cased:
+#           # a token called "acme dns-01" -> ACME_DNS_01
+#           set -g CF_DEPLOY_ACME_DNS_01        opnsense
+#           set -g CF_OPNSENSE_UUID_ACME_DNS_01 <validation uuid>
+#
+# Env     CF_ACCOUNT_ID and every CF_* above may also be set in the
+#         environment; the environment wins over the config file.
+#         CF_TOKEN_TIMEOUT  curl --max-time, seconds (default 30)
+#
+# Credential
+#   Looked up as  secret-tool lookup service cloudflare account $CF_ACCOUNT_ID
+#   kind manage.  If absent you are prompted with `read -s` and offered
+#   storage. It is never echoed, never written to a file, never placed on any
+#   command line (curl takes it through --config on stdin) and never reaches
+#   shell history. `--forget` removes it again -- the intended lifetime is
+#   one rotation session per year.
+
+set -g SELF (status filename)
+set -g PROG (basename -- (status filename))
+set -g API https://api.cloudflare.com/client/v4
+
+set -g CFG_HOME (set -q XDG_CONFIG_HOME; and echo $XDG_CONFIG_HOME; or echo $HOME/.config)
+set -g CFG $CFG_HOME/cf-token-tools/config.fish
+
+# Scratch for the cached token listing; it holds ids, names and policies --
+# no secret value ever lands here -- but mktemp gives it 0700 anyway. The
+# preview subprocess is handed the path and needs no scratch of its own.
+if test "$argv[1]" = __preview
+    set -g TMPDIR_TUI ''
+    set -g LIST_JSON ''
+else
+    set -g TMPDIR_TUI (mktemp -d /tmp/cf-token-rotate.XXXXXX)
+    set -g LIST_JSON $TMPDIR_TUI/tokens.json
+end
+
+# the management credential, in memory only, for the life of this process
+set -g MANAGE_TOKEN ''
+
+function _cleanup --on-event fish_exit
+    set -g MANAGE_TOKEN ''
+    set -e MANAGE_TOKEN
+    test -d "$TMPDIR_TUI"; and rm -rf $TMPDIR_TUI
+end
+
+function _die
+    echo "$PROG: $argv" >&2
+    exit 1
+end
+
+function _warn
+    set_color red
+    echo "$PROG: $argv" >&2
+    set_color normal
+end
+
+function _pause
+    read -P (set_color -d)'-- enter to continue --'(set_color normal) >/dev/null
+end
+
+function _confirm --argument-names q
+    read -l -P (set_color -o yellow)"$q [y/N] "(set_color normal) a
+    test "$a" = y -o "$a" = Y -o "$a" = yes
+end
+
+# shorten to N chars with an ellipsis, so a long token name can't blow out a header
+function _ellip --argument-names str n
+    if test (string length -- $str) -gt $n
+        echo (string sub -l (math $n - 1) -- $str)…
+    else
+        echo $str
+    end
+end
+
+# single-quote a string for a remote /bin/sh, the '\'' way, so a name or path
+# with spaces or quotes in it cannot become extra sh words
+function _shq --argument-names s
+    echo -n "'"(string replace -a -- "'" "'\\''" "$s")"'"
+end
+
+# a token name as an upper-snake config key: "acme dns-01" -> ACME_DNS_01
+function _slug --argument-names s
+    string upper -- (string trim -c _ -- (string replace -ra '[^A-Za-z0-9]+' _ -- "$s"))
+end
+
+# --- config ------------------------------------------------------------------
+
+function load_config
+    # remember what the environment said, so a config file cannot quietly
+    # override an explicit `CF_ACCOUNT_ID=... cf-token-rotate`
+    set -l env_account "$CF_ACCOUNT_ID"
+
+    if test -r "$CFG"
+        source $CFG
+        or _die "config file failed to load: $CFG"
+    end
+    test -n "$env_account"; and set -g CF_ACCOUNT_ID $env_account
+
+    set -q CF_TOKEN_TIMEOUT[1]; or set -g CF_TOKEN_TIMEOUT 30
+    set -q CF_TOKEN_DAYS[1]; or set -g CF_TOKEN_DAYS 365
+    set -q CF_OPNSENSE_PHP[1]; or set -g CF_OPNSENSE_PHP /usr/local/bin/php
+end
+
+function need_account
+    if not set -q CF_ACCOUNT_ID[1]; or test -z "$CF_ACCOUNT_ID"
+        echo "$PROG: CF_ACCOUNT_ID is not set -- refusing to run." >&2
+        echo >&2
+        echo "Set it in $CFG:" >&2
+        echo "    set -g CF_ACCOUNT_ID <your 32-hex account id>" >&2
+        echo "or in the environment:" >&2
+        echo "    CF_ACCOUNT_ID=... $PROG" >&2
+        echo >&2
+        echo "Nothing identifying is stored in the dotfiles repo, by design." >&2
+        exit 1
+    end
+end
+
+# --- credential --------------------------------------------------------------
+
+function cred_lookup
+    secret-tool lookup service cloudflare account "$CF_ACCOUNT_ID" kind manage 2>/dev/null
+end
+
+function cred_store --argument-names tok
+    printf '%s' $tok \
+        | secret-tool store --label="Cloudflare account API token (manage)" \
+        service cloudflare account "$CF_ACCOUNT_ID" kind manage
+end
+
+function cred_forget
+    set -l cur (cred_lookup | string collect)
+    if test -z "$cur"
+        echo "$PROG: nothing stored for this account -- nothing to forget."
+        return 0
+    end
+    set -e cur
+    secret-tool clear service cloudflare account "$CF_ACCOUNT_ID" kind manage
+    or _die "secret-tool clear failed"
+    echo "$PROG: management credential removed from the keyring."
+end
+
+# fill $MANAGE_TOKEN from the keyring, or prompt for it and offer to store it
+function need_cred
+    test -n "$MANAGE_TOKEN"; and return 0
+
+    set -g MANAGE_TOKEN (cred_lookup | string collect)
+    if test -n "$MANAGE_TOKEN"
+        return 0
+    end
+
+    echo "No management credential in the keyring for this account."
+    echo "It needs 'Account API Tokens Write' and NOTHING else -- the API"
+    echo "rejects a token that mixes token management with zone permissions"
+    echo "(error 1001)."
+    echo
+    # read -s does not echo, and `read` never touches fish history
+    read -s -P (set_color -o)'management API token: '(set_color normal) -l tok
+    echo
+    set tok (string trim -- "$tok")
+    test -n "$tok"; or _die "no token given"
+    set -g MANAGE_TOKEN $tok
+    set -e tok
+
+    if _confirm "store it in the keyring? (--forget removes it again)"
+        if cred_store $MANAGE_TOKEN
+            echo "stored. Run '$PROG --forget' when the rotation session is done."
+        else
+            _warn "secret-tool store failed -- continuing with it in memory only"
+        end
+    end
+end
+
+# --- api ---------------------------------------------------------------------
+
+# cf_api <bearer> <method> <path> [body-file]  -> response JSON on stdout
+#
+# The bearer never appears in any argv: curl reads it from a --config document
+# on stdin, and the printf that writes that document is a fish builtin, so no
+# process ever carries the secret where `ps` can see it.
+function cf_api --argument-names bearer method path bodyfile
+    set -l args --silent --show-error --max-time $CF_TOKEN_TIMEOUT \
+        --request $method --header 'Content-Type: application/json'
+    test -n "$bodyfile"; and set -a args --data @$bodyfile
+    set -a args --config - "$API$path"
+    printf 'header = "Authorization: Bearer %s"\n' $bearer | curl $args
+end
+
+function api_ok --argument-names json
+    printf '%s' $json | jq -e '.success == true' >/dev/null 2>&1
+end
+
+function api_errs --argument-names json
+    set -l e (printf '%s' $json \
+        | jq -r '.errors[]? | "  [\(.code)] \(.message)"' 2>/dev/null)
+    if test (count $e) -eq 0
+        echo "  (no error detail; response was not valid JSON)"
+        printf '%s' $json | head -c 400 | string replace -r '^' '  '
+    else
+        printf '%s\n' $e
+    end
+end
+
+function report_failure --argument-names what json
+    _warn "$what failed"
+    api_errs $json >&2
+end
+
+# --- token listing -----------------------------------------------------------
+
+function fetch_tokens
+    set -l json (cf_api $MANAGE_TOKEN GET \
+        "/accounts/$CF_ACCOUNT_ID/tokens?per_page=50&include_expired=true" \
+        | string collect)
+    if not api_ok "$json"
+        report_failure "listing tokens" "$json"
+        return 1
+    end
+    printf '%s' $json >$LIST_JSON
+    return 0
+end
+
+# "<display>\t<id>", soonest expiry first, expired/near-expiry coloured
+function token_rows
+    jq -r '
+        def exp:
+            if .expires_on == null then null
+            else (.expires_on | sub("[.][0-9]+Z$"; "Z") | fromdateiso8601) end;
+        .result
+        | sort_by(exp // 99999999999)[]
+        | [ .name,
+            (.status // "?"),
+            (if exp == null then "never" else (exp | strftime("%Y-%m-%d")) end),
+            (if exp == null then "" else ((exp - now) / 86400 | floor | tostring) end),
+            .id ]
+        | @tsv
+    ' $LIST_JSON 2>/dev/null | awk -F'\t' '
+        {
+            col = ""; note = ""
+            if ($4 == "")            { note = "no expiry" }
+            else if ($4 + 0 < 0)     { col = "\033[31m"; note = "EXPIRED" }
+            else if ($4 + 0 < 30)    { col = "\033[33m"; note = $4 "d left" }
+            else                     { note = $4 "d left" }
+            if ($2 != "active")      { col = "\033[31m" }
+            printf "%s%-30s %-9s %-11s %-11s\033[0m\t%s\n", \
+                col, substr($1, 1, 30), $2, $3, note, $5
+        }'
+end
+
+function token_get --argument-names id
+    jq -e --arg id "$id" '.result[] | select(.id == $id)' $LIST_JSON 2>/dev/null
+end
+
+function token_name --argument-names id
+    token_get $id | jq -r '.name' 2>/dev/null
+end
+
+function token_preview --argument-names id listfile
+    test -r "$listfile"; or begin
+        echo "no cached listing"
+        return
+    end
+    set -l t (jq -e --arg id "$id" '.result[] | select(.id == $id)' $listfile \
+        | string collect)
+    test -n "$t"; or begin
+        echo "token $id is not in the cached listing"
+        return
+    end
+
+    set_color cyan
+    printf '%s\n' (printf '%s' $t | jq -r '.name')
+    set_color normal
+    set_color -d
+    echo $id
+    set_color normal
+    echo
+    printf '%s' $t | jq -r '
+        "status       \(.status // "?")",
+        "issued       \(.issued_on // "-")",
+        "expires      \(.expires_on // "never")",
+        "last used    \(.last_used_on // "never")"
+    '
+    echo
+    set -l target (deploy_target_for (printf '%s' $t | jq -r '.name'))
+    printf 'deploy       %s\n' $target
+    if test "$target" = opnsense
+        printf 'validation   %s\n' (opnsense_uuid (printf '%s' $t | jq -r '.name'))
+        printf 'host         %s\n' (set -q CF_OPNSENSE_HOST[1]; and echo $CF_OPNSENSE_HOST; or echo '(CF_OPNSENSE_HOST unset!)')
+    end
+    echo
+    set_color -o
+    echo policies
+    set_color normal
+    printf '%s' $t | jq '.policies'
+    echo
+    set_color -o
+    echo condition
+    set_color normal
+    printf '%s' $t | jq '.condition // "none"'
+end
+
+# --- deploy targets ----------------------------------------------------------
+
+function deploy_target_for --argument-names name
+    set -l var CF_DEPLOY_(_slug "$name")
+    if set -q $var
+        echo $$var[1]
+        return
+    end
+    if set -q CF_DEPLOY_DEFAULT[1]; and test -n "$CF_DEPLOY_DEFAULT"
+        echo $CF_DEPLOY_DEFAULT
+        return
+    end
+    echo manual
+end
+
+function opnsense_uuid --argument-names name
+    set -l var CF_OPNSENSE_UUID_(_slug "$name")
+    if set -q $var
+        echo $$var[1]
+        return
+    end
+    set -q CF_OPNSENSE_VALIDATION_UUID[1]; and echo $CF_OPNSENSE_VALIDATION_UUID
+end
+
+# The php that runs on the firewall. One line on purpose: fish splits a
+# multi-line command substitution into a list, and this has to stay one
+# argument all the way to the remote sh.
+#
+# It sets dns_cf_token and ONLY dns_cf_token. It must NEVER also set
+# dns_cf_zone_id: with a non-empty Zone ID, acme.sh writes the credentials
+# into the per-domain .conf under /var/etc/acme-client, and on renewal that
+# stale copy overrides whatever the GUI holds -- renewals then fail with a
+# misleading "invalid domain". That cost months to find; do not "improve" it
+# by populating the Zone ID field.
+function opnsense_php_code
+    string join ' ' \
+        'require_once("config.inc");' \
+        '$uuid = $argv[1];' \
+        '$tok = getenv("CF_NEW_TOKEN");' \
+        'if ($tok === false || $tok === "") { fwrite(STDERR, "empty CF_NEW_TOKEN in environment\n"); exit(2); }' \
+        '$mdl = new OPNsense\AcmeClient\AcmeClient();' \
+        '$node = $mdl->getNodeByReference("validations.validation." . $uuid);' \
+        'if ($node === null) { fwrite(STDERR, "no AcmeClient validation with uuid " . $uuid . "\n"); exit(3); }' \
+        '$node->dns_cf_token = $tok;' \
+        '$mdl->serializeToConfig();' \
+        'OPNsense\Core\Config::getInstance()->save();' \
+        'echo "CF_DEPLOY_OK\n";'
+end
+
+# The remote wrapper. The secret arrives on stdin and is read INSIDE the
+# sudo'd shell, then exported, so it is in php's environment and nowhere
+# else -- not in any argv, local or remote, and not in a sudo -E that the
+# firewall's sudoers would very likely refuse anyway.
+function opnsense_sh_code
+    string join ' ' \
+        'read -r CF_NEW_TOKEN;' \
+        'export CF_NEW_TOKEN;' \
+        'exec "$1" -r "$2" "$3"'
+end
+
+function opnsense_remote_cmd --argument-names uuid
+    echo -n 'sudo /bin/sh -c '(_shq (opnsense_sh_code))' cf-token-rotate '
+    echo -n (_shq $CF_OPNSENSE_PHP)' '(_shq (opnsense_php_code))' '(_shq $uuid)
+end
+
+# deploy_opnsense <secret> <token-name>
+function deploy_opnsense --argument-names secret name
+    if not set -q CF_OPNSENSE_HOST[1]; or test -z "$CF_OPNSENSE_HOST"
+        _warn "CF_OPNSENSE_HOST is not set -- cannot deploy"
+        return 1
+    end
+    set -l uuid (opnsense_uuid "$name")
+    if test -z "$uuid"
+        _warn "no AcmeClient validation uuid configured for '$name'"
+        echo "  set CF_OPNSENSE_VALIDATION_UUID, or" >&2
+        echo "  set CF_OPNSENSE_UUID_"(_slug "$name")" in $CFG" >&2
+        return 1
+    end
+
+    set -l remote (opnsense_remote_cmd $uuid)
+    echo
+    set_color -d
+    echo "> ssh $CF_OPNSENSE_HOST <sudo php, validation $uuid>"
+    echo "  (the new secret goes over ssh stdin, never in an argv)"
+    set_color normal
+    echo
+
+    set -l out (printf '%s\n' $secret \
+        | ssh -o BatchMode=yes $CF_OPNSENSE_HOST $remote 2>&1 | string collect)
+    set -l rc $status
+
+    if test $rc -ne 0
+        _warn "ssh/php exited $rc"
+        test -n "$out"; and printf '%s\n' $out >&2
+        return 1
+    end
+    if not string match -q '*CF_DEPLOY_OK*' -- "$out"
+        _warn "the firewall did not confirm the write"
+        test -n "$out"; and printf '%s\n' $out >&2
+        return 1
+    end
+    set_color green
+    echo "deployed to $CF_OPNSENSE_HOST (validation $uuid)"
+    set_color normal
+    return 0
+end
+
+# deploy_manual <secret> <token-name> -- show it once, make the user say so
+function deploy_manual --argument-names secret name
+    echo
+    set_color -o yellow
+    echo "This secret is shown ONCE. Cloudflare will not show it again."
+    set_color normal
+    echo
+    set_color -o
+    echo $secret
+    set_color normal
+    echo
+    echo "Put it wherever '$name' is consumed, then confirm."
+    if _confirm "stored it?"
+        return 0
+    end
+    _warn "not confirmed -- treating the deploy as failed"
+    return 1
+end
+
+function do_deploy --argument-names secret name target
+    switch $target
+        case opnsense
+            deploy_opnsense $secret $name
+        case manual
+            deploy_manual $secret $name
+        case '*'
+            _warn "unknown deploy target '$target' for '$name'"
+            echo "  valid targets: opnsense, manual" >&2
+            return 1
+    end
+end
+
+# --- flows -------------------------------------------------------------------
+
+function iso_in_days --argument-names days
+    date -u -d "+$days days" +%Y-%m-%dT%H:%M:%SZ
+end
+
+function ask_days --argument-names prompt
+    read -l -P (set_color -o)"$prompt [$CF_TOKEN_DAYS] "(set_color normal) d
+    set d (string trim -- "$d")
+    test -z "$d"; and set d $CF_TOKEN_DAYS
+    if not string match -qr '^[0-9]+$' -- $d; or test $d -lt 1
+        _warn "not a positive number of days: $d"
+        return 1
+    end
+    echo $d
+end
+
+# a sensible name for the replacement: strip a trailing -YYYYMMDD, add today's
+function next_name --argument-names name
+    set -l base (string replace -r -- '-[0-9]{8}$' '' "$name")
+    echo $base-(date -u +%Y%m%d)
+end
+
+function rotate_token --argument-names id
+    set -l name (token_name $id)
+    test -n "$name"; or return 1
+    set -l target (deploy_target_for "$name")
+    set -l old_expires (token_get $id | jq -r '.expires_on // "never"')
+
+    set -l hdr "ROTATE  "(_ellip "$name" 36)
+    set hdr "$hdr"\n"old token  $id  (expires $old_expires)"
+    set hdr "$hdr"\n"deploy     $target"
+    set hdr "$hdr"\n'create -> verify -> deploy -> verify -> delete old'
+    set hdr "$hdr"\n'the old secret keeps working until the new one verifies'
+
+    set -l choice (printf '%s\n' \
+        "rotate: create a replacement, deploy it, then delete this one" \
+        cancel \
+        | fzf --prompt 'confirm> ' --height 40% --reverse --header "$hdr")
+    string match -q 'rotate:*' -- "$choice"; or return 0
+
+    set -l days (ask_days 'validity of the new token, days'); or begin
+        _pause
+        return 1
+    end
+    set -l expires (iso_in_days $days)
+
+    set -l suggested (next_name "$name")
+    read -l -P (set_color -o)"name for the new token [$suggested] "(set_color normal) newname
+    set newname (string trim -- "$newname")
+    test -z "$newname"; and set newname $suggested
+
+    # --- the exact plan, before anything happens -----------------------------
+    echo
+    set_color -o
+    echo plan
+    set_color normal
+    echo "  1. POST   /accounts/<id>/tokens         name '$newname', expires $expires"
+    echo "            policies and condition copied verbatim from '$name'"
+    echo "  2. GET    /accounts/<id>/tokens/verify  as the NEW token (pre-flight)"
+    echo "  3. deploy via '$target'"
+    echo "  4. GET    /accounts/<id>/tokens/verify  again, after the deploy"
+    echo "  5. DELETE /accounts/<id>/tokens/$id"
+    echo
+    echo "  steps 1-4 leave '$name' untouched and working. Step 5 only runs"
+    echo "  if everything before it succeeds. If step 2 fails the router is"
+    echo "  never touched at all."
+    echo
+    if not _confirm "go ahead?"
+        echo "cancelled; nothing was changed."
+        _pause
+        return 0
+    end
+
+    # --- 1. create -----------------------------------------------------------
+    set -l body $TMPDIR_TUI/create.json
+    jq -n --arg id "$id" --arg name "$newname" --arg exp "$expires" \
+        --slurpfile all $LIST_JSON '
+            ($all[0].result[] | select(.id == $id)) as $src
+            | { name: $name, policies: $src.policies, expires_on: $exp }
+            + (if $src.condition == null then {} else { condition: $src.condition } end)
+        ' >$body
+    or begin
+        _warn "could not build the create request"
+        _pause
+        return 1
+    end
+
+    echo "creating '$newname' ..."
+    set -l resp (cf_api $MANAGE_TOKEN POST "/accounts/$CF_ACCOUNT_ID/tokens" $body \
+        | string collect)
+    rm -f $body
+    if not api_ok "$resp"
+        report_failure "creating the new token" "$resp"
+        echo
+        echo "Nothing changed. '$name' is untouched and still live."
+        _pause
+        return 1
+    end
+
+    set -l new_id (printf '%s' $resp | jq -r '.result.id')
+    set -l new_secret (printf '%s' $resp | jq -r '.result.value')
+    set -e resp
+    if test -z "$new_secret" -o "$new_secret" = null
+        _warn "the create call returned no secret value"
+        abort_state "$name" $id "$newname" "$new_id" "created, but no secret came back"
+        _pause
+        return 1
+    end
+    set_color green
+    echo "created $new_id"
+    set_color normal
+
+    # --- 1b. pre-flight verify -----------------------------------------------
+    # Verified BEFORE the deploy as well, so a token that came back unusable
+    # never reaches the router: here the old secret is still live and nothing
+    # has been written anywhere, which is the cheapest possible place to fail.
+    # A freshly created token is not always usable on the very first call, so
+    # give it a couple of tries before believing it.
+    #
+    # This works because /tokens/verify authenticates with the token being
+    # tested -- a DNS-scoped token can verify itself, needing no extra
+    # permission. It is the one self-referential call a token can always make.
+    echo "checking the new token is usable ..."
+    set -l ok 0
+    for attempt in 1 2 3
+        set -l pre (cf_api $new_secret GET "/accounts/$CF_ACCOUNT_ID/tokens/verify" \
+            | string collect)
+        if api_ok "$pre"
+            and test (printf '%s' $pre | jq -r '.result.status // "?"') = active
+            set ok 1
+            break
+        end
+        test $attempt -lt 3; and sleep 2
+    end
+    if test $ok -ne 1
+        _warn "the new token never reported 'active' -- not deploying it"
+        abort_state "$name" $id "$newname" "$new_id" \
+            "the new token never became usable (nothing was deployed, the router is untouched)"
+        set -e new_secret
+        _pause
+        return 1
+    end
+    set_color green
+    echo "usable"
+    set_color normal
+
+    # --- 2. deploy -----------------------------------------------------------
+    if not do_deploy $new_secret "$name" $target
+        abort_state "$name" $id "$newname" "$new_id" "the deploy failed"
+        set -e new_secret
+        _pause
+        return 1
+    end
+
+    # --- 3. verify -----------------------------------------------------------
+    # verified again AFTER the deploy: the pre-flight proved the token works,
+    # this proves the secret that actually landed on the router is that token
+    # and not something mangled in transit.
+    echo "verifying the new token ..."
+    set -l vresp (cf_api $new_secret GET "/accounts/$CF_ACCOUNT_ID/tokens/verify" \
+        | string collect)
+    set -e new_secret
+    if not api_ok "$vresp"
+        report_failure "verifying the new token" "$vresp"
+        abort_state "$name" $id "$newname" "$new_id" "the new token did not verify"
+        _pause
+        return 1
+    end
+    set -l vstatus (printf '%s' $vresp | jq -r '.result.status // "?"')
+    if test "$vstatus" != active
+        _warn "the new token verified but its status is '$vstatus', not 'active'"
+        abort_state "$name" $id "$newname" "$new_id" "status '$vstatus'"
+        _pause
+        return 1
+    end
+    set_color green
+    echo "verified: active"
+    set_color normal
+
+    # --- 4. delete the old one ----------------------------------------------
+    echo "deleting the old token $id ..."
+    set -l dresp (cf_api $MANAGE_TOKEN DELETE "/accounts/$CF_ACCOUNT_ID/tokens/$id" \
+        | string collect)
+    if not api_ok "$dresp"
+        report_failure "deleting the old token" "$dresp"
+        echo
+        set_color yellow
+        echo "This is the harmless half of a half-done rotation:"
+        set_color normal
+        echo "  the new token '$newname' ($new_id) is live and deployed."
+        echo "  the old token '$name' ($id) is still there and must be deleted"
+        echo "  by hand -- it is now unused but still valid."
+        _pause
+        return 1
+    end
+    set_color green
+    echo "rotation complete: '$newname' ($new_id) is live; '$name' is gone."
+    set_color normal
+    _pause
+    return 0
+end
+
+# say exactly where things stand when a rotation aborts before the delete
+function abort_state --argument-names oldname oldid newname newid why
+    echo
+    set_color -o red
+    echo "ABORTED: $why"
+    set_color normal
+    echo
+    echo "State right now:"
+    echo "  OLD  '$oldname' ($oldid)"
+    echo "       untouched, still valid, still deployed. Nothing to repair."
+    if test -n "$newid"
+        echo "  NEW  '$newname' ($newid)"
+        echo "       exists on the account but is NOT in service."
+        echo
+        echo "Its secret was shown once and is now unrecoverable, so it cannot"
+        echo "be deployed later. Clean it up with ctrl-d in the token list, or:"
+        echo "  DELETE /accounts/<id>/tokens/$newid"
+        echo "Then fix the cause and rotate again."
+    else
+        echo "  NEW  not created."
+    end
+    echo
+    echo "DNS-01 is unaffected: the old secret was never replaced."
+end
+
+function extend_token --argument-names id
+    set -l name (token_name $id)
+    test -n "$name"; or return 1
+    set -l old_expires (token_get $id | jq -r '.expires_on // "never"')
+
+    set -l hdr "EXTEND  "(_ellip "$name" 36)
+    set hdr "$hdr"\n"token      $id"
+    set hdr "$hdr"\n"expires    $old_expires"
+    set hdr "$hdr"\n'the secret does NOT change -- nothing to deploy'
+
+    set -l choice (printf '%s\n' \
+        "extend: push out expires_on, keep the same secret" \
+        cancel \
+        | fzf --prompt 'confirm> ' --height 40% --reverse --header "$hdr")
+    string match -q 'extend:*' -- "$choice"; or return 0
+
+    set -l days (ask_days 'new validity from now, days'); or begin
+        _pause
+        return 1
+    end
+    set -l expires (iso_in_days $days)
+
+    echo
+    echo "  PUT /accounts/<id>/tokens/$id   expires_on: $expires"
+    echo "  the secret is untouched, so nothing needs redeploying."
+    echo
+    if not _confirm "go ahead?"
+        echo "cancelled."
+        _pause
+        return 0
+    end
+
+    set -l body $TMPDIR_TUI/extend.json
+    jq -n --arg exp "$expires" '{ expires_on: $exp }' >$body
+    set -l resp (cf_api $MANAGE_TOKEN PUT "/accounts/$CF_ACCOUNT_ID/tokens/$id" $body \
+        | string collect)
+    rm -f $body
+    if not api_ok "$resp"
+        report_failure "extending the token" "$resp"
+        echo
+        echo "Nothing changed; '$name' still expires $old_expires."
+        _pause
+        return 1
+    end
+    set_color green
+    echo "'$name' now expires "(printf '%s' $resp | jq -r '.result.expires_on // "?"')
+    set_color normal
+    _pause
+    return 0
+end
+
+function delete_token --argument-names id
+    set -l name (token_name $id)
+    test -n "$name"; or return 1
+    set -l last (token_get $id | jq -r '.last_used_on // "never"')
+
+    set -l hdr "DELETE  "(_ellip "$name" 36)
+    set hdr "$hdr"\n"token      $id"
+    set hdr "$hdr"\n"last used  $last"
+    set hdr "$hdr"\n'anything still using this secret breaks immediately'
+
+    set -l choice (printf '%s\n' \
+        "delete this token permanently" \
+        cancel \
+        | fzf --prompt 'confirm> ' --height 40% --reverse --header "$hdr")
+    string match -q 'delete this*' -- "$choice"; or return 0
+
+    echo
+    set_color -o red
+    echo "This cannot be undone. Anything still holding this secret stops working."
+    set_color normal
+    read -l -P (set_color -o yellow)"type the token name to confirm: "(set_color normal) typed
+    if test "$typed" != "$name"
+        echo "name did not match -- nothing deleted."
+        _pause
+        return 0
+    end
+
+    set -l resp (cf_api $MANAGE_TOKEN DELETE "/accounts/$CF_ACCOUNT_ID/tokens/$id" \
+        | string collect)
+    if not api_ok "$resp"
+        report_failure "deleting the token" "$resp"
+        _pause
+        return 1
+    end
+    set_color green
+    echo "deleted '$name'."
+    set_color normal
+    _pause
+    return 0
+end
+
+# --- views -------------------------------------------------------------------
+
+function main
+    need_account
+    need_cred
+    fetch_tokens; or exit 1
+
+    while true
+        set -l rows (token_rows)
+        if test (count $rows) -eq 0
+            echo "$PROG: the account has no API tokens."
+            return 0
+        end
+
+        set -l hdr 'enter rotate · ctrl-e extend expiry · ctrl-d delete'\n'ctrl-r refresh · esc quit'
+        set -l out (printf '%s\n' $rows | fzf --ansi --reverse --delimiter \t --with-nth 1 \
+            --expect=ctrl-e,ctrl-r,ctrl-d \
+            --header "$hdr" --prompt 'token> ' \
+            --preview "$SELF __preview {2} $LIST_JSON" \
+            --preview-window 'right:55%:wrap')
+        test (count $out) -lt 2; and break
+
+        set -l id (string split -m1 -- \t $out[2])[2]
+        switch $out[1]
+            case ctrl-r
+                fetch_tokens; or return 1
+            case ctrl-e
+                extend_token $id
+                fetch_tokens; or return 1
+            case ctrl-d
+                delete_token $id
+                fetch_tokens; or return 1
+            case ''
+                rotate_token $id
+                fetch_tokens; or return 1
+        end
+    end
+end
+
+function list_only
+    need_account
+    need_cred
+    fetch_tokens; or exit 1
+    printf '%-30s %-9s %-11s %-11s  %s\n' NAME STATUS EXPIRES REMAINING ID
+    token_rows | string replace -a \t '  ' | string replace -ra '\e\[[0-9;]*m' ''
+end
+
+# --- entrypoint --------------------------------------------------------------
+
+command -v fzf >/dev/null; or _die "fzf is required"
+command -v jq >/dev/null; or _die "jq is required"
+command -v curl >/dev/null; or _die "curl is required"
+command -v secret-tool >/dev/null; or _die "secret-tool is required (libsecret)"
+
+load_config
+
+switch "$argv[1]"
+    case __preview
+        token_preview $argv[2] $argv[3]
+    case --list -l
+        list_only
+    case --forget
+        need_account
+        cred_forget
+    case --help -h
+        sed -n '3,${/^#/!q;p}' $SELF | string replace -r '^# ?' ''
+    case ''
+        main
+    case '*'
+        _die "unknown argument: $argv[1]"
+end

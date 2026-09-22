@@ -1,0 +1,9 @@
+[Unit]
+# Needs the keyring unlocked and a notification daemon up, so this is a user
+# unit tied to the graphical session rather than anything system-wide.
+Description=Warn about expiring or expired Cloudflare API tokens
+After=graphical-session.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/cf-token-monitor

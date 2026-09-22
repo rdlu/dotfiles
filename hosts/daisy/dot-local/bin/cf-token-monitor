@@ -1,0 +1,304 @@
+#!/usr/bin/env fish
+
+# cf-token-monitor — warn before a Cloudflare API token expires, because
+# nothing else will.
+#
+# The router's OPNsense ACME client stores its Cloudflare DNS-01 credentials as
+# plain text fields with no expiry, no TTL, no reminder — the token's lifetime
+# lives only in Cloudflare's dashboard. When one lapses, OPNsense doesn't
+# complain: the renewal just fails quietly and the certificate keeps serving
+# until it dies. That already happened once here and went unnoticed until a
+# cert had been expired for 17 days. This closes that hole from the other end:
+# ask Cloudflare itself which tokens are running out, and shout early.
+#
+# Lists every API token in the account and classifies it as EXPIRED, EXPIRING
+# (inside the warning window), INACTIVE (disabled) or OK. Anything worth
+# knowing about becomes a mako notification; all-clear is silent, so the daily
+# run is invisible until it matters.
+#
+# Driven by cf-token-monitor.timer (daily). Run manually anytime; `--list`
+# prints the full table instead of notifying.
+#
+# Usage:
+#   cf-token-monitor [--days N] [--list] [--help]
+#
+#   --days N   warn this many days ahead (default 30, or $CF_TOKEN_WARN_DAYS)
+#   --list     print every token as a table on stdout, notify nothing
+#
+# Setup (both live off-repo — this repo is public):
+#   ~/.config/cf-token-tools/config.fish   set -gx CF_ACCOUNT_ID <id>
+#   secret-service                         the read-only listing token (below)
+#
+# The token must be account-scoped with `Account API Tokens Read`. Note the
+# account endpoints below, not /user/tokens: an account-owned token (cfat_
+# prefix) gets "Invalid API Token" from the /user/ ones, which reads like a bad
+# secret and sends you looking in the wrong place.
+#
+# A monitor that fails silently is worse than no monitor, so every failure path
+# — network, auth, garbage JSON, missing setup — is loud and exits non-zero.
+
+set -g SELF (status filename)
+set -g PROG (basename -- $SELF)
+set -g API https://api.cloudflare.com/client/v4
+set -g PER_PAGE 50
+set -g MAX_PAGES 20 # a sanity stop; 1000 tokens would be a different problem
+set -g CURL_TIMEOUT 20
+set -g APP cf-token-monitor
+set -g CF_ERR '' # last failure description, filled in by _api_get
+
+set -g TMP (mktemp -d -t cf-token-monitor.XXXXXX)
+function _cleanup --on-event fish_exit
+    test -d "$TMP"; and rm -rf $TMP
+end
+
+# colour only for a human at a terminal; --list is meant to survive a pipe
+set -g COLOR 0
+isatty stdout; and set -g COLOR 1
+
+function _c # colour on, no-op when piped
+    test $COLOR -eq 1; and set_color $argv
+end
+
+function _c0
+    test $COLOR -eq 1; and set_color normal
+end
+
+function _note # notify only when nobody is watching a terminal
+    isatty stdout; and return 0
+    command -q notify-send; or return 0
+    notify-send $argv
+end
+
+# Loud failure: stderr for the human, a low-urgency toast for the timer run.
+function _fail
+    echo "$PROG: $argv[1]" >&2
+    for line in $argv[2..]
+        echo "  $line" >&2
+    end
+    _note -u low -a $APP "Cloudflare token check failed" "$argv[1]"
+    exit 1
+end
+
+# --help is the header comment down to the implementation notes, so the two
+# can't drift apart.
+function _help
+    awk 'NR < 3 {next} /^# The token must be/ {exit} /^#/ {sub(/^# ?/, ""); print; next} {exit}' $SELF
+end
+
+argparse 'd/days=' 'l/list' 'h/help' -- $argv
+or exit 2
+
+set -q _flag_help; and begin
+    _help
+    exit 0
+end
+
+# ---- config -------------------------------------------------------------
+# The file is sourced first, then the environment is put back on top, so an
+# env var always wins over the file even if the file exports.
+
+set -l env_account $CF_ACCOUNT_ID
+set -l env_days $CF_TOKEN_WARN_DAYS
+
+set -l conf_dir $XDG_CONFIG_HOME
+test -n "$conf_dir"; or set conf_dir $HOME/.config
+set -l conf $conf_dir/cf-token-tools/config.fish
+test -r $conf; and source $conf
+
+test -n "$env_account"; and set -g CF_ACCOUNT_ID $env_account
+test -n "$env_days"; and set -g CF_TOKEN_WARN_DAYS $env_days
+
+set -g WARN_DAYS 30
+test -n "$CF_TOKEN_WARN_DAYS"; and set -g WARN_DAYS $CF_TOKEN_WARN_DAYS
+set -q _flag_days; and set -g WARN_DAYS $_flag_days
+
+if not string match -qr '^[0-9]+$' -- "$WARN_DAYS"
+    _fail "warning window must be a whole number of days, got '$WARN_DAYS'"
+end
+
+if test -z "$CF_ACCOUNT_ID"
+    _fail "no Cloudflare account id" \
+        "Set it in $conf:" \
+        "    set -gx CF_ACCOUNT_ID <account id>" \
+        "or pass it in the environment as CF_ACCOUNT_ID." \
+        "Find it in the Cloudflare dashboard URL, or under any domain's Overview."
+end
+
+# ---- credential ---------------------------------------------------------
+# Read-only listing token, kept in the login keyring. Never echoed, never
+# logged, never put in a notification.
+
+command -q secret-tool
+or _fail "secret-tool not found (install libsecret)"
+
+set -g CF_TOKEN (secret-tool lookup service cloudflare account "$CF_ACCOUNT_ID" kind read 2>/dev/null)
+if test -z "$CF_TOKEN"
+    _fail "no read-only Cloudflare token in the keyring for this account" \
+        "Store one (it will prompt for the token on stdin):" \
+        "    secret-tool store --label='Cloudflare token list (read-only)' \\" \
+        "        service cloudflare account $CF_ACCOUNT_ID kind read" \
+        "The token needs the 'Account API Tokens Read' permission on this account."
+end
+
+command -q jq; or _fail "jq not found"
+
+# ---- api ----------------------------------------------------------------
+# Fetch one page into $out. Returns 0 ok / 1 network / 2 API refusal /
+# 3 unparseable, and leaves a human explanation in $CF_ERR.
+
+function _api_get --argument-names url out
+    set -g CF_ERR ''
+    # http code via -w, not --fail-with-body: the body is where Cloudflare
+    # explains itself, and curl's own exit status stays meaningful for the
+    # network-vs-refusal distinction.
+    curl -sS --max-time $CURL_TIMEOUT \
+        -o $out -w '%{http_code}' \
+        -H "Authorization: Bearer $CF_TOKEN" \
+        -H 'Content-Type: application/json' \
+        -- $url >$TMP/code 2>$TMP/curl.err
+    set -l rc $status
+    set -l code (cat $TMP/code 2>/dev/null)
+    if test $rc -ne 0
+        set -g CF_ERR "could not reach api.cloudflare.com: "(string join -- ' ' (cat $TMP/curl.err))
+        return 1
+    end
+
+    if not jq -e . $out >/dev/null 2>&1
+        set -g CF_ERR "Cloudflare returned something that isn't JSON (HTTP $code)"
+        return 3
+    end
+
+    if test (jq -r '.success // false' $out) != true
+        # Cloudflare puts the real reason in errors[]; HTTP 4xx alone is useless.
+        set -l detail (jq -r '.errors[]? | "[\(.code)] \(.message)"' $out)
+        test -n "$detail"; or set detail "no error detail (HTTP $code)"
+        set -g CF_ERR "Cloudflare refused the request: "(string join -- '; ' $detail)
+        return 2
+    end
+
+    return 0
+end
+
+# ---- collect ------------------------------------------------------------
+# One TSV row per token: id, name, status, expires_on, last_used_on.
+
+set -g ROWS
+set -l page 1
+while test $page -le $MAX_PAGES
+    set -l body $TMP/page$page.json
+    _api_get "$API/accounts/$CF_ACCOUNT_ID/tokens?per_page=$PER_PAGE&page=$page&include_expired=true" $body
+    or _fail "$CF_ERR"
+
+    set -a ROWS (jq -r '.result[]? | [.id, .name, (.status // "unknown"), (.expires_on // ""), (.last_used_on // "")] | @tsv' $body)
+
+    set -l total (jq -r '.result_info.total_count // 0' $body)
+    set -l per (jq -r '.result_info.per_page // 0' $body)
+    test "$per" -gt 0; or break
+    test (math "$page * $per") -lt "$total"; or break
+    set page (math $page + 1)
+end
+
+if test (count $ROWS) -eq 0
+    _fail "the account reports no API tokens at all — that is almost certainly wrong" \
+        "Check that the token has 'Account API Tokens Read' on account $CF_ACCOUNT_ID."
+end
+
+# ---- classify -----------------------------------------------------------
+
+set -l now (date +%s)
+set -l names_expired
+set -l names_inactive
+set -l names_expiring
+set -l n_ok 0
+set -l table
+
+for row in $ROWS
+    set -l f (string split \t -- $row)
+    set -l name $f[2]
+    set -l tstatus $f[3]
+    set -l expires $f[4]
+
+    set -l days '' # empty means "never expires"
+    if test -n "$expires"
+        set -l epoch (date -d "$expires" +%s 2>/dev/null)
+        if test -z "$epoch"
+            _fail "could not parse an expiry date from Cloudflare: '$expires'"
+        end
+        set days (math "floor(($epoch - $now) / 86400)")
+    end
+
+    set -l state OK
+    if test "$tstatus" = expired; or begin test -n "$days"; and test $days -lt 0; end
+        set state EXPIRED
+        # a token can read "expired" with a null expires_on; don't do maths on nothing
+        if test -n "$days"
+            set -a names_expired "$name ("(math "abs($days)")" d ago)"
+        else
+            set -a names_expired "$name"
+        end
+    else if test "$tstatus" != active
+        set state INACTIVE
+        set -a names_inactive "$name ($tstatus)"
+    else if test -n "$days"; and test $days -le $WARN_DAYS
+        set state EXPIRING
+        set -a names_expiring "$name ($days d)"
+    else
+        set n_ok (math $n_ok + 1)
+    end
+
+    set -l shown never
+    test -n "$expires"; and set shown (string split T -- $expires)[1]
+    set -l left '—'
+    test -n "$days"; and set left "$days"
+    set -l used never
+    test -n "$f[5]"; and set used (string split T -- $f[5])[1]
+
+    # `--` is load-bearing: an expired token's day count is negative, and
+    # string join would read "-17" as an option.
+    set -a table (string join -- \t $state $name $tstatus $shown $left $used)
+end
+
+# ---- output -------------------------------------------------------------
+
+if set -q _flag_list
+    printf '%-9s %-28s %-9s %-12s %6s  %s\n' STATE NAME STATUS EXPIRES DAYS 'LAST USED'
+    for row in $table
+        set -l f (string split \t -- $row)
+        switch $f[1]
+            case EXPIRED
+                _c -o red
+            case INACTIVE
+                _c -o magenta
+            case EXPIRING
+                _c -o yellow
+            case '*'
+                _c green
+        end
+        printf '%-9s %-28s %-9s %-12s %6s  %s\n' $f[1] $f[2] $f[3] $f[4] $f[5] $f[6]
+        _c0
+    end
+    echo
+    echo "$PROG: "(count $ROWS)" token(s), warning window $WARN_DAYS days."
+    exit 0
+end
+
+# Silence is the normal case: nothing to say, nothing to interrupt for.
+if test (count $names_expired) -eq 0; and test (count $names_inactive) -eq 0; and test (count $names_expiring) -eq 0
+    exit 0
+end
+
+set -l body
+test (count $names_expired) -gt 0; and set -a body "Expired: "(string join -- ', ' $names_expired)
+test (count $names_inactive) -gt 0; and set -a body "Not active: "(string join -- ', ' $names_inactive)
+test (count $names_expiring) -gt 0; and set -a body "Expiring: "(string join -- ', ' $names_expiring)
+set -a body "" "Renew in the Cloudflare dashboard, then update the ACME client on the router."
+
+set -l urgency normal
+set -l title "Cloudflare API tokens expiring"
+if test (count $names_expired) -gt 0; or test (count $names_inactive) -gt 0
+    set urgency critical
+    set title "Cloudflare API token problem"
+end
+
+# Names and day counts only — never an id, never the secret.
+notify-send -u $urgency -a $APP -i dialog-warning "$title" (string join -- \n $body)
