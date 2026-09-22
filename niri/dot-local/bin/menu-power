@@ -4,6 +4,12 @@
 # One entry per line: '<label>|<command>'. The label is matched exactly on
 # selection, so adding an entry is just adding a line here.
 
+# niri runs as a systemd user service and its PATH has no ~/.local/bin, so a
+# bare script name from there (ssh-here, localsend-here, caffeine) resolves to
+# nothing -- the entry silently does nothing, stderr goes nowhere. Put it back
+# for this script and everything it exec's.
+fish_add_path -gp ~/.local/bin
+
 # The mute toggles show the live state: the action that WOULD happen
 # (Mute when unmuted, Unmute when muted) plus the current default device.
 function audio_entry -a icon noun flag target
