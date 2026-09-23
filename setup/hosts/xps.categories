@@ -1,0 +1,23 @@
+# Manifest categories (setup/packages.yaml) the xps work laptop is expected
+# to have installed — read by pkg-missing, pkg-tui [missing] and
+# `mise run pkg-install` (no args).
+#
+# One category per line; `!pkgname` excludes a single package; # comments.
+
+bootstrap-mirrors
+bootstrap-aur-helper
+languages
+cli-essentials
+fish-shell
+helix-editor
+niri-wm
+yazi
+fastfetch
+docs-toolchain
+containers
+emacs
+file-transfer
+input-method
+printing
+keyboard-firmware
+security

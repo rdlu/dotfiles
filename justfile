@@ -85,7 +85,7 @@ file-transfer:
 file-transfer-harden:
   @mise run file-transfer-harden
 
-# Install the package manifest (all of setup/packages.yaml, or one category)
+# Install this host's missing manifest packages (or one category, or `all`)
 [group("install-other")]
 pkg-install category="":
   @mise run pkg-install "{{ category }}"
@@ -99,6 +99,11 @@ pkg-categories:
 [group("maintenance")]
 pkg-drift:
   @mise run pkg-drift
+
+# Manifest packages this host expects but lacks (setup/hosts/<hostname>.categories)
+[group("maintenance")]
+pkg-missing:
+  @mise run pkg-missing
 
 # Interactive manifest manager: browse categories, install/remove/audit (fzf TUI)
 [group("maintenance")]
