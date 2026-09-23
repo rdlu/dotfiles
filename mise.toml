@@ -231,6 +231,8 @@ run = 'scripts/dot-local/bin/harden-file-transfer-ssh'
 # pkg-missing is the other direction: packages from the categories this host
 # expects (setup/hosts/<hostname>.categories) that aren't installed. With no
 # category, pkg-install installs just those; `all` = the whole manifest.
+# Packages go to paru as args, not stdin, so its prompts (group member
+# selection, confirm) can still read the terminal.
 
 [tasks.pkg-install]
 description = "Install this host's missing manifest packages (or one category, or `all`)"
@@ -239,9 +241,9 @@ run = '''
 case "${usage_category}" in
   "")
     pkgs=$(scripts/dot-local/bin/pkg-missing --list) || true
-    if [ -n "$pkgs" ]; then echo "$pkgs" | paru -S --needed -; else echo "Nothing missing on $(uname -n)"; fi ;;
-  all) mise run _pkgs | sort -u | paru -S --needed - ;;
-  *) mise run _pkgs "${usage_category}" | sort -u | paru -S --needed - ;;
+    if [ -n "$pkgs" ]; then paru -S --needed $pkgs; else echo "Nothing missing on $(uname -n)"; fi ;;
+  all) paru -S --needed $(mise run _pkgs | sort -u) ;;
+  *) paru -S --needed $(mise run _pkgs "${usage_category}" | sort -u) ;;
 esac
 '''
 

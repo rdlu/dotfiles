@@ -7,11 +7,11 @@
 # excludes a single package, `#` comments). No host file = whole manifest.
 #
 #   pkg-missing          # `category: pkg1 pkg2` per category; exit 1 if any
-#   pkg-missing --list   # bare names, one per line (pipe into paru -S -)
+#   pkg-missing --list   # bare names, one per line (args for paru -S)
 #
 # Installed-ness goes through `pacman -T`, so provides count (keybase-bin
-# satisfies keybase). A pacman group entry (nerd-fonts) is satisfied only
-# when all its members are installed.
+# satisfies keybase). A pacman group entry (nerd-fonts) reports its members
+# that aren't installed, under the group's category.
 set -euo pipefail
 
 dotfiles="${DOTFILES:-$HOME/.dotfiles}"
@@ -53,11 +53,16 @@ fi
 # Names pacman can't satisfy (by name or provides); exit 127 just means "some"
 unsat=$(pacman -T $(cut -d' ' -f2 <<<"$pairs" | sort -u) || true)
 
-# ...minus pacman groups whose members are all installed
+# ...with pacman groups replaced by their missing members, so the list can go
+# straight to paru without its interactive group-selection prompt
 missing=""
 for p in $unsat; do
   if members=$(pacman -Sgq "$p" 2>/dev/null) && [[ -n $members ]]; then
-    [[ -z $(pacman -T $members || true) ]] && continue
+    for m in $(pacman -T $members || true); do
+      missing+="$m"$'\n'
+      pairs+=$'\n'"$(grep -m1 " $p\$" <<<"$pairs" | cut -d' ' -f1) $m"
+    done
+    continue
   fi
   missing+="$p"$'\n'
 done
