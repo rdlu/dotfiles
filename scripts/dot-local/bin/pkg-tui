@@ -4,8 +4,11 @@
 #           (setup/packages.yaml) with fzf.
 #
 # Category view:  every category with installed/total counts, plus
-#                 [all] (whole manifest) and [drift] (installed but
-#                 not captured in the manifest, via pacman-drift).
+#                 [all] (whole manifest), [missing] (what this host
+#                 expects but lacks, via pkg-missing) and [drift]
+#                 (installed but not captured in the manifest, via
+#                 pacman-drift). A dim • marks the categories this host
+#                 expects (setup/hosts/<hostname>.categories).
 # Package view:   TAB multi-select, live pacman info preview.
 #
 # Package view keys:
@@ -20,6 +23,8 @@ set -g MANIFEST $DOTFILES/setup/packages.yaml
 set -g SELF (status filename)
 set -g TMPDIR_TUI (mktemp -d /tmp/pkg-tui.XXXXXX)
 set -g INSTALLED $TMPDIR_TUI/installed
+set -g HOST (set -q PKG_HOST; and echo $PKG_HOST; or uname -n)
+set -g HOSTFILE $DOTFILES/setup/hosts/$HOST.categories
 
 function _cleanup --on-event fish_exit
     test -d "$TMPDIR_TUI"; and rm -rf $TMPDIR_TUI
@@ -38,6 +43,12 @@ end
 
 function manifest_categories
     awk '/^[a-z0-9][a-z0-9-]*:/ { sub(":.*", "", $1); print $1 }' $MANIFEST
+end
+
+# categories this host expects (empty without a host file)
+function host_categories
+    test -r $HOSTFILE; or return
+    string replace -r '#.*' '' <$HOSTFILE | string trim | string match -rv '^(!|$)'
 end
 
 # packages of one category (empty arg = whole manifest)
@@ -89,24 +100,33 @@ function pkg_lines --argument-names cat # ✓/✗ status per manifest package
     end | sort -k2
 end
 
+function missing_lines # this host expects but lacks
+    pkg-missing --list 2>/dev/null | sed 's/^/\x1b[31m✗\x1b[0m /'
+end
+
 function drift_lines # installed but uncaptured
     pacman-drift | sed 's/^/\x1b[36m+\x1b[0m /'
 end
 
 function category_lines
     set -l drift_count (pacman-drift | count)
+    set -l missing_count (missing_lines | count)
+    set -l expected (host_categories)
     set -l all_total (manifest_pkgs | sort -u | wc -l)
     set -l all_inst (manifest_pkgs | sort -u | comm -12 - $INSTALLED | wc -l)
     printf '%-22s \x1b[36m%s\x1b[0m\n' '[all]' "$all_inst/$all_total installed"
+    printf '%-22s \x1b[36m%s\x1b[0m\n' '[missing]' "$missing_count missing on $HOST"
     printf '%-22s \x1b[36m%s\x1b[0m\n' '[drift]' "$drift_count uncaptured"
     for c in (manifest_categories)
         manifest_pkgs $c | sort -u >$TMPDIR_TUI/pkgs
         set -l total (wc -l <$TMPDIR_TUI/pkgs | string trim)
         set -l inst (comm -12 $TMPDIR_TUI/pkgs $INSTALLED | wc -l)
+        set -l mark ' '
+        contains -- $c $expected; and set mark \e'[2m•'\e'[0m'
         if test $inst -eq $total
-            printf '%-22s \x1b[32m%s\x1b[0m\n' $c "$inst/$total"
+            printf '%-22s %s \x1b[32m%s\x1b[0m\n' $c $mark "$inst/$total"
         else
-            printf '%-22s \x1b[33m%s\x1b[0m\n' $c "$inst/$total"
+            printf '%-22s %s \x1b[33m%s\x1b[0m\n' $c $mark "$inst/$total"
         end
     end
 end
@@ -190,6 +210,9 @@ function package_view --argument-names cat
             case '[drift]'
                 set lines (drift_lines)
                 set hdr 'DRIFT: installed but not in the manifest | TAB select | ctrl-a add to category | ctrl-r remove from system | esc back'
+            case '[missing]'
+                set lines (missing_lines)
+                set hdr "MISSING on $HOST | TAB select | enter menu | ^i install ^e reinstall ^r remove ^d un-manifest ^a re-categorize | esc back"
             case '[all]'
                 set lines (pkg_lines)
                 set hdr 'TAB select | enter menu | ^i install ^e reinstall ^r remove ^d un-manifest ^a re-categorize | esc back'
@@ -239,6 +262,8 @@ function catpreview --argument-names cat
     switch $cat
         case '[all]'
             pkg_lines
+        case '[missing]'
+            missing_lines
         case '[drift]'
             drift_lines
         case '*'

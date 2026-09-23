@@ -228,11 +228,22 @@ run = 'scripts/dot-local/bin/harden-file-transfer-ssh'
 # installed beyond the tasks above (built from pacman.log: explicit installs
 # after the day-0 CachyOS run). pkg-drift reports new intentional installs
 # that aren't captured yet — add them to the yaml to keep it current.
+# pkg-missing is the other direction: packages from the categories this host
+# expects (setup/hosts/<hostname>.categories) that aren't installed. With no
+# category, pkg-install installs just those; `all` = the whole manifest.
 
 [tasks.pkg-install]
-description = "Install the package manifest (all of setup/packages.yaml, or one category)"
+description = "Install this host's missing manifest packages (or one category, or `all`)"
 usage = 'arg "[category]" default=""'
-run = 'mise run _pkgs "${usage_category}" | sort -u | paru -S --needed -'
+run = '''
+case "${usage_category}" in
+  "")
+    pkgs=$(scripts/dot-local/bin/pkg-missing --list) || true
+    if [ -n "$pkgs" ]; then echo "$pkgs" | paru -S --needed -; else echo "Nothing missing on $(uname -n)"; fi ;;
+  all) mise run _pkgs | sort -u | paru -S --needed - ;;
+  *) mise run _pkgs "${usage_category}" | sort -u | paru -S --needed - ;;
+esac
+'''
 
 [tasks.pkg-categories]
 description = "List the manifest categories with their package counts"
@@ -242,6 +253,10 @@ run = '''awk '/^[a-z][a-z0-9-]*:/ { if (c) print c, n; c = substr($1, 1, length(
 [tasks.pkg-drift]
 description = "Explicit installs (post day-0) not yet in the manifest or any task"
 run = 'scripts/dot-local/bin/pacman-drift'
+
+[tasks.pkg-missing]
+description = "Manifest packages this host expects but lacks (setup/hosts/<hostname>.categories)"
+run = 'scripts/dot-local/bin/pkg-missing'
 
 [tasks.pkg-tui]
 description = "Interactive manifest manager: browse categories, install/remove/audit (fzf TUI)"

@@ -8,8 +8,10 @@
 # install. Individual nerd fonts are omitted: the `nerd-fonts` group in
 # the niri-wm category pulls all of them.
 #
-#   just pkg-install              # install every category (paru -S --needed)
+#   just pkg-install              # install what this host lacks (pkg-missing)
 #   just pkg-install music-media  # install one category
+#   just pkg-install all          # install every category (paru -S --needed)
+#   just pkg-missing              # expected-but-missing (setup/hosts/<host>.categories)
 #   just pkg-categories           # list categories with package counts
 #   just pkg-drift                # show installed-but-not-captured packages
 #

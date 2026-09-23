@@ -9,3 +9,14 @@ echo '---- Upgrade mise/rtx packages ----'
 mise upgrade --interactive
 echo '---- Upgrade appman packages ----'
 appman update
+echo '---- Check manifest packages ----'
+# report-only: packages this host's categories expect but lack
+if set -l missing (pkg-missing 2>&1)
+    echo 'All manifest packages present'
+else
+    set_color yellow
+    echo 'Manifest packages missing on this host:'
+    printf '  %s\n' $missing
+    set_color normal
+    echo 'Install with: mise run pkg-install in ~/.dotfiles (or browse [missing] in pkg-tui)'
+end

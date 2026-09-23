@@ -1,0 +1,76 @@
+#!/bin/bash
+# Show manifest packages (setup/packages.yaml) that THIS host expects but
+# doesn't have installed — the opposite direction of pacman-drift.
+#
+# The manifest is the union across hosts, so each host names the categories
+# it expects in setup/hosts/<hostname>.categories (one per line, `!pkg`
+# excludes a single package, `#` comments). No host file = whole manifest.
+#
+#   pkg-missing          # `category: pkg1 pkg2` per category; exit 1 if any
+#   pkg-missing --list   # bare names, one per line (pipe into paru -S -)
+#
+# Installed-ness goes through `pacman -T`, so provides count (keybase-bin
+# satisfies keybase). A pacman group entry (nerd-fonts) is satisfied only
+# when all its members are installed.
+set -euo pipefail
+
+dotfiles="${DOTFILES:-$HOME/.dotfiles}"
+manifest="$dotfiles/setup/packages.yaml"
+host="${PKG_HOST:-$(hostname 2>/dev/null || uname -n)}"
+hostfile="$dotfiles/setup/hosts/$host.categories"
+
+list=0
+case "${1:-}" in
+  --list) list=1 ;;
+  '') ;;
+  *) echo "usage: pkg-missing [--list]" >&2; exit 2 ;;
+esac
+
+[[ -r $manifest ]] || { echo "pkg-missing: manifest not found: $manifest" >&2; exit 2; }
+
+# `category pkg` pairs, in manifest order
+pairs=$(awk '/^[a-z0-9][a-z0-9-]*:/ { c = $1; sub(":.*", "", c) } /^  - / { print c, $2 }' "$manifest")
+
+if [[ -r $hostfile ]]; then
+  # strip comments + whitespace; split into categories and !exclusions
+  entries=$(sed -e 's/#.*//' -e 's/[[:space:]]//g' -e '/^$/d' "$hostfile")
+  cats=$(grep -v '^!' <<<"$entries" || true)
+  excludes=$(sed -n 's/^!//p' <<<"$entries")
+  known=$(cut -d' ' -f1 <<<"$pairs" | sort -u)
+  for c in $(comm -23 <(sort -u <<<"$cats") <(echo "$known")); do
+    echo "pkg-missing: $hostfile: unknown category '$c'" >&2
+  done
+  pairs=$(awk -v cats="$cats" -v excl="$excludes" '
+    BEGIN { split(cats, a, "\n"); for (i in a) want[a[i]] = 1
+            split(excl, b, "\n"); for (i in b) skip[b[i]] = 1 }
+    ($1 in want) && !($2 in skip)' <<<"$pairs")
+else
+  echo "pkg-missing: no setup/hosts/$host.categories — checking the whole manifest" >&2
+fi
+
+[[ -n $pairs ]] || exit 0
+
+# Names pacman can't satisfy (by name or provides); exit 127 just means "some"
+unsat=$(pacman -T $(cut -d' ' -f2 <<<"$pairs" | sort -u) || true)
+
+# ...minus pacman groups whose members are all installed
+missing=""
+for p in $unsat; do
+  if members=$(pacman -Sgq "$p" 2>/dev/null) && [[ -n $members ]]; then
+    [[ -z $(pacman -T $members || true) ]] && continue
+  fi
+  missing+="$p"$'\n'
+done
+
+[[ -n $missing ]] || exit 0
+
+if ((list)); then
+  printf '%s' "$missing" | sort -u
+else
+  # group by category, keeping manifest order
+  awk -v miss="$missing" '
+    BEGIN { split(miss, a, "\n"); for (i in a) if (a[i] != "") m[a[i]] = 1 }
+    ($2 in m) { if (!($1 in seen)) { seen[$1] = 1; order[++n] = $1 }; out[$1] = out[$1] " " $2 }
+    END { for (i = 1; i <= n; i++) print order[i] ":" out[order[i]] }' <<<"$pairs"
+fi
+exit 1
