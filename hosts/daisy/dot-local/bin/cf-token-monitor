@@ -13,16 +13,16 @@
 #
 # Lists every API token in the account and classifies it as EXPIRED, EXPIRING
 # (inside the warning window), INACTIVE (disabled) or OK. Anything worth
-# knowing about becomes a mako notification; all-clear is silent, so the daily
+# knowing about becomes a mako notification; all-clear is silent, so the monthly
 # run is invisible until it matters.
 #
-# Driven by cf-token-monitor.timer (daily). Run manually anytime; `--list`
+# Driven by cf-token-monitor.timer (first Saturday of the month). Run manually anytime; `--list`
 # prints the full table instead of notifying.
 #
 # Usage:
 #   cf-token-monitor [--days N] [--list] [--help]
 #
-#   --days N   warn this many days ahead (default 30, or $CF_TOKEN_WARN_DAYS)
+#   --days N   warn this many days ahead (default 45, or $CF_TOKEN_WARN_DAYS)
 #   --list     print every token as a table on stdout, notify nothing
 #
 # Setup (both live off-repo — this repo is public):
@@ -108,7 +108,7 @@ test -r $conf; and source $conf
 test -n "$env_account"; and set -g CF_ACCOUNT_ID $env_account
 test -n "$env_days"; and set -g CF_TOKEN_WARN_DAYS $env_days
 
-set -g WARN_DAYS 30
+set -g WARN_DAYS 45 # > the 35-day worst-case gap between first Saturdays
 test -n "$CF_TOKEN_WARN_DAYS"; and set -g WARN_DAYS $CF_TOKEN_WARN_DAYS
 set -q _flag_days; and set -g WARN_DAYS $_flag_days
 

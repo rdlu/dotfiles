@@ -1,10 +1,10 @@
 [Unit]
-Description=Daily check for expiring Cloudflare API tokens
+Description=Monthly (first Saturday) check for expiring Cloudflare API tokens
 
 [Timer]
 # Persistent so a laptop that was asleep at the trigger still reports after
 # boot; the random delay keeps it out of the login stampede.
-OnCalendar=daily
+OnCalendar=Sat *-*-01..07
 Persistent=true
 RandomizedDelaySec=30min
 
