@@ -13,8 +13,12 @@ That stays the right default everywhere else. It does not apply here.
   gitlab and has *two* push URLs, so `git push origin main` publishes to
   both — that's the normal push. `github` and `gitlab` address one each,
   for when they've diverged. Only github runs the docs CI.
-- **Pushing needs a tap on the hardware SSH key** (ED25519-SK), so it can't
-  complete unattended — leave it to the user: `! git push origin main`.
+- **Pushing needs a tap on the hardware SSH key** (ED25519-SK). Run the push
+  (and any other git-over-ssh op) yourself — the key blinks and the user gets
+  notified and taps it. Allow up to 3 attempts, then stop and report.
+  `agent refused operation` usually means the key isn't being read (flaky
+  hub port); `origin` can land on gitlab and fail on github, so retry just
+  the failed remote.
 - Pushing here is pre-authorized, same as the global rule. Don't ask, and
   don't offer to open a PR instead.
 
