@@ -170,8 +170,9 @@ run = [
 [tasks.niri-window-manager]
 description = "Install niri and tools used with it"
 run = [
-  '''echo -e "\033[1;33m1) Installing niri and related tools\033[0m"''',
+  '''echo -e "\033[1;33m1) Installing niri, related tools and the desktop themes\033[0m"''',
   'paru -S --needed $(mise run _pkgs niri-wm)',
+  'paru -S --needed $(mise run _pkgs desktop-themes)',
   '''echo -e "\033[1;33m\n2) Stowing niri config\033[0m"''',
   'stow --no-folding --dotfiles -S niri',
 ]
