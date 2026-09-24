@@ -1,0 +1,7 @@
+# ThinkPad E14 Gen 6 (daisy), ABNT2: the "/ ?" key right of AltGr sends Right
+# Ctrl's scancode (0x9d) and relies on xkb br(thinkpad) to remap it. Apps that
+# read the physical key (Ghostty) see a modifier and drop the "?". Report it
+# as KEY_RO, the real ABNT2 "/ ?" key, so every layout and app agrees. The
+# laptop has no real Right Ctrl. Install: `mise run hwdb`.
+evdev:atkbd:dmi:bvn*:bvr*:bd*:svnLENOVO:pn21M4*:*
+ KEYBOARD_KEY_9d=ro

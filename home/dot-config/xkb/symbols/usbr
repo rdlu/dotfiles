@@ -12,4 +12,7 @@ xkb_symbols "basic" {
 
     key <AD02> { [ w, W, atilde, Atilde ] };
     key <AD10> { [ p, P, otilde, Otilde ] };
+
+    // The laptop's ABNT2 "/ ?" key (daisy's is remapped to it via hwdb).
+    key <AB11> { [ slash, question, degree, questiondown ] };
 };
