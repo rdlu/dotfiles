@@ -28,4 +28,7 @@ environment {
     // Follow the mimeapps default (zen) instead of naming a browser here.
     // Absolute: niri neither expands ~ nor has ~/.local/bin on its PATH.
     BROWSER "/home/rdlu/.local/bin/xdg-browser"
+    // desktop-theme owns GTK theming; GTK_THEME overrides it and breaks
+    // libadwaita. null unsets it for spawned apps even if something leaked it.
+    GTK_THEME null
 }
