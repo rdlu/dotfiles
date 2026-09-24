@@ -1,0 +1,6 @@
+#!/bin/sh
+# $BROWSER target: hands URLs to xdg-open so everything follows the mimeapps
+# default. A unique name (not plain `xdg-open`) keeps `xdg-settings get
+# default-web-browser` honest — it maps $BROWSER to the first .desktop whose
+# Exec is that binary, and cups.desktop runs `xdg-open http://localhost:631/`.
+exec xdg-open "$@"

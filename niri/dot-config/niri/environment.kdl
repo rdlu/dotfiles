@@ -27,5 +27,6 @@ environment {
     XCOMPOSEFILE "~/.XCompose"
     EDITOR "nvim"
     // Follow the mimeapps default (zen) instead of naming a browser here.
-    BROWSER "xdg-open"
+    // Absolute: niri neither expands ~ nor has ~/.local/bin on its PATH.
+    BROWSER "/home/rdlu/.local/bin/xdg-browser"
 }
