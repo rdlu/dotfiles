@@ -1,0 +1,15 @@
+// US altgr-intl tuned for pt-BR: plain ' " ` ~ ^ stay literal (code-friendly),
+// and the two letters AltGr+Shift+` (dead tilde) made awkward get one chord.
+// Read by niri (inputs.kdl) and fcitx5 (rules/evdev.xml registers it).
+//
+//   AltGr+w  ã   AltGr+W  Ã      (was å / Å)
+//   AltGr+p  õ   AltGr+P  Õ      (was ö / Ö)
+//   AltGr+,  ç   AltGr+'  c → ç  (~/.XCompose; stock rule gives ć)
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+    include "us(altgr-intl)"
+    name[Group1] = "English (US, intl., AltGr dead keys, pt-BR)";
+
+    key <AD02> { [ w, W, atilde, Atilde ] };
+    key <AD10> { [ p, P, otilde, Otilde ] };
+};

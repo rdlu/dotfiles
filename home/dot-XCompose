@@ -1,0 +1,7 @@
+# Read from ~/.XCompose by GTK, Qt, Chromium/Electron and fcitx5 — no
+# XCOMPOSEFILE needed. Keep the locale defaults, override only what pt-BR
+# wants: acute + c is ç (as on US-Intl), not ć.
+include "%L"
+
+<dead_acute> <c> : "ç" ccedilla
+<dead_acute> <C> : "Ç" Ccedilla
