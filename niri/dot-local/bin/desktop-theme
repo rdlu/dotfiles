@@ -18,6 +18,14 @@ change shows up as a repo diff) and this script pushes it to:
     and blurry. icon_theme is GTK-only.
   - niri's own cursor: xcursor-theme/xcursor-size in the cursor {} block of
     ~/.config/niri/inputs.kdl (stowed, so the repo file changes; niri reloads)
+  - flatpak apps: they only see a GTK theme through the flathub extension
+    org.gtk.Gtk3theme.<gtk_theme> (else GTK falls back to light Adwaita in the
+    sandbox and Electron apps go light). When any flatpak app is installed,
+    apply/set/dark/light/toggle install that extension system-wide if flathub
+    has it, and warn if it doesn't; preview only warns, never installs.
+    Running flatpak apps need a restart to see a new extension. The name must
+    match exactly: org.gtk.Gtk3theme.Breeze ships only Breeze (its dark
+    variant is used only with prefer-dark), so Breeze-Dark has none.
 
 Never set GTK_THEME: it overrides all of the above and breaks libadwaita.
 
@@ -30,9 +38,12 @@ Usage: desktop-theme [COMMAND]
                     apply the conf with these overrides WITHOUT writing it
                     (mode VALUE brings its mode defaults, as dark|light do);
                     `apply` reverts. Used by theme-tui's live preview.
-  status            conf values vs what is actually set
+  status            conf values vs what is actually set (+ the flatpak extension)
   list              installed GTK themes, KDE schemes, icon + cursor themes
+                    (GTK themes without a flathub extension are marked)
   list --plain KEY  the choices for one key, one per line (for scripts)
+  list --notes KEY  the same, as VALUE<TAB>NOTE lines (NOTE may be empty;
+                    gtk_theme: "no flatpak"). Used by theme-tui.
   get [KEY]         the effective conf: KEY=VALUE lines, or one bare value
 KEYS: mode gtk_theme kde_scheme icon_theme kde_icon_theme cursor_theme cursor_size
 """
@@ -41,6 +52,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 HOME = Path.home()
@@ -52,6 +64,10 @@ SCHEME_DIR = Path("/usr/share/color-schemes")
 THEME_DIRS = [HOME / ".local/share/themes", HOME / ".themes", Path("/usr/share/themes")]
 ICON_DIRS = [HOME / ".local/share/icons", HOME / ".icons", Path("/usr/share/icons")]
 IFACE = "org.gnome.desktop.interface"
+FLATPAK_EXT = "org.gtk.Gtk3theme."
+# flathub's theme-extension list, cached across runs (theme-tui calls `list` a lot)
+FLATHUB_CACHE = Path(os.environ.get("XDG_RUNTIME_DIR") or "/tmp") / "desktop-theme-flathub-gtk3themes"
+FLATHUB_CACHE_TTL = 600  # seconds
 
 MODE_DEFAULTS = {
     "dark": {"gtk_theme": "adw-gtk3-dark", "kde_scheme": "KvGnomeDark", "kde_icon_theme": "breeze-dark"},
@@ -338,9 +354,96 @@ def installed(kind):
     return sorted(names, key=str.lower)
 
 
+# --- flatpak GTK theme extensions -------------------------------------------
+
+_memo = {}
+
+
+def flatpak(*args):
+    """stdout lines of a flatpak command, or None if flatpak is missing/fails."""
+    try:
+        r = subprocess.run(["flatpak", *args], capture_output=True, text=True)
+    except FileNotFoundError:
+        return None
+    return [l.strip() for l in r.stdout.splitlines() if l.strip()] if r.returncode == 0 else None
+
+
+def flatpak_in_use():
+    """True if flatpak exists and any flatpak app is installed."""
+    if "apps" not in _memo:
+        _memo["apps"] = bool(flatpak("list", "--app", "--columns=application"))
+    return _memo["apps"]
+
+
+def flatpak_ext_installed(theme):
+    if "ext" not in _memo:
+        _memo["ext"] = set(flatpak("list", "--runtime", "--columns=application") or [])
+    return FLATPAK_EXT + theme in _memo["ext"]
+
+
+def flathub_themes():
+    """Theme names flathub has an extension for; None if flathub can't be read."""
+    if "flathub" in _memo:
+        return _memo["flathub"]
+    names = None
+    try:
+        if time.time() - FLATHUB_CACHE.stat().st_mtime < FLATHUB_CACHE_TTL:
+            names = set(FLATHUB_CACHE.read_text().split())
+    except OSError:
+        pass
+    if names is None:
+        ids = flatpak("remote-ls", "--system", "flathub", "--columns=application")
+        if ids is not None:
+            names = {i[len(FLATPAK_EXT):] for i in ids if i.startswith(FLATPAK_EXT)}
+            try:
+                FLATHUB_CACHE.write_text("\n".join(sorted(names)) + "\n")
+            except OSError:
+                pass
+    _memo["flathub"] = names
+    return names
+
+
+def flatpak_note(theme):
+    """'no flatpak' when flatpak apps exist but flathub lacks this theme's
+    extension (and it isn't installed some other way), else ''."""
+    if not flatpak_in_use() or flatpak_ext_installed(theme):
+        return ""
+    avail = flathub_themes()
+    return "no flatpak" if avail is not None and theme not in avail else ""
+
+
+def flatpak_sync(theme, install):
+    """Make sure flatpak apps can use GTK theme `theme`. Returns True if an
+    extension got installed."""
+    if not flatpak_in_use() or flatpak_ext_installed(theme):
+        return False
+    ext = FLATPAK_EXT + theme
+    avail = flathub_themes()
+    if avail is None:
+        warn(f"couldn't list flathub; can't check for {ext} (flatpak apps may fall back "
+             "to light Adwaita)")
+        return False
+    if theme not in avail:
+        warn(f"flathub has no {ext}: flatpak apps will fall back to light Adwaita "
+             "with this GTK theme")
+        return False
+    if not install:
+        warn(f"{ext} not installed; preview doesn't install it, so flatpak apps keep "
+             "their old look (apply/set installs it)")
+        return False
+    print(f"desktop-theme: installing {ext} from flathub (system) for flatpak apps", flush=True)
+    r = subprocess.run(["flatpak", "install", "--system", "-y", "--noninteractive", "flathub", ext],
+                       stdin=subprocess.DEVNULL)
+    _memo.pop("ext", None)
+    if r.returncode != 0 or not flatpak_ext_installed(theme):
+        warn(f"flatpak install {ext} failed; flatpak apps will fall back to light Adwaita")
+        return False
+    return True
+
+
 # --- apply / status / list ---------------------------------------------------
 
-def apply(conf):
+def apply(conf, install_flatpak=True):
     dark = conf["mode"] == "dark"
     gtk_theme, kde_scheme = conf["gtk_theme"], conf["kde_scheme"]
     icon, kde_icon = conf["icon_theme"], conf["kde_icon_theme"]
@@ -352,9 +455,11 @@ def apply(conf):
     gset("color-scheme", "prefer-dark" if dark else "default")
     ini = {"gtk-application-prefer-dark-theme": "true" if dark else "false"}
 
+    flatpak_installed = False
     if gtk_theme_installed(gtk_theme):
         gset("gtk-theme", gtk_theme)
         ini["gtk-theme-name"] = gtk_theme
+        flatpak_installed = flatpak_sync(gtk_theme, install_flatpak)
     else:
         warn(f"GTK theme {gtk_theme!r} not installed (pacman pkg adw-gtk-theme for "
              "adw-gtk3*; `desktop-theme list`); skipped gtk-theme")
@@ -395,6 +500,8 @@ def apply(conf):
         set_niri_cursor(cursor, size)
 
     print("note: restart open KDE/GTK3 apps to pick it up (libadwaita/GTK4 switch live)")
+    if flatpak_installed:
+        print(f"note: restart running flatpak apps to pick up {FLATPAK_EXT}{gtk_theme}")
 
 
 def status(conf):
@@ -425,6 +532,16 @@ def status(conf):
     theme, size = niri_cursor_now()
     row("niri inputs.kdl xcursor-theme", conf["cursor_theme"], theme)
     row("niri inputs.kdl xcursor-size", conf["cursor_size"], size)
+    ext = FLATPAK_EXT + conf["gtk_theme"]
+    if not flatpak_in_use():
+        print(f"  {'flatpak ' + ext:<38} n/a (no flatpak apps)")
+    elif flatpak_ext_installed(conf["gtk_theme"]):
+        row(f"flatpak {ext}", "installed", "installed")
+    elif flatpak_note(conf["gtk_theme"]):
+        print(f"  {'flatpak ' + ext:<38} {'not on flathub':<22} "
+              "(flatpak apps fall back to light Adwaita)")
+    else:
+        row(f"flatpak {ext}", "installed", "missing")
     if os.environ.get("GTK_THEME"):
         warn(f"GTK_THEME={os.environ['GTK_THEME']} is set in this environment and "
              "overrides the GTK settings above; remove it and re-login")
@@ -460,7 +577,8 @@ def list_installed(conf):
                              ("cursor", "cursor_theme", "Cursor themes")]:
         print(f"{title} ({key}):")
         for name in installed(kind):
-            print(f"  {'*' if name == conf[key] else ' '} {name}")
+            note = flatpak_note(name) if kind == "gtk" else ""
+            print(f"  {'*' if name == conf[key] else ' '} {name}" + (f"  ({note})" if note else ""))
 
 
 def main():
@@ -493,17 +611,20 @@ def main():
                 conf.update(MODE_DEFAULTS[value])
             conf[key] = value
         print("desktop-theme: preview only, conf unchanged (`desktop-theme apply` reverts)")
-        apply(conf)
+        apply(conf, install_flatpak=False)
     elif cmd == "status":
         status(read_conf())
     elif cmd == "list":
         if len(args) == 1:
             list_installed(read_conf())
-        elif len(args) == 3 and args[1] == "--plain":
+        elif len(args) == 3 and args[1] in ("--plain", "--notes"):
             check_value(args[2], DEFAULTS[args[2]] if args[2] in DEFAULTS else "")
-            print("\n".join(choices(args[2], read_conf())))
+            opts = choices(args[2], read_conf())
+            if args[1] == "--notes":
+                opts = [f"{v}\t{flatpak_note(v) if args[2] == 'gtk_theme' else ''}" for v in opts]
+            print("\n".join(opts))
         else:
-            sys.exit("usage: desktop-theme list [--plain KEY]")
+            sys.exit("usage: desktop-theme list [--plain KEY | --notes KEY]")
     elif cmd == "get":
         conf = read_conf()
         if len(args) == 1:
