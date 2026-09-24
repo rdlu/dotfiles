@@ -16,3 +16,14 @@ output "Invalid Vendor Codename - RTK HG540T40 0x01010101" {
   position x=1920 y=134
   variable-refresh-rate
 }
+
+// The xps keyboard is a Dell ABNT2 (pt-BR): its own ç and ~ keys, so plain
+// br comes first. usbr (US + AltGr+w/p for ã/õ) stays second for US
+// punctuation. Overrides inputs.kdl's daisy-shaped "usbr,br(thinkpad)".
+input {
+    keyboard {
+        xkb {
+            layout "br,usbr"; variant ",";
+        }
+    }
+}
