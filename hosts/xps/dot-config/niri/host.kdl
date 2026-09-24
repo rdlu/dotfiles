@@ -16,14 +16,3 @@ output "Invalid Vendor Codename - RTK HG540T40 0x01010101" {
   position x=1920 y=134
   variable-refresh-rate
 }
-
-// Same external US keyboard on both hosts, so usbr stays first everywhere.
-// The xps built-in keyboard is a Dell ABNT2, so the second layout is plain
-// br (abnt2) instead of inputs.kdl's daisy-shaped br(thinkpad).
-input {
-    keyboard {
-        xkb {
-            layout "usbr,br"; variant ",";
-        }
-    }
-}
