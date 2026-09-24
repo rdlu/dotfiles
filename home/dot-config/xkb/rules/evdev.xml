@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE xkbConfigRegistry SYSTEM "xkb.dtd">
+<!-- Registers ~/.config/xkb/symbols/usbr so layout pickers (fcitx5) list it. -->
+<xkbConfigRegistry version="1.1">
+  <layoutList>
+    <layout>
+      <configItem>
+        <name>usbr</name>
+        <shortDescription>us</shortDescription>
+        <description>English (US, intl., AltGr dead keys, pt-BR)</description>
+        <languageList>
+          <iso639Id>eng</iso639Id>
+          <iso639Id>por</iso639Id>
+        </languageList>
+      </configItem>
+    </layout>
+  </layoutList>
+</xkbConfigRegistry>
