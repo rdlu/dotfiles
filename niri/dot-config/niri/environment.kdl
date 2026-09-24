@@ -26,4 +26,6 @@ environment {
     BEMOJI_PICKER_CMD "fuzzel -d \"emojis\""
     XCOMPOSEFILE "~/.XCompose"
     EDITOR "nvim"
+    // Follow the mimeapps default (zen) instead of naming a browser here.
+    BROWSER "xdg-open"
 }
