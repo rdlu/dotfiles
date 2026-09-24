@@ -189,7 +189,7 @@ python:
   - python-xattr
 
 dev:
-  - bun-bin
+  - bun
   - claude-code
   - dfu-util
   - dtc

@@ -43,7 +43,5 @@ apps
 printing
 keyboard-firmware
 
-# The repo `bun` (plus mise's) covers it; don't swap to the AUR -bin.
-!bun-bin
 # Plain helix is enough here.
 !evil-helix-bin
