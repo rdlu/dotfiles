@@ -90,9 +90,7 @@ terminals: # kitty-terminal recipe installs this (kitty + the other emulators)
   - wezterm
 
 niri-wm: # niri-window-manager (nerd-fonts is a group: pulls all nerd fonts)
-  - adw-gtk-theme # desktop-theme: adw-gtk3 / adw-gtk3-dark
   - bluetui
-  - breeze-icons # desktop-theme: kde_icon_theme breeze / breeze-dark
   - brightnessctl
   - cliphist
   - fuzzel
@@ -100,9 +98,9 @@ niri-wm: # niri-window-manager (nerd-fonts is a group: pulls all nerd fonts)
   - greetd-tuigreet
   - gtk3-demos # theme-tui preview window (gtk3-widget-factory)
   - gtk4-demos # theme-tui preview window (gtk4-widget-factory)
+  - filelight # theme-tui preview window (KDE app)
   - inter-font
   - jq
-  - kvantum # desktop-theme: KvGnome / KvGnomeDark kdeglobals schemes
   - mako
   - nerd-fonts
   - niri
@@ -124,6 +122,21 @@ niri-wm: # niri-window-manager (nerd-fonts is a group: pulls all nerd fonts)
   - wpaperd
   - xdg-desktop-portal-gnome
   - xwayland-satellite
+
+desktop-themes: # niri-window-manager; the themes desktop-theme / theme-tui choose from
+  - adw-gtk-theme # gtk_theme adw-gtk3 / adw-gtk3-dark (mode defaults)
+  - breeze # kde_scheme BreezeDark / BreezeLight / BreezeClassic, cursor breeze_cursors
+  - breeze-gtk # gtk_theme Breeze / Breeze-Dark
+  - breeze-icons # kde_icon_theme breeze / breeze-dark (mode defaults)
+  - capitaine-cursors
+  - cosmic-icon-theme
+  - kvantum # kde_scheme KvGnome / KvGnomeDark (mode defaults)
+  - kvantum-theme-materia
+  - materia-gtk-theme
+  - orchis-theme
+  - papirus-icon-theme
+  - pop-gtk-theme
+  - pop-icon-theme
 
 syncthing: # syncthing-file-sync
   - syncthing
