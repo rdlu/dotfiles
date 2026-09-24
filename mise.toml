@@ -200,6 +200,16 @@ run = [
   '~/.local/bin/niri-session-wrapper install',
 ]
 
+# Keyboard scancode fixes (setup/hwdb), each matched to one machine by DMI,
+# so installing all of them on every host is harmless. Needs sudo.
+[tasks.hwdb]
+description = "Install the udev hwdb keyboard fixes and reload them"
+run = [
+  'sudo install -Dm644 -t /etc/udev/hwdb.d setup/hwdb/*.hwdb',
+  'sudo systemd-hwdb update',
+  'sudo udevadm trigger --subsystem-match=input --action=change --settle',
+]
+
 [tasks.keybase-ssh]
 description = "Import the Keybase PGP key into GPG and expose it for SSH auth"
 run = [
