@@ -22,7 +22,8 @@
 # Previews: gtk3-widget-factory, gtk4-widget-factory (pkgs gtk3-demos,
 # gtk4-demos) and filelight, launched without the stale GTK_THEME /
 # QT_QPA_PLATFORMTHEME. They are relaunched on every try (GTK3 and KDE apps
-# don't reload a theme live). Only the PIDs this TUI started are ever killed.
+# don't reload a theme live). They float, cascaded at the right edge, so
+# they stay visible next to the TUI. Only the PIDs this TUI started are ever killed.
 # Leaving the TUI, however it ends, closes them and re-applies the conf.
 
 set -g SELF (status filename)
@@ -99,7 +100,31 @@ function previews_open
     disown $last_pid 2>/dev/null
 end
 
-# wait until each pid has a window (or ~8s), then focus the TUI's terminal
+# niri window id of the terminal this TUI runs in: the window owned by the
+# nearest ancestor process. Not simply the focused window: a freshly spawned
+# terminal may not have focus yet when this starts. If that process owns
+# several windows (single-instance terminals), prefer the focused one of them.
+function term_window
+    set -l windows (niri msg -j windows 2>/dev/null | jq -r '.[] | "\(.pid) \(.id) \(.is_focused)"')
+    set -l p $fish_pid
+    while test -n "$p"; and test "$p" -gt 1
+        set -l mine (string match -- "$p *" $windows)
+        if test (count $mine) -gt 0
+            set -l pick (string match -- '* true' $mine)[1]
+            test -n "$pick"; or set pick $mine[1]
+            string split -f2 ' ' -- $pick
+            return 0
+        end
+        set p (string match -r '^\S+\s+\(.*\)\s+\S+\s+(\d+)' </proc/$p/stat 2>/dev/null)[2]
+    end
+    niri msg -j focused-window 2>/dev/null | jq -r '.id // empty'
+end
+
+# wait until each pid has a window (or ~8s), float them, then focus the TUI's
+# terminal. Floating matters: tiled, they open as new columns right of the
+# terminal and refocusing scrolls them off-screen (looks like open+close).
+# Done per window by id, not via a window-rule, so these apps still tile when
+# opened normally.
 function refocus
     set -l term (cat $STATE/term 2>/dev/null)
     test -n "$term"; or return 0
@@ -111,6 +136,41 @@ function refocus
         end
         test $all = 1; and break
         sleep 0.2
+    end
+    # float them, then cascade them right-aligned on the output (placed by
+    # their real size: the widget factories have a large minimum size)
+    set -l ids
+    for p in $argv
+        set -a ids (niri msg -j windows 2>/dev/null | jq -r --argjson p $p '.[] | select(.pid == $p) | .id')
+    end
+    # the terminal's output: a preview can map elsewhere if focus moved while
+    # it started (windows open on the focused output); bring it over
+    set -l ws (niri msg -j windows 2>/dev/null | jq -r --argjson t $term '.[] | select(.id == $t) | .workspace_id')
+    set -l output
+    test -n "$ws"; and set output (niri msg -j workspaces 2>/dev/null | jq -r --argjson w $ws '.[] | select(.id == $w) | .output // empty')
+    for id in $ids
+        niri msg action move-window-to-floating --id $id >/dev/null 2>&1
+        test -n "$output"; and niri msg action move-window-to-monitor --id $id $output >/dev/null 2>&1
+        niri msg action set-window-width --id $id 45% >/dev/null 2>&1
+        niri msg action set-window-height --id $id 45% >/dev/null 2>&1
+    end
+    sleep 0.3 # let the resizes land before reading the sizes back
+    set -l out
+    if test -n "$output"
+        set out (niri msg -j outputs 2>/dev/null | jq -r --arg o $output '.[$o].logical | "\(.width) \(.height)"' | string split ' ')
+    else
+        set out (niri msg -j focused-output 2>/dev/null | jq -r '.logical | "\(.width) \(.height)"' | string split ' ')
+    end
+    if test (count $out) -eq 2; and string match -qr '^\d+$' -- $out
+        set -l n 0
+        for id in $ids
+            set -l w (niri msg -j windows 2>/dev/null | jq -r --argjson i $id '.[] | select(.id == $i) | .layout.window_size[0] | floor')
+            string match -qr '^\d+$' -- $w; or continue
+            niri msg action move-floating-window --id $id \
+                -x (math -s0 "max(0, $out[1] - $w - 20 - $n * 40)") \
+                -y (math -s0 "20 + $n * $out[2] * 0.26") >/dev/null 2>&1
+            set n (math $n + 1)
+        end
     end
     niri msg action focus-window --id $term >/dev/null 2>&1
 end
@@ -249,7 +309,7 @@ function main
     set -g STATE $THEME_TUI_DIR
     # the terminal we run in, to hand focus back after previews map
     if command -q niri; and command -q jq
-        niri msg -j focused-window 2>/dev/null | jq -r '.id // empty' >$STATE/term
+        term_window >$STATE/term
     end
 
     # defined here, not at top level: the fzf callbacks run this same script
