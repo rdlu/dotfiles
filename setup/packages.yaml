@@ -98,6 +98,8 @@ niri-wm: # niri-window-manager (nerd-fonts is a group: pulls all nerd fonts)
   - fuzzel
   - greetd
   - greetd-tuigreet
+  - gtk3-demos # theme-tui preview window (gtk3-widget-factory)
+  - gtk4-demos # theme-tui preview window (gtk4-widget-factory)
   - inter-font
   - jq
   - kvantum # desktop-theme: KvGnome / KvGnomeDark kdeglobals schemes

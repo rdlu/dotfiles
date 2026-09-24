@@ -26,8 +26,14 @@ Usage: desktop-theme [COMMAND]
   dark|light|toggle switch mode + its gtk_theme/kde_scheme/kde_icon_theme
                     defaults, apply (icon_theme/cursor keys are left alone)
   set KEY VALUE     set one conf key (see KEYS below), apply
+  preview KEY VALUE [KEY VALUE...]
+                    apply the conf with these overrides WITHOUT writing it
+                    (mode VALUE brings its mode defaults, as dark|light do);
+                    `apply` reverts. Used by theme-tui's live preview.
   status            conf values vs what is actually set
   list              installed GTK themes, KDE schemes, icon + cursor themes
+  list --plain KEY  the choices for one key, one per line (for scripts)
+  get [KEY]         the effective conf: KEY=VALUE lines, or one bare value
 KEYS: mode gtk_theme kde_scheme icon_theme kde_icon_theme cursor_theme cursor_size
 """
 
@@ -51,6 +57,8 @@ MODE_DEFAULTS = {
     "dark": {"gtk_theme": "adw-gtk3-dark", "kde_scheme": "KvGnomeDark", "kde_icon_theme": "breeze-dark"},
     "light": {"gtk_theme": "adw-gtk3", "kde_scheme": "KvGnome", "kde_icon_theme": "breeze"},
 }
+# fixed choices offered for the non-theme keys (`list --plain`)
+CURSOR_SIZES = ["16", "24", "32", "48", "64"]
 # every conf key, in file order, with its default
 DEFAULTS = {"mode": "dark", "gtk_theme": "adw-gtk3-dark", "kde_scheme": "KvGnomeDark",
             "icon_theme": "Adwaita", "kde_icon_theme": "breeze-dark",
@@ -422,6 +430,28 @@ def status(conf):
              "overrides the GTK settings above; remove it and re-login")
 
 
+def choices(key, conf):
+    """Values offered for a key; the conf's own value is always included."""
+    if key == "mode":
+        opts = list(MODE_DEFAULTS)
+    elif key == "cursor_size":
+        return sorted(set(CURSOR_SIZES) | {conf[key]}, key=int)
+    else:
+        kind = {"gtk_theme": "gtk", "kde_scheme": "kde", "icon_theme": "icon",
+                "kde_icon_theme": "icon", "cursor_theme": "cursor"}[key]
+        opts = installed(kind)
+    return opts if conf[key] in opts else opts + [conf[key]]
+
+
+def check_value(key, value):
+    if key not in DEFAULTS:
+        sys.exit(f"desktop-theme: unknown key {key!r} (" + " ".join(DEFAULTS) + ")")
+    if key == "mode" and value not in MODE_DEFAULTS:
+        sys.exit("desktop-theme: mode must be dark or light")
+    if key == "cursor_size" and not value.isdigit():
+        sys.exit("desktop-theme: cursor_size must be a number")
+
+
 def list_installed(conf):
     for kind, key, title in [("gtk", "gtk_theme", "GTK themes"),
                              ("kde", "kde_scheme", "KDE color schemes"),
@@ -449,20 +479,43 @@ def main():
         if len(args) != 3:
             sys.exit("usage: desktop-theme set KEY VALUE  (KEY: " + " ".join(DEFAULTS) + ")")
         key, value = args[1], args[2]
-        if key not in DEFAULTS:
-            sys.exit(f"desktop-theme: unknown key {key!r} (" + " ".join(DEFAULTS) + ")")
-        if key == "mode" and value not in MODE_DEFAULTS:
-            sys.exit("desktop-theme: mode must be dark or light")
-        if key == "cursor_size" and not value.isdigit():
-            sys.exit("desktop-theme: cursor_size must be a number")
+        check_value(key, value)
         write_conf({key: value})
         apply(read_conf())
+    elif cmd == "preview":
+        pairs = args[1:]
+        if not pairs or len(pairs) % 2:
+            sys.exit("usage: desktop-theme preview KEY VALUE [KEY VALUE...]")
+        conf = read_conf()
+        for key, value in zip(pairs[::2], pairs[1::2]):
+            check_value(key, value)
+            if key == "mode":
+                conf.update(MODE_DEFAULTS[value])
+            conf[key] = value
+        print("desktop-theme: preview only, conf unchanged (`desktop-theme apply` reverts)")
+        apply(conf)
     elif cmd == "status":
         status(read_conf())
     elif cmd == "list":
-        list_installed(read_conf())
+        if len(args) == 1:
+            list_installed(read_conf())
+        elif len(args) == 3 and args[1] == "--plain":
+            check_value(args[2], DEFAULTS[args[2]] if args[2] in DEFAULTS else "")
+            print("\n".join(choices(args[2], read_conf())))
+        else:
+            sys.exit("usage: desktop-theme list [--plain KEY]")
+    elif cmd == "get":
+        conf = read_conf()
+        if len(args) == 1:
+            print("\n".join(f"{k}={conf[k]}" for k in DEFAULTS))
+        elif len(args) == 2:
+            check_value(args[1], DEFAULTS.get(args[1], ""))
+            print(conf[args[1]])
+        else:
+            sys.exit("usage: desktop-theme get [KEY]")
     else:
-        sys.exit(f"desktop-theme: unknown command {cmd!r} (apply|dark|light|toggle|set|status|list)")
+        sys.exit(f"desktop-theme: unknown command {cmd!r} "
+                 "(apply|dark|light|toggle|set|preview|status|list|get)")
 
 
 if __name__ == "__main__":
