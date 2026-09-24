@@ -18,9 +18,5 @@
     // "format": "{app_id}@{title}",
     "format": "{title}",
     "icon": true
-  },
-  "niri/language": {
-    // "format": "{short}-{variant}"
-    "format": "{short}"
   }
 }

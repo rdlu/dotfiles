@@ -17,7 +17,6 @@
   "modules-right": [
     "privacy",
     "group/tray-expander",
-    "niri/language",
     "power-profiles-daemon",
     "bluetooth",
     "network",
