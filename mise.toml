@@ -176,6 +176,16 @@ run = [
   'stow --no-folding --dotfiles -S niri',
 ]
 
+# Light/dark, icon + cursor theme for GTK + Qt/KDE apps. The choice lives in
+# the stowed ~/.config/desktop-theme.conf (niri package); changing it rewrites
+# that file, so it shows up as a repo diff. No arg re-applies it. Args pass
+# straight through: `mise run theme light`, `mise run theme set icon_theme Pop`,
+# `mise run theme status`, `mise run theme list`.
+[tasks.theme]
+description = "Apply or change the desktop theme (dark|light|toggle|set KEY VALUE|status|list)"
+usage = 'arg "[args]" var=#true help="dark|light|toggle|set KEY VALUE|status|list (none = apply)"'
+run = '~/.local/bin/desktop-theme ${usage_args:-}'
+
 # The wrapper is derived from the LIVE /usr/bin/niri-session at run time, so
 # re-run this task after a niri upgrade to regenerate it; `niri-session-wrapper
 # check` reports when that is due. It is a no-op once upstream ships the fix

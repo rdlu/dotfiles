@@ -1,0 +1,458 @@
+#!/usr/bin/python3
+"""Desktop theme switcher (light/dark, icons, cursor) for GTK + Qt/KDE under niri.
+
+niri has no settings app, so nothing keeps the theme prefs in sync. The choice
+lives in ~/.config/desktop-theme.conf (stowed from niri/dot-config/, so a
+change shows up as a repo diff) and this script pushes it to:
+
+  - gsettings org.gnome.desktop.interface: color-scheme, gtk-theme,
+    icon-theme, cursor-theme, cursor-size
+    (libadwaita/GTK4 apps follow color-scheme live via the portal)
+  - ~/.config/gtk-{3,4}.0/settings.ini: only the gtk-theme/icon/cursor keys
+    and gtk-application-prefer-dark-theme; every other line is kept
+  - ~/.config/kdeglobals: the color sections of the chosen .colors scheme and
+    [Icons] Theme (KDE/Kirigami apps read these from here, not from the Qt
+    style or the portal); other sections KDE apps store there are kept
+  - niri's own cursor: xcursor-theme/xcursor-size in the cursor {} block of
+    ~/.config/niri/inputs.kdl (stowed, so the repo file changes; niri reloads)
+
+Never set GTK_THEME: it overrides all of the above and breaks libadwaita.
+
+Usage: desktop-theme [COMMAND]
+  apply (default)   apply the conf as it is
+  dark|light|toggle switch mode + its gtk_theme/kde_scheme defaults, apply
+                    (icon/cursor keys are left alone)
+  set KEY VALUE     set one conf key (see KEYS below), apply
+  status            conf values vs what is actually set
+  list              installed GTK themes, KDE schemes, icon + cursor themes
+KEYS: mode gtk_theme kde_scheme icon_theme cursor_theme cursor_size
+"""
+
+import os
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+HOME = Path.home()
+CONF = HOME / ".config/desktop-theme.conf"
+GTK_INIS = [HOME / ".config/gtk-3.0/settings.ini", HOME / ".config/gtk-4.0/settings.ini"]
+KDEGLOBALS = HOME / ".config/kdeglobals"
+NIRI_INPUTS = HOME / ".config/niri/inputs.kdl"
+SCHEME_DIR = Path("/usr/share/color-schemes")
+THEME_DIRS = [HOME / ".local/share/themes", HOME / ".themes", Path("/usr/share/themes")]
+ICON_DIRS = [HOME / ".local/share/icons", HOME / ".icons", Path("/usr/share/icons")]
+IFACE = "org.gnome.desktop.interface"
+
+MODE_DEFAULTS = {
+    "dark": {"gtk_theme": "adw-gtk3-dark", "kde_scheme": "KvGnomeDark"},
+    "light": {"gtk_theme": "adw-gtk3", "kde_scheme": "KvGnome"},
+}
+# every conf key, in file order, with its default
+DEFAULTS = {"mode": "dark", **MODE_DEFAULTS["dark"],
+            "icon_theme": "Adwaita", "cursor_theme": "Adwaita", "cursor_size": "24"}
+
+
+def warn(msg):
+    sys.stdout.flush()
+    print(f"\033[1;33mwarning:\033[0m {msg}", file=sys.stderr, flush=True)
+
+
+def write_through(path, text):
+    """Truncate+write (no rename) so a stow symlink stays a symlink and the
+    repo file behind it is what changes."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w") as f:
+        f.write(text)
+
+
+# --- conf ------------------------------------------------------------------
+
+def read_conf():
+    conf = dict(DEFAULTS)
+    if CONF.exists():
+        for line in CONF.read_text().splitlines():
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, v = line.split("=", 1)
+                conf[k.strip()] = v.strip()
+    else:
+        warn(f"{CONF} missing (stow niri?); using defaults")
+    if conf["mode"] not in MODE_DEFAULTS:
+        sys.exit(f"desktop-theme: bad mode={conf['mode']!r} in {CONF} (dark|light)")
+    if not conf["cursor_size"].isdigit():
+        sys.exit(f"desktop-theme: bad cursor_size={conf['cursor_size']!r} in {CONF}")
+    return conf
+
+
+def write_conf(values):
+    """Update the given keys in place, keeping comments and other keys."""
+    lines = CONF.read_text().splitlines() if CONF.exists() else []
+    pending = dict(values)
+    for i, line in enumerate(lines):
+        m = re.match(r"\s*([A-Za-z_]+)\s*=", line)
+        if m and m.group(1) in pending:
+            lines[i] = f"{m.group(1)}={pending.pop(m.group(1))}"
+    lines += [f"{k}={v}" for k, v in pending.items()]
+    write_through(CONF, "\n".join(lines) + "\n")
+
+
+# --- gsettings -------------------------------------------------------------
+
+def gsettings(*args):
+    try:
+        r = subprocess.run(["gsettings", *args], capture_output=True, text=True)
+    except FileNotFoundError:
+        return None
+    return r.stdout.strip() if r.returncode == 0 else None
+
+
+def gset(key, value):
+    if gsettings("set", IFACE, key, value) is None:
+        warn(f"gsettings set {IFACE} {key} failed")
+
+
+# --- GTK settings.ini (line-based, keeps everything else) -------------------
+
+def set_ini_keys(path, section, values):
+    lines = path.read_text().splitlines() if path.exists() else []
+    start = next((i for i, l in enumerate(lines) if l.strip() == f"[{section}]"), None)
+    if start is None:
+        if lines and lines[-1].strip():
+            lines.append("")
+        lines.append(f"[{section}]")
+        start = len(lines) - 1
+    end = next((i for i in range(start + 1, len(lines)) if lines[i].strip().startswith("[")), len(lines))
+    pending = dict(values)
+    for i in range(start + 1, end):
+        key = lines[i].split("=", 1)[0].strip()
+        if "=" in lines[i] and key in pending:
+            lines[i] = f"{key}={pending.pop(key)}"
+    # new keys go after the section's last non-blank line
+    insert = end
+    while insert > start + 1 and not lines[insert - 1].strip():
+        insert -= 1
+    lines[insert:insert] = [f"{k}={v}" for k, v in pending.items()]
+    write_through(path, "\n".join(lines) + "\n")
+
+
+def get_ini_key(path, key):
+    if not path.exists():
+        return None
+    for line in path.read_text().splitlines():
+        if "=" in line and line.split("=", 1)[0].strip() == key:
+            return line.split("=", 1)[1].strip()
+    return None
+
+
+# --- kdeglobals (line-based: KDE keys are case-sensitive) -------------------
+
+def parse_sections(text):
+    """[(name, [lines])]; name None for anything before the first header."""
+    sections = [(None, [])]
+    for line in text.splitlines():
+        m = re.match(r"^\[(.+)\]\s*$", line)
+        if m:
+            sections.append((m.group(1), []))
+        else:
+            sections[-1][1].append(line)
+    return sections
+
+
+def is_color_section(name):
+    return name is not None and (name.startswith(("Colors:", "ColorEffects:")) or name == "WM")
+
+
+def kv(lines):
+    out = {}
+    for l in lines:
+        if "=" in l and not l.lstrip().startswith("#"):
+            k, v = l.split("=", 1)
+            out[k.strip()] = v.strip()
+    return out
+
+
+def merge_keys(lines, values):
+    """Set keys in a section body in place (new ones appended); order kept."""
+    body = [l for l in lines if l.strip()]
+    pending = dict(values)
+    for i, l in enumerate(body):
+        k = l.split("=", 1)[0].strip()
+        if "=" in l and k in pending:
+            body[i] = f"{k}={pending.pop(k)}"
+    return body + [f"{k}={v}" for k, v in pending.items()]
+
+
+def write_kdeglobals(scheme_name=None, scheme_file=None, icon_theme=None):
+    """Replace the color sections with scheme_file's (if given) and set
+    [Icons] Theme (if given); every other section/key is kept."""
+    scheme = parse_sections(scheme_file.read_text()) if scheme_file else []
+    current = parse_sections(KDEGLOBALS.read_text()) if KDEGLOBALS.exists() else [(None, [])]
+
+    # the scheme's [General] (minus its Name*) and [KDE] keys merge into ours
+    merge = {}
+    if scheme_file:
+        merge = {"General": {}, "KDE": {}}
+        for name, lines in scheme:
+            if name in merge:
+                merge[name].update({k: v for k, v in kv(lines).items() if not k.startswith("Name")})
+        merge["General"]["ColorScheme"] = scheme_name
+    if icon_theme:
+        merge["Icons"] = {"Theme": icon_theme}
+
+    out = []
+    for name, lines in current:
+        if scheme_file and is_color_section(name):
+            continue
+        if name in merge:
+            lines = merge_keys(lines, merge.pop(name))  # replaces keys in place
+        else:
+            lines = list(lines)
+            while lines and not lines[-1].strip():
+                lines.pop()
+        if name is not None or lines:
+            out.append((name, lines))
+    for name, values in merge.items():  # sections we didn't have yet
+        out.append((name, [f"{k}={v}" for k, v in values.items()]))
+    for name, lines in scheme:
+        if is_color_section(name):
+            body = list(lines)
+            while body and not body[-1].strip():
+                body.pop()
+            out.append((name, body))
+
+    chunks = ["\n".join(([] if name is None else [f"[{name}]"]) + lines) for name, lines in out]
+    write_through(KDEGLOBALS, "\n\n".join(chunks) + "\n")
+
+
+def kde_key(section, key):
+    if not KDEGLOBALS.exists():
+        return None
+    for name, lines in parse_sections(KDEGLOBALS.read_text()):
+        if name == section:
+            return kv(lines).get(key)
+    return None
+
+
+# --- niri cursor (inputs.kdl cursor {} block) -------------------------------
+
+CURSOR_RE = {
+    "xcursor-theme": re.compile(r'^(\s*xcursor-theme\s+)"[^"]*"(.*)$'),
+    "xcursor-size": re.compile(r"^(\s*xcursor-size\s+)\d+(.*)$"),
+}
+
+
+def niri_cursor_now():
+    if not NIRI_INPUTS.exists():
+        return None, None
+    theme = size = None
+    in_block = False
+    for line in NIRI_INPUTS.read_text().splitlines():
+        if re.match(r"^\s*cursor\s*\{", line):
+            in_block = True
+        elif in_block and line.strip().startswith("}"):
+            in_block = False
+        elif in_block:
+            m = re.match(r'^\s*xcursor-theme\s+"([^"]*)"', line)
+            theme = m.group(1) if m else theme
+            m = re.match(r"^\s*xcursor-size\s+(\d+)", line)
+            size = m.group(1) if m else size
+    return theme, size
+
+
+def set_niri_cursor(theme, size):
+    if not NIRI_INPUTS.exists():
+        warn(f"{NIRI_INPUTS} missing (stow niri?); skipped the niri cursor")
+        return
+    if niri_cursor_now() == (theme, str(size)):
+        return  # unchanged: don't poke niri's live reload
+    lines = NIRI_INPUTS.read_text().splitlines()
+    new = {"xcursor-theme": f'"{theme}"', "xcursor-size": str(size)}
+    in_block, done = False, set()
+    for i, line in enumerate(lines):
+        if re.match(r"^\s*cursor\s*\{", line):
+            in_block = True
+        elif in_block and line.strip().startswith("}"):
+            in_block = False
+        elif in_block:
+            for key, rx in CURSOR_RE.items():
+                m = rx.match(line)
+                if m:
+                    lines[i] = f"{m.group(1)}{new[key]}{m.group(2)}"
+                    done.add(key)
+    if done != set(new):
+        warn(f"no xcursor-theme/xcursor-size lines in the cursor {{}} block of {NIRI_INPUTS}; "
+             "skipped the niri cursor")
+        return
+    write_through(NIRI_INPUTS, "\n".join(lines) + "\n")
+    try:
+        r = subprocess.run(["niri", "validate"], capture_output=True, text=True)
+        if r.returncode != 0:
+            warn(f"niri validate failed after editing {NIRI_INPUTS}:\n{r.stderr or r.stdout}")
+    except FileNotFoundError:
+        pass
+
+
+# --- discovery -------------------------------------------------------------
+
+def find_dir(bases, name, marker):
+    return next((b / name for b in bases if (b / name / marker).exists()), None)
+
+
+def gtk_theme_installed(name):
+    return any((b / name).is_dir() for b in THEME_DIRS)
+
+
+def installed(kind):
+    names = set()
+    if kind == "gtk":
+        for b in THEME_DIRS:
+            if b.is_dir():
+                names |= {d.name for d in b.iterdir()
+                          if (d / "gtk-3.0").is_dir() or (d / "gtk-4.0").is_dir()}
+    elif kind == "kde":
+        names = {f.stem for f in SCHEME_DIR.glob("*.colors")}
+    else:
+        for b in ICON_DIRS:
+            if not b.is_dir():
+                continue
+            for d in b.iterdir():
+                if kind == "cursor" and (d / "cursors").exists():
+                    names.add(d.name)
+                # icon theme = index.theme + some dir besides cursors/
+                elif kind == "icon" and (d / "index.theme").exists() and any(
+                        s.is_dir() and s.name != "cursors" for s in d.iterdir()):
+                    names.add(d.name)
+    return sorted(names, key=str.lower)
+
+
+# --- apply / status / list ---------------------------------------------------
+
+def apply(conf):
+    dark = conf["mode"] == "dark"
+    gtk_theme, kde_scheme = conf["gtk_theme"], conf["kde_scheme"]
+    icon, cursor, size = conf["icon_theme"], conf["cursor_theme"], conf["cursor_size"]
+    print(f"desktop-theme: {conf['mode']} (gtk {gtk_theme}, kde {kde_scheme}, "
+          f"icons {icon}, cursor {cursor} {size})")
+
+    # color-scheme is safe to set even when a theme is missing
+    gset("color-scheme", "prefer-dark" if dark else "default")
+    ini = {"gtk-application-prefer-dark-theme": "true" if dark else "false"}
+
+    if gtk_theme_installed(gtk_theme):
+        gset("gtk-theme", gtk_theme)
+        ini["gtk-theme-name"] = gtk_theme
+    else:
+        warn(f"GTK theme {gtk_theme!r} not installed (pacman pkg adw-gtk-theme for "
+             "adw-gtk3*; `desktop-theme list`); skipped gtk-theme")
+
+    icon_ok = find_dir(ICON_DIRS, icon, "index.theme") is not None
+    if icon_ok:
+        gset("icon-theme", icon)
+        ini["gtk-icon-theme-name"] = icon
+    else:
+        warn(f"icon theme {icon!r} not installed (no .../icons/{icon}/index.theme); skipped icons")
+
+    cursor_ok = find_dir(ICON_DIRS, cursor, "cursors") is not None
+    if cursor_ok:
+        gset("cursor-theme", cursor)
+        gset("cursor-size", size)
+        ini["gtk-cursor-theme-name"] = cursor
+        ini["gtk-cursor-theme-size"] = size
+    else:
+        warn(f"cursor theme {cursor!r} not installed (no .../icons/{cursor}/cursors); skipped cursor")
+
+    for path in GTK_INIS:
+        set_ini_keys(path, "Settings", ini)
+
+    scheme_file = SCHEME_DIR / f"{kde_scheme}.colors"
+    if not scheme_file.is_file():
+        warn(f"KDE color scheme {scheme_file} not installed (pacman pkg kvantum for "
+             "KvGnome*); skipped kdeglobals colors")
+        scheme_file = None
+    if scheme_file or icon_ok:
+        write_kdeglobals(kde_scheme, scheme_file, icon if icon_ok else None)
+
+    if cursor_ok:
+        set_niri_cursor(cursor, size)
+
+    print("note: restart open KDE/GTK3 apps to pick it up (libadwaita/GTK4 switch live)")
+
+
+def status(conf):
+    def row(label, want, have):
+        mark = "ok" if str(want) == str(have) else "DIFFERS"
+        print(f"  {label:<38} {str(have):<22} (want {want}) {mark}")
+
+    dark = conf["mode"] == "dark"
+    print(f"conf {CONF}:")
+    print("  " + " ".join(f"{k}={conf[k]}" for k in DEFAULTS))
+    g = lambda key: gsettings("get", IFACE, key)
+    row("gsettings color-scheme", "'prefer-dark'" if dark else "'default'", g("color-scheme"))
+    row("gsettings gtk-theme", f"'{conf['gtk_theme']}'", g("gtk-theme"))
+    row("gsettings icon-theme", f"'{conf['icon_theme']}'", g("icon-theme"))
+    row("gsettings cursor-theme", f"'{conf['cursor_theme']}'", g("cursor-theme"))
+    row("gsettings cursor-size", conf["cursor_size"], g("cursor-size"))
+    for path in GTK_INIS:
+        short = f"{path.parent.name}/settings.ini"
+        for key, want in [("gtk-theme-name", conf["gtk_theme"]),
+                          ("gtk-application-prefer-dark-theme", "true" if dark else "false"),
+                          ("gtk-icon-theme-name", conf["icon_theme"]),
+                          ("gtk-cursor-theme-name", conf["cursor_theme"]),
+                          ("gtk-cursor-theme-size", conf["cursor_size"])]:
+            label = key.replace("gtk-application-", "").replace("gtk-", "")
+            row(f"{short} {label}", want, get_ini_key(path, key))
+    row("kdeglobals [General] ColorScheme", conf["kde_scheme"], kde_key("General", "ColorScheme"))
+    row("kdeglobals [Icons] Theme", conf["icon_theme"], kde_key("Icons", "Theme"))
+    theme, size = niri_cursor_now()
+    row("niri inputs.kdl xcursor-theme", conf["cursor_theme"], theme)
+    row("niri inputs.kdl xcursor-size", conf["cursor_size"], size)
+    if os.environ.get("GTK_THEME"):
+        warn(f"GTK_THEME={os.environ['GTK_THEME']} is set in this environment and "
+             "overrides the GTK settings above; remove it and re-login")
+
+
+def list_installed(conf):
+    for kind, key, title in [("gtk", "gtk_theme", "GTK themes"),
+                             ("kde", "kde_scheme", "KDE color schemes"),
+                             ("icon", "icon_theme", "Icon themes"),
+                             ("cursor", "cursor_theme", "Cursor themes")]:
+        print(f"{title} ({key}):")
+        for name in installed(kind):
+            print(f"  {'*' if name == conf[key] else ' '} {name}")
+
+
+def main():
+    args = [a for a in sys.argv[1:] if a]
+    cmd = args[0] if args else "apply"
+    if cmd in ("-h", "--help", "help"):
+        print(__doc__.strip())
+    elif cmd == "apply":
+        apply(read_conf())
+    elif cmd in ("dark", "light", "toggle"):
+        if cmd == "toggle":
+            cmd = "light" if read_conf()["mode"] == "dark" else "dark"
+        write_conf({"mode": cmd, **MODE_DEFAULTS[cmd]})
+        apply(read_conf())
+    elif cmd == "set":
+        if len(args) != 3:
+            sys.exit("usage: desktop-theme set KEY VALUE  (KEY: " + " ".join(DEFAULTS) + ")")
+        key, value = args[1], args[2]
+        if key not in DEFAULTS:
+            sys.exit(f"desktop-theme: unknown key {key!r} (" + " ".join(DEFAULTS) + ")")
+        if key == "mode" and value not in MODE_DEFAULTS:
+            sys.exit("desktop-theme: mode must be dark or light")
+        if key == "cursor_size" and not value.isdigit():
+            sys.exit("desktop-theme: cursor_size must be a number")
+        write_conf({key: value})
+        apply(read_conf())
+    elif cmd == "status":
+        status(read_conf())
+    elif cmd == "list":
+        list_installed(read_conf())
+    else:
+        sys.exit(f"desktop-theme: unknown command {cmd!r} (apply|dark|light|toggle|set|status|list)")
+
+
+if __name__ == "__main__":
+    main()
