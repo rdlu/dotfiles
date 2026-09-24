@@ -5,7 +5,10 @@
 #
 # Main view:    every conf key with its current value.
 # Option view:  the installed choices for that key (● = the conf's value),
-#               from `desktop-theme list --plain KEY`.
+#               from `desktop-theme list --notes KEY`; GTK themes flathub has
+#               no org.gtk.Gtk3theme.* extension for show "(no flatpak)":
+#               flatpak apps fall back to light Adwaita with them. Trying one
+#               never installs an extension; keeping one does.
 #
 # Option view keys:
 #   tab     try: apply the highlighted value temporarily (conf untouched, via
@@ -164,9 +167,12 @@ end
 function option_lines --argument-names key
     set -l cur ($DT get $key)
     set -l tried (string replace -f "$key=" '' -- (cat $STATE/trying 2>/dev/null))
-    for v in ($DT list --plain $key)
+    for line in ($DT list --notes $key)
+        set -l f (string split -m1 \t -- $line)
+        set -l v $f[1]
         set -l tag
-        test "$v" = "$tried"; and set tag ' \x1b[33m(trying)\x1b[0m'
+        test -n "$f[2]"; and set tag " \x1b[2m($f[2])\x1b[0m"
+        test "$v" = "$tried"; and set tag "$tag"' \x1b[33m(trying)\x1b[0m'
         if test "$v" = "$cur"
             printf "%s\t\x1b[32m●\x1b[0m %s$tag\n" $v $v
         else
