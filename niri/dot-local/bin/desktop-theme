@@ -11,8 +11,11 @@ change shows up as a repo diff) and this script pushes it to:
   - ~/.config/gtk-{3,4}.0/settings.ini: only the gtk-theme/icon/cursor keys
     and gtk-application-prefer-dark-theme; every other line is kept
   - ~/.config/kdeglobals: the color sections of the chosen .colors scheme and
-    [Icons] Theme (KDE/Kirigami apps read these from here, not from the Qt
-    style or the portal); other sections KDE apps store there are kept
+    [Icons] Theme from kde_icon_theme (KDE/Kirigami apps read these from here,
+    not from the Qt style or the portal); other sections KDE apps store there
+    are kept. KDE gets its own icon theme because Adwaita lacks most KDE icon
+    names (folder-home, ...): KDE apps then fall back to its 16px PNGs, upscaled
+    and blurry. icon_theme is GTK-only.
   - niri's own cursor: xcursor-theme/xcursor-size in the cursor {} block of
     ~/.config/niri/inputs.kdl (stowed, so the repo file changes; niri reloads)
 
@@ -20,12 +23,12 @@ Never set GTK_THEME: it overrides all of the above and breaks libadwaita.
 
 Usage: desktop-theme [COMMAND]
   apply (default)   apply the conf as it is
-  dark|light|toggle switch mode + its gtk_theme/kde_scheme defaults, apply
-                    (icon/cursor keys are left alone)
+  dark|light|toggle switch mode + its gtk_theme/kde_scheme/kde_icon_theme
+                    defaults, apply (icon_theme/cursor keys are left alone)
   set KEY VALUE     set one conf key (see KEYS below), apply
   status            conf values vs what is actually set
   list              installed GTK themes, KDE schemes, icon + cursor themes
-KEYS: mode gtk_theme kde_scheme icon_theme cursor_theme cursor_size
+KEYS: mode gtk_theme kde_scheme icon_theme kde_icon_theme cursor_theme cursor_size
 """
 
 import os
@@ -45,12 +48,13 @@ ICON_DIRS = [HOME / ".local/share/icons", HOME / ".icons", Path("/usr/share/icon
 IFACE = "org.gnome.desktop.interface"
 
 MODE_DEFAULTS = {
-    "dark": {"gtk_theme": "adw-gtk3-dark", "kde_scheme": "KvGnomeDark"},
-    "light": {"gtk_theme": "adw-gtk3", "kde_scheme": "KvGnome"},
+    "dark": {"gtk_theme": "adw-gtk3-dark", "kde_scheme": "KvGnomeDark", "kde_icon_theme": "breeze-dark"},
+    "light": {"gtk_theme": "adw-gtk3", "kde_scheme": "KvGnome", "kde_icon_theme": "breeze"},
 }
 # every conf key, in file order, with its default
-DEFAULTS = {"mode": "dark", **MODE_DEFAULTS["dark"],
-            "icon_theme": "Adwaita", "cursor_theme": "Adwaita", "cursor_size": "24"}
+DEFAULTS = {"mode": "dark", "gtk_theme": "adw-gtk3-dark", "kde_scheme": "KvGnomeDark",
+            "icon_theme": "Adwaita", "kde_icon_theme": "breeze-dark",
+            "cursor_theme": "Adwaita", "cursor_size": "24"}
 
 
 def warn(msg):
@@ -331,9 +335,10 @@ def installed(kind):
 def apply(conf):
     dark = conf["mode"] == "dark"
     gtk_theme, kde_scheme = conf["gtk_theme"], conf["kde_scheme"]
-    icon, cursor, size = conf["icon_theme"], conf["cursor_theme"], conf["cursor_size"]
+    icon, kde_icon = conf["icon_theme"], conf["kde_icon_theme"]
+    cursor, size = conf["cursor_theme"], conf["cursor_size"]
     print(f"desktop-theme: {conf['mode']} (gtk {gtk_theme}, kde {kde_scheme}, "
-          f"icons {icon}, cursor {cursor} {size})")
+          f"icons {icon}, kde icons {kde_icon}, cursor {cursor} {size})")
 
     # color-scheme is safe to set even when a theme is missing
     gset("color-scheme", "prefer-dark" if dark else "default")
@@ -351,7 +356,12 @@ def apply(conf):
         gset("icon-theme", icon)
         ini["gtk-icon-theme-name"] = icon
     else:
-        warn(f"icon theme {icon!r} not installed (no .../icons/{icon}/index.theme); skipped icons")
+        warn(f"icon theme {icon!r} not installed (no .../icons/{icon}/index.theme); skipped GTK icons")
+
+    kde_icon_ok = find_dir(ICON_DIRS, kde_icon, "index.theme") is not None
+    if not kde_icon_ok:
+        warn(f"KDE icon theme {kde_icon!r} not installed (no .../icons/{kde_icon}/index.theme; "
+             "breeze*: pacman pkg breeze-icons); skipped kdeglobals icons")
 
     cursor_ok = find_dir(ICON_DIRS, cursor, "cursors") is not None
     if cursor_ok:
@@ -370,8 +380,8 @@ def apply(conf):
         warn(f"KDE color scheme {scheme_file} not installed (pacman pkg kvantum for "
              "KvGnome*); skipped kdeglobals colors")
         scheme_file = None
-    if scheme_file or icon_ok:
-        write_kdeglobals(kde_scheme, scheme_file, icon if icon_ok else None)
+    if scheme_file or kde_icon_ok:
+        write_kdeglobals(kde_scheme, scheme_file, kde_icon if kde_icon_ok else None)
 
     if cursor_ok:
         set_niri_cursor(cursor, size)
@@ -403,7 +413,7 @@ def status(conf):
             label = key.replace("gtk-application-", "").replace("gtk-", "")
             row(f"{short} {label}", want, get_ini_key(path, key))
     row("kdeglobals [General] ColorScheme", conf["kde_scheme"], kde_key("General", "ColorScheme"))
-    row("kdeglobals [Icons] Theme", conf["icon_theme"], kde_key("Icons", "Theme"))
+    row("kdeglobals [Icons] Theme", conf["kde_icon_theme"], kde_key("Icons", "Theme"))
     theme, size = niri_cursor_now()
     row("niri inputs.kdl xcursor-theme", conf["cursor_theme"], theme)
     row("niri inputs.kdl xcursor-size", conf["cursor_size"], size)
@@ -415,7 +425,8 @@ def status(conf):
 def list_installed(conf):
     for kind, key, title in [("gtk", "gtk_theme", "GTK themes"),
                              ("kde", "kde_scheme", "KDE color schemes"),
-                             ("icon", "icon_theme", "Icon themes"),
+                             ("icon", "icon_theme", "Icon themes, GTK"),
+                             ("icon", "kde_icon_theme", "Icon themes, KDE"),
                              ("cursor", "cursor_theme", "Cursor themes")]:
         print(f"{title} ({key}):")
         for name in installed(kind):
