@@ -1,0 +1,49 @@
+# Manifest categories (setup/packages.yaml) the daisy desktop notebook is
+# expected to have installed — read by pkg-missing, pkg-tui [missing] and
+# `mise run pkg-install` (no args). Daisy is the main machine: everything.
+#
+# One category per line; `!pkgname` excludes a single package; # comments.
+
+bootstrap-flatpak
+bootstrap-mirrors
+bootstrap-aur-helper
+languages
+cli-essentials
+fish-shell
+helix-editor
+terminals
+niri-wm
+desktop-themes
+syncthing
+yazi
+fastfetch
+docs-toolchain
+fonts
+python
+dev
+containers
+editors
+emacs
+cli-tools
+docs-wiki
+network
+file-transfer
+keybase
+security
+system
+desktop
+input-method
+audio-production
+obs-streaming
+music-media
+office-reading
+graphics
+gaming
+apps
+printing
+keyboard-firmware
+
+# The repo `bun` (plus mise's) covers it; don't swap to the AUR -bin.
+!bun-bin
+# Plain helix is enough here.
+!evil-helix-bin
