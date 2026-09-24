@@ -77,7 +77,6 @@ window#waybar{
 #mpris,
 #user,
 #idle_inhibitor,
-#custom-expand-icon,
 #perf {
   padding: 0.1em 0.5em;
   color: @foreground;

@@ -16,7 +16,7 @@
   ],
   "modules-right": [
     "privacy",
-    "group/tray-expander",
+    "tray",
     "power-profiles-daemon",
     "bluetooth",
     "network",
@@ -145,21 +145,6 @@
     "on-click": "ghostty --title=Wiremix --class=Wiremix -e wiremix -v input",
     "on-click-right": "swayosd-client --input-volume mute-toggle",
     "scroll-step": 5
-  },
-  "group/tray-expander": {
-    "orientation": "inherit",
-    "drawer": {
-      "transition-duration": 600,
-      "children-class": "tray-group-item"
-    },
-    "modules": [
-      "custom/expand-icon",
-      "tray"
-    ]
-  },
-  "custom/expand-icon": {
-    "format": " ",
-    "tooltip": false
   },
   "tray": {
     "icon-size": 12,
