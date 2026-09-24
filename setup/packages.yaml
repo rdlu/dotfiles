@@ -90,6 +90,7 @@ terminals: # kitty-terminal recipe installs this (kitty + the other emulators)
   - wezterm
 
 niri-wm: # niri-window-manager (nerd-fonts is a group: pulls all nerd fonts)
+  - adw-gtk-theme # desktop-theme: adw-gtk3 / adw-gtk3-dark
   - bluetui
   - brightnessctl
   - cliphist
@@ -98,6 +99,7 @@ niri-wm: # niri-window-manager (nerd-fonts is a group: pulls all nerd fonts)
   - greetd-tuigreet
   - inter-font
   - jq
+  - kvantum # desktop-theme: KvGnome / KvGnomeDark kdeglobals schemes
   - mako
   - nerd-fonts
   - niri
