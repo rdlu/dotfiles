@@ -182,7 +182,7 @@ run = [
 # straight through: `mise run theme light`, `mise run theme set icon_theme Pop`,
 # `mise run theme status`, `mise run theme list`.
 [tasks.theme]
-description = "Apply or change the desktop theme (dark|light|toggle|set KEY VALUE|status|list)"
+description = "Apply or change the desktop theme (dark|light|toggle|set KEY VALUE|preview|status|list|get). Picker: theme-tui"
 usage = 'arg "[args]" var=#true help="dark|light|toggle|set KEY VALUE|status|list (none = apply)"'
 run = '~/.local/bin/desktop-theme ${usage_args:-}'
 
@@ -273,6 +273,10 @@ run = 'scripts/dot-local/bin/pkg-missing'
 [tasks.pkg-tui]
 description = "Interactive manifest manager: browse categories, install/remove/audit (fzf TUI)"
 run = 'scripts/dot-local/bin/pkg-tui'
+
+[tasks.theme-tui]
+description = "Pick the desktop theme key by key, with live GTK3/GTK4/KDE preview windows (fzf TUI)"
+run = 'scripts/dot-local/bin/theme-tui'
 
 [tasks.images-disk-tui]
 description = "Browse disk images and write one to a removable drive via caligula (fzf TUI)"
