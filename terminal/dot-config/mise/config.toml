@@ -15,11 +15,11 @@ bun = true
 [tools]
 # Languages — kept in mise (version-pinned) alongside the pacman copies.
 # This dual install is intentional: pacman = system floor, mise = project pin.
-erlang = "29.0.1"
-elixir = "1.20.0-otp-29"
+erlang = "29.1.1"
+elixir = "1.20.4-otp-29"
 ruby = "4.0"
-zig = "0.15.2"
-gleam = "1.14.0"
+zig = "0.16.0"
+gleam = "1.18.1"
 
 # CLI/dev tools that are NOT in the pacman repos (AUR-only or fetched direct),
 # so mise is the right manager for them.
