@@ -77,12 +77,21 @@ window-rule {
 }
 
 // Frigate gate live view (mpv launched by ~/Projects/frigate-monitor):
-// small floating player in the corner that doesn't steal focus.
+// small floating player in the corner that doesn't steal focus. Size comes from
+// mpv's --geometry (20% live, 35% debug); column width doesn't apply. Anchored: app-id is a regex, and the debug view's id contains this one.
 window-rule {
-    match app-id="frigate-monitor"
+    match app-id="^frigate-monitor$"
     open-floating true
     open-focused false
-    default-column-width { proportion 0.25; }
+    default-floating-position x=32 y=32 relative-to="bottom-right"
+    opacity 1.0
+}
+
+// Frigate debug view (`mise run watch debug`: boxes, zones, motion): bigger.
+window-rule {
+    match app-id="^frigate-monitor-debug$"
+    open-floating true
+    open-focused false
     default-floating-position x=32 y=32 relative-to="bottom-right"
     opacity 1.0
 }
