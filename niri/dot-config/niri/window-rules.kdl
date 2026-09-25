@@ -82,7 +82,7 @@ window-rule {
     match app-id="frigate-monitor"
     open-floating true
     open-focused false
-    default-column-width { proportion 0.35; }
+    default-column-width { proportion 0.25; }
     default-floating-position x=32 y=32 relative-to="bottom-right"
     opacity 1.0
 }
