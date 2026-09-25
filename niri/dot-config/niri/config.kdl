@@ -51,6 +51,7 @@ workspace "games" {
 
 // Window rules
 include "window-rules.kdl"
+include "window-rules-games.kdl"
 
 // Keybindings
 include "binds.kdl"
