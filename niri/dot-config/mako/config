@@ -61,3 +61,18 @@ default-timeout=30000
 
 [mode=do-not-disturb app-name=YubiKey-detector]
 invisible=false
+
+# Frigate gate notifier (~/Projects/frigate-monitor): bigger snapshot preview.
+# Left click = live view (muted), middle click = live view with sound,
+# right click = dismiss. Urgent (someone waiting at the gate) shows even in DND;
+# quiet (someone near the gate) gets 10s instead of the global 3s.
+[app-name=Frigate]
+max-icon-size=128
+height=160
+on-button-middle=exec makoctl invoke -n "$id" sound
+
+[app-name=Frigate urgency=normal]
+default-timeout=10000
+
+[mode=do-not-disturb app-name=Frigate urgency=high]
+invisible=false
