@@ -116,7 +116,7 @@ window-rule {
   block-out-from "screen-capture"
 }
 
-// Gaming windows
+// OBS (streaming). Game windows are in window-rules-games.kdl
 window-rule {
   match app-id="com.obsproject.Studio"
   open-on-workspace "brain"
@@ -127,56 +127,6 @@ window-rule {
     active-color "#ff0000"
     inactive-color "#aa0000"
   }
-}
-
-window-rule {
-    match app-id=r#"RetroArch$"#
-    open-fullscreen true
-    open-focused true
-    open-on-workspace "games"
-    variable-refresh-rate true
-    tiled-state false
-}
-
-window-rule {
-  match app-id="Hollow Knight Silksong"
-  open-on-workspace "games"
-  open-fullscreen true
-  tiled-state false
-  open-focused true
-  variable-refresh-rate true
-}
-
-window-rule {
-    match app-id="es-de"
-    open-fullscreen true
-    open-focused true
-    open-on-workspace "games"
-    tiled-state false
-}
-
-window-rule {
-    match app-id="gamescope"
-    match app-id="PrismLauncher$"
-    match app-id="steam"
-    match app-id="heroic"
-    open-on-workspace "games"
-}
-
-window-rule {
-  match app-id="^steam_app"
-  match app-id="gamescope"
-  open-on-workspace "games"
-  open-fullscreen true
-  tiled-state false
-  open-focused true
-  variable-refresh-rate true
-}
-
-// Dont auto focus
-window-rule {
-    match app-id="steam"
-    open-focused false
 }
 
 window-rule {

@@ -1,0 +1,63 @@
+// Game windows: launchers and games open on the "games" workspace (pinned to an
+// output in config.kdl). Included right after window-rules.kdl; later rules win
+// in niri, and none of these set properties the general rules there also set.
+
+window-rule {
+    match app-id=r#"RetroArch$"#
+    open-fullscreen true
+    open-focused true
+    open-on-workspace "games"
+    variable-refresh-rate true
+    tiled-state false
+}
+
+window-rule {
+  match app-id="Hollow Knight Silksong"
+  open-on-workspace "games"
+  open-fullscreen true
+  tiled-state false
+  open-focused true
+  variable-refresh-rate true
+}
+
+// SpaghettiKart saves its own fullscreen state and re-applies it at launch, so
+// forcing open-fullscreen here makes the two fight. Let the game own it.
+window-rule {
+  match app-id="^Spaghettify$"
+  open-on-workspace "games"
+  tiled-state false
+  open-focused true
+  variable-refresh-rate true
+}
+
+window-rule {
+    match app-id="es-de"
+    open-fullscreen true
+    open-focused true
+    open-on-workspace "games"
+    tiled-state false
+}
+
+window-rule {
+    match app-id="gamescope"
+    match app-id="PrismLauncher$"
+    match app-id="steam"
+    match app-id="heroic"
+    open-on-workspace "games"
+}
+
+window-rule {
+  match app-id="^steam_app"
+  match app-id="gamescope"
+  open-on-workspace "games"
+  open-fullscreen true
+  tiled-state false
+  open-focused true
+  variable-refresh-rate true
+}
+
+// Dont auto focus
+window-rule {
+    match app-id="steam"
+    open-focused false
+}
