@@ -20,11 +20,31 @@ window-rule {
   variable-refresh-rate true
 }
 
-// SpaghettiKart saves its own fullscreen state and re-applies it at launch, so
-// forcing open-fullscreen here makes the two fight. Let the game own it.
+// Native ports and recomps launched from Heroic. These save their own fullscreen
+// state and re-apply it at launch, so forcing open-fullscreen here makes the two
+// fight (seen with SpaghettiKart). Let the games own it.
 window-rule {
-  match app-id="^Spaghettify$"
+  match app-id="^Spaghettify$"                // SpaghettiKart
+  match app-id=r#"^soh\.elf$"#                 // Ship of Harkinian (OoT)
+  match app-id="^Starship$"                   // Star Fox 64
+  match app-id="^BanjoRecompiled$"
+  match app-id="^MarioKart64Recompiled$"
+  match app-id="^Zelda64Recompiled$"          // Majora's Mask
+  match app-id="^WaveRace64Recomp$"
+  match app-id=r#"^dev\.twilitrealm\.dusk$"#   // Dusklight (Twilight Princess)
+  match app-id="^Mega Man X Regenesis$"
+  match title="^SymphonyRecomp"               // sets no app-id
   open-on-workspace "games"
+  tiled-state false
+  open-focused true
+  variable-refresh-rate true
+}
+
+// F-Zero has no fullscreen option of its own, so niri does it.
+window-rule {
+  match app-id="^FZeroSNESRecomp$"
+  open-on-workspace "games"
+  open-fullscreen true
   tiled-state false
   open-focused true
   variable-refresh-rate true
