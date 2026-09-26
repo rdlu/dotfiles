@@ -34,6 +34,8 @@ window-rule {
   match app-id=r#"^dev\.twilitrealm\.dusk$"#   // Dusklight (Twilight Princess)
   match app-id="^Mega Man X Regenesis$"
   match app-id="^zelda3$"                     // A Link to the Past (snesrev)
+  match app-id="^sm64coopdx$"                 // Super Mario 64
+  match app-id=r#"^pd\.x86_64$"#              // Perfect Dark
   match title="^SymphonyRecomp"               // sets no app-id
   open-on-workspace "games"
   tiled-state false
