@@ -34,12 +34,14 @@ keybind = ctrl+shift+n=new_window
 # never reaches a full-screen TUI, which wants those keys for itself
 # (monitor-tui binds ctrl+t to rotate). This is also ghostty's default.
 keybind = ctrl+shift+t=new_tab
+# ghostty binds ctrl+enter to toggle_fullscreen by default; hand it to
+# the app instead (fullscreen is the compositor's job under niri).
+keybind = ctrl+enter=unbind
 keybind = ctrl+plus=increase_font_size:1
 keybind = ctrl+minus=decrease_font_size:1
 keybind = ctrl+zero=reset_font_size
 # shell-integration = fish
 # shell-integration-features = cursor,sudo,title
-keybind = shift+enter=text:\x1b\r
 
 # Material 3 UI elements
 unfocused-split-opacity = 0.7
