@@ -36,6 +36,7 @@ window-rule {
   match app-id="^zelda3$"                     // A Link to the Past (snesrev)
   match app-id="^sm64coopdx$"                 // Super Mario 64
   match app-id=r#"^pd\.x86_64$"#              // Perfect Dark
+  match app-id="^MegaManXSNESRecomp$"         // native Wayland via run.sh
   match title="^SymphonyRecomp"               // sets no app-id
   open-on-workspace "games"
   tiled-state false
