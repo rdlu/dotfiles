@@ -14,7 +14,11 @@
 # come from ~/.config/usb-ports/labels (per host, stowed from hosts/<host>/):
 #   <pci-address>-<port>  <label>      e.g.  0000:06:00.4-1  USB-C (caps lock)
 # Find the key for a socket by plugging something in and reading the
-# unlabeled line it appears on.
+# unlabeled line it appears on. A UCSI port gets the same label via
+#   typec:<portN>  <label>             e.g.  typec:port0  USB-C (caps lock)
+# (plug something into the socket, see which portN gains a partner), so a
+# device that carries no USB data — a monitor in DP alt mode — still shows
+# on its socket.
 set -euo pipefail
 
 labels_file="${XDG_CONFIG_HOME:-$HOME/.config}/usb-ports/labels"
@@ -72,9 +76,20 @@ snapshot() {
   health
 }
 
+# External connectors that are lit, as DRM names (DP-2, HDMI-A-1).
+lit_connectors() {
+  local c
+  for c in /sys/class/drm/card*-*; do
+    [[ -e $c/status && $c != *eDP* && $c != *Writeback* ]] || continue
+    [[ $(rd "$c/status") == connected ]] && echo "${c##*/card[0-9]-}"
+  done
+  return 0
+}
+
 sections() {
   echo "${B}USB ports$N"
-  local p bus port peer pbus pport pci key hs ss top name ss_seen=0 ss_down=0
+  local p bus port peer pbus pport pci key hs ss top name ss_seen=0 ss_down=0 t tc lit_dp
+  lit_dp=$(lit_connectors | grep '^DP-' | tr '\n' ' ' || true)
   for p in /sys/bus/usb/devices/usb*/*-0:1.0/usb*-port*; do
     [[ $(rd "$p/connect_type") == hotplug ]] || continue
     bus=${p##*/usb}; port=${bus#*-port}; bus=${bus%-port*}
@@ -106,6 +121,22 @@ sections() {
     else
       echo "    USB 2 half: ${D}idle$N"
     fi
+    # The socket's USB-C side, when the labels file maps a UCSI port to it.
+    tc=''
+    for t in "${!label[@]}"; do
+      [[ $t == typec:* && -n ${label[$key]:-} && ${label[$t]} == "${label[$key]}" ]] && tc=${t#typec:}
+    done
+    if [[ -n $tc && -d /sys/class/typec/$tc/$tc-partner ]]; then
+      echo "    USB-C:      ${G}partner$N ${D}($tc)$N"
+      if ((!hs && !ss)); then
+        # No USB data but a partner: a display in alt mode, or a bare charger.
+        if [[ -n $lit_dp ]]; then
+          echo "      ${D}└$N display in DP alt mode → ${G}${lit_dp% }$N"
+        else
+          echo "      ${D}└$N no USB data, no DisplayPort (charger only?)"
+        fi
+      fi
+    fi
     # A hub on the USB 2 side with nothing on the USB 3 side is a USB 3 hub
     # whose SuperSpeed link never came up (USB 2-only hubs are rare now).
     top=/sys/bus/usb/devices/$bus-$port
@@ -134,13 +165,14 @@ sections() {
     n=${t##*/}; partner=$t/$n-partner
     psy=/sys/class/power_supply/ucsi-source-psy-USBC000:00$((${n#port} + 1))
     online=$(rd "$psy/online")
+    [[ -n ${label[typec:$n]:-} ]] && n+=" (${label[typec:$n]})"
     if [[ -d $partner ]]; then
       printf '  %s: %spartner%s  pd=%s  alt-modes=%s  power-in=%s%s\n' "$n" "$G" "$N" \
         "$(rd "$partner/supports_usb_power_delivery")" \
         "$(rd "$partner/number_of_alternate_modes")" \
         "$([[ $online == 1 ]] && echo "${Y}charging$N" || echo no)" \
-        "$([[ -d $t/$n-cable ]] && echo "  cable=$(rd "$t/$n-cable/type")")"
-      [[ $online == 1 ]] || sinks+=("$n")
+        "$([[ -d $t/${t##*/}-cable ]] && echo "  cable=$(rd "$t/${t##*/}-cable/type")")"
+      [[ $online == 1 ]] || sinks+=("${t##*/}")
     else
       echo "  $n: ${D}empty$N"
     fi

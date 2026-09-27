@@ -4,3 +4,7 @@
 0000:06:00.4-1  USB-C (caps lock)
 0000:05:00.4-1  USB-A (right)
 0000:05:00.4-2  USB-A (left)
+
+# UCSI ports: port0 = caps lock (the monitor and the hub both showed up there
+# when plugged in; the hinge port never reports to UCSI).
+typec:port0  USB-C (caps lock)
