@@ -16,6 +16,7 @@ output "Invalid Vendor Codename - RTK HG540T40 0x01010101" {
   position x=107 y=0
   scale 1.5
   transform "normal"
+  mode "2560x1600@60.002"
 }
 
 // output "HDMI-A-1" {
