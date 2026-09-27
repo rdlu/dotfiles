@@ -434,6 +434,16 @@ quiet = true
 usage = 'arg "[level]" default="get"'
 run = '"$HOME/.local/bin/ext-brightness" "${usage_level}"'
 
+[tasks.usb-ports]
+description = "USB/USB-C/display health: per-port link speed (USB 2/3 halves side by side), UCSI/PD, DP alt mode, power, kernel errors. -H verdict only, -w watch."
+quiet = true
+raw = true
+usage = """
+flag "-H --health" help="Print only the health verdict"
+flag "-w --watch" help="Refresh every second"
+"""
+run = 'scripts/dot-local/bin/usb-ports ${usage_health:+--health} ${usage_watch:+--watch}'
+
 [tasks.ext-display]
 description = "Interactive TUI to control the external monitor over DDC/CI: brightness, contrast, sharpness, input, colour preset, power (gum)."
 quiet = true

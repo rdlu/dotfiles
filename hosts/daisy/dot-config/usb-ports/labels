@@ -1,0 +1,6 @@
+# usb-ports labels for daisy (ThinkPad E14 Gen 6): <pci-address>-<port> <label>
+# Mapped 2026-09-27 by plugging devices in and reading which line they appear on.
+0000:06:00.3-1  USB-C (hinge)
+0000:06:00.4-1  USB-C (caps lock)
+0000:05:00.4-1  USB-A (right)
+0000:05:00.4-2  USB-A (left)
