@@ -1,0 +1,244 @@
+#!/bin/bash
+# Show every physical USB port: what's plugged in and at what link speed, with
+# the USB 2 and USB 3 halves of each port side by side — so a port that has
+# silently fallen back to USB 2 (its SuperSpeed lanes dead, which on USB-C also
+# means no DisplayPort alt mode) stands out. Then the USB-C/PD state and which
+# DP/HDMI connectors are lit, power, and a health verdict built from the
+# checks that diagnosed daisy's dead USB-C port on 2026-09-27.
+#
+#   usb-ports        # full report + health; exit 1 if anything is wrong
+#   usb-ports -H     # health verdict only
+#   usb-ports -w     # full report, refreshed every second (plug/unplug and watch)
+#
+# The kernel can't tell which socket on the chassis a root port is, so labels
+# come from ~/.config/usb-ports/labels (per host, stowed from hosts/<host>/):
+#   <pci-address>-<port>  <label>      e.g.  0000:06:00.4-1  USB-C (caps lock)
+# Find the key for a socket by plugging something in and reading the
+# unlabeled line it appears on.
+set -euo pipefail
+
+labels_file="${XDG_CONFIG_HOME:-$HOME/.config}/usb-ports/labels"
+
+if [[ -t 1 ]]; then
+  B=$'\e[1m' D=$'\e[2m' R=$'\e[31m' G=$'\e[32m' Y=$'\e[33m' N=$'\e[0m'
+else
+  B='' D='' R='' G='' Y='' N=''
+fi
+
+declare -A label=()
+if [[ -r $labels_file ]]; then
+  while read -r key text; do
+    [[ -z $key || $key == \#* ]] && continue
+    label[$key]=$text
+  done <"$labels_file"
+fi
+
+rd() { cat "$1" 2>/dev/null || true; }
+
+# Health findings, filled in while the sections print.
+findings=() bad=0
+ok() { findings+=("  ${G}✓$N $*"); }
+warn() { findings+=("  ${Y}⚠$N $*"); bad=1; }
+fail() { findings+=("  ${R}✗$N $*"); bad=1; }
+
+speed() {
+  case "$1" in
+    1.5) echo "1.5M (USB 1 low)" ;;
+    12) echo "12M (USB 1 full)" ;;
+    480) echo "480M (USB 2)" ;;
+    5000) echo "5G (USB 3 Gen 1)" ;;
+    10000) echo "10G (USB 3 Gen 2)" ;;
+    20000) echo "20G (USB 3 Gen 2x2)" ;;
+    *) echo "${1}M" ;;
+  esac
+}
+
+# Devices under root port <bus>-<port>, indented by hub depth.
+tree() {
+  local bus=$1 port=$2 d name depth
+  for d in /sys/bus/usb/devices/"$bus-$port" /sys/bus/usb/devices/"$bus-$port".*; do
+    [[ -e $d/idVendor ]] || continue
+    name=${d##*/}
+    depth=$(tr -cd . <<<"$name" | wc -c)
+    printf '      %*s%s %s:%s  %-22s %s\n' $((depth * 2)) '' "$D└$N" \
+      "$(rd "$d/idVendor")" "$(rd "$d/idProduct")" "$(speed "$(rd "$d/speed")")" \
+      "$(rd "$d/product")"
+  done
+}
+
+snapshot() {
+  findings=() bad=0
+  { sections; } >&3
+  health
+}
+
+sections() {
+  echo "${B}USB ports$N"
+  local p bus port peer pbus pport pci key hs ss top name ss_seen=0 ss_down=0
+  for p in /sys/bus/usb/devices/usb*/*-0:1.0/usb*-port*; do
+    [[ $(rd "$p/connect_type") == hotplug ]] || continue
+    bus=${p##*/usb}; port=${bus#*-port}; bus=${bus%-port*}
+    # Visit each physical port once, from its USB 2 (480M root hub) side.
+    [[ $(rd "/sys/bus/usb/devices/usb$bus/speed") == 480 ]] || continue
+    peer=$(readlink -f "$p/peer" 2>/dev/null || true)
+    pbus='' pport=''
+    if [[ -n $peer ]]; then
+      pbus=${peer##*/usb}; pport=${pbus#*-port}; pbus=${pbus%-port*}
+    fi
+    pci=$(basename "$(readlink -f "/sys/bus/usb/devices/usb$bus/..")")
+    key="$pci-$port"
+    name=${label[$key]:-$key}
+    hs=0 ss=0
+    [[ -e /sys/bus/usb/devices/$bus-$port ]] && hs=1
+    [[ -n $pbus && -e /sys/bus/usb/devices/$pbus-$pport ]] && ss=1
+    ((ss)) && ss_seen=1
+
+    printf '\n  %s%-20s%s %s%s%s\n' "$B" "${label[$key]:-unlabeled}" "$N" "$D" "$key" "$N"
+    if ((ss)); then
+      echo "    USB 3 half: ${G}linked$N"
+      tree "$pbus" "$pport"
+    elif [[ -n $pbus ]]; then
+      echo "    USB 3 half: ${D}idle$N"
+    fi
+    if ((hs)); then
+      echo "    USB 2 half: ${G}linked$N"
+      tree "$bus" "$port"
+    else
+      echo "    USB 2 half: ${D}idle$N"
+    fi
+    # A hub on the USB 2 side with nothing on the USB 3 side is a USB 3 hub
+    # whose SuperSpeed link never came up (USB 2-only hubs are rare now).
+    top=/sys/bus/usb/devices/$bus-$port
+    if ((hs && !ss)) && [[ -n $pbus && $(rd "$top/bDeviceClass") == 09 ]]; then
+      echo "    ${R}⚠ hub linked at USB 2 only — its USB 3 half is missing$N"
+      fail "$name: hub stuck at USB 2 — the port's SuperSpeed lanes are down, so no" \
+        "USB 3 and no DP alt mode either. Flip the plug; if that fails, EC reset" \
+        "(power off, unplug all, hold power 15 s)"
+      ss_down=1
+    fi
+  done
+  ((ss_seen && !ss_down)) && ok "USB 3 links up (SuperSpeed lanes working)"
+
+  echo
+  echo "${B}USB-C (UCSI)$N"
+  local t n partner psy online ports=(/sys/class/typec/port[0-9]) sinks=()
+  if [[ ! -e ${ports[0]} ]]; then
+    echo "  ${Y}no USB-C ports registered$N"
+    ports=()
+    fail "USB-C status driver (UCSI) didn't init — Linux can't see USB-C state." \
+      "Video still works; fix: pkexec sh -c 'modprobe -r ucsi_acpi && modprobe ucsi_acpi', or reboot"
+  else
+    ok "USB-C status driver (UCSI) up: ${#ports[@]} port(s)"
+  fi
+  for t in "${ports[@]}"; do
+    n=${t##*/}; partner=$t/$n-partner
+    psy=/sys/class/power_supply/ucsi-source-psy-USBC000:00$((${n#port} + 1))
+    online=$(rd "$psy/online")
+    if [[ -d $partner ]]; then
+      printf '  %s: %spartner%s  pd=%s  alt-modes=%s  power-in=%s%s\n' "$n" "$G" "$N" \
+        "$(rd "$partner/supports_usb_power_delivery")" \
+        "$(rd "$partner/number_of_alternate_modes")" \
+        "$([[ $online == 1 ]] && echo "${Y}charging$N" || echo no)" \
+        "$([[ -d $t/$n-cable ]] && echo "  cable=$(rd "$t/$n-cable/type")")"
+      [[ $online == 1 ]] || sinks+=("$n")
+    else
+      echo "  $n: ${D}empty$N"
+    fi
+  done
+
+  echo
+  echo "${B}Display connectors$N"
+  local c conn lit=0 dp=0 hdmi=0 vrr=''
+  for c in /sys/class/drm/card*-*; do
+    [[ -e $c/status && $c != *eDP* && $c != *Writeback* ]] || continue
+    [[ $(rd "$c/status") == connected ]] || continue
+    conn=${c##*/card[0-9]-}; lit=1
+    case $conn in DP-*) dp=1 ;; HDMI-*) hdmi=1 ;; esac
+    # Mode + VRR as niri drives it (niri names outputs by connector).
+    if command -v niri >/dev/null && command -v jq >/dev/null; then
+      vrr=$(niri msg --json outputs 2>/dev/null | jq -r --arg c "$conn" '
+        .[$c] // empty | (.modes[.current_mode] // {}) as $m
+        | "\($m.width)x\($m.height)@\(($m.refresh_rate // 0) / 1000)  VRR "
+          + (if .vrr_enabled then "on" elif .vrr_supported then "off" else "unsupported" end)
+          + "  scale \(.logical.scale // "?")"' 2>/dev/null || true)
+    fi
+    printf '  %s%s%s connected%s  %s%s%s\n' "$G" "$conn" "$N" \
+      "$([[ $conn == DP-* ]] && echo " (USB-C alt mode)")" "$D" "$vrr" "$N"
+  done
+  ((lit)) || echo "  ${D}no external display connected$N"
+
+  if ((dp)); then
+    ok "external display on USB-C (DP alt mode working)"
+  elif ((hdmi)); then
+    ok "external display on HDMI"
+    [[ $vrr == *"VRR on"* ]] &&
+      warn "VRR is always-on over HDMI — the RTK portable monitor flickered like this;" \
+        "if it does, set 'variable-refresh-rate on-demand=true' on its niri output"
+  fi
+  # A USB-C partner that isn't feeding us power, with no DP lit: a monitor
+  # there means alt mode never came up (the 2026-09-27 failure).
+  if ((${#sinks[@]} && !dp)); then
+    warn "USB-C device on ${sinks[*]} but no DisplayPort output — if it's a monitor," \
+      "alt mode failed: check the cable on another machine, then EC reset"
+  fi
+
+  echo
+  echo "${B}Power$N"
+  local ac cap st end src=() s
+  ac=$(rd /sys/class/power_supply/AC/online)
+  cap=$(rd /sys/class/power_supply/BAT0/capacity)
+  st=$(rd /sys/class/power_supply/BAT0/status)
+  end=$(rd /sys/class/power_supply/BAT0/charge_control_end_threshold)
+  for s in /sys/class/power_supply/ucsi-source-psy-*; do
+    [[ $(rd "$s/online") == 1 ]] && src+=("port$((10#${s##*:} - 1))")
+  done
+  echo "  AC: $([[ $ac == 1 ]] && echo "${G}online$N" || echo "${Y}offline$N")" \
+    "${src[*]:+ via USB-C ${src[*]}}  battery: ${cap:-?}% $st${end:+  (charge limit $end%)}"
+  if [[ $ac == 1 ]]; then
+    if ((${#src[@]})); then
+      ok "charging power arriving via USB-C ${src[*]}"
+    else
+      ok "on AC power (via a port UCSI doesn't report, e.g. a hub's charging pass-through)"
+    fi
+  fi
+
+  echo
+  echo "${B}Kernel log (this boot)$N"
+  local log hits benign
+  log=$(journalctl -k -b -q -p warning --no-pager 2>/dev/null || true)
+  # Real failures only. amdgpu's LTTPR/REG_WAIT noise shows up on healthy boots.
+  hits=$(grep -iE 'ucsi.*(fail|error)|over-current|device descriptor read|not accepting address|unable to enumerate|cannot enable|link training.*fail|HC died|xhci.*error' <<<"$log" || true)
+  benign=$(grep -cE 'LTTPR|REG_WAIT' <<<"$log" || true)
+  if [[ -n $hits ]]; then
+    echo "$hits" | tail -n 5 | cut -c1-160 | sed 's/^/  /'
+    fail "$(grep -c . <<<"$hits") USB/USB-C/display error line(s) in the kernel log — see above"
+  else
+    echo "  ${D}no USB, USB-C or link-training errors${benign:+ ($benign benign amdgpu LTTPR/REG_WAIT lines)}$N"
+    ok "kernel log clean"
+  fi
+}
+
+health() {
+  echo
+  echo "${B}Health$N"
+  printf '%s\n' "${findings[@]}"
+  ((bad)) && echo "  ${Y}→ something needs a look$N" || echo "  ${G}→ all good$N"
+  return "$bad"
+}
+
+case "${1:-}" in
+  -w|--watch)
+    trap 'tput cnorm 2>/dev/null; exit' INT TERM
+    tput civis 2>/dev/null || true
+    exec 3>&1
+    while :; do
+      out=$(snapshot 3>&1 || true)
+      clear
+      printf '%s\n\n%s\n' "$out" "${D}refreshing every 1s — ctrl+c to quit$N"
+      sleep 1
+    done
+    ;;
+  -H|--health) snapshot 3>/dev/null ;;
+  '') snapshot 3>&1 ;;
+  *) echo "usage: usb-ports [-H|--health] [-w|--watch]" >&2; exit 2 ;;
+esac
