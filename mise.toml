@@ -435,7 +435,7 @@ usage = 'arg "[level]" default="get"'
 run = '"$HOME/.local/bin/ext-brightness" "${usage_level}"'
 
 [tasks.usb-ports]
-description = "USB/USB-C/display health: per-port link speed (USB 2/3 halves side by side), UCSI/PD, DP alt mode, power, kernel errors. -H verdict only, -w watch."
+description = "USB/USB-C/display/firmware health: per-port link speed, UCSI/PD, DP alt mode, power, kernel errors, BIOS/EC/PD firmware vs Lenovo catalog + fwupd. -H verdict only, -w watch."
 quiet = true
 raw = true
 usage = """

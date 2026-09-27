@@ -8,3 +8,6 @@
 # UCSI ports: port0 = caps lock (the monitor and the hub both showed up there
 # when plugged in; the hinge port never reports to UCSI).
 typec:port0  USB-C (caps lock)
+
+# Firmware fwupd only calls "UEFI Device Firmware": 0x105 = Lenovo PD fw 1.0.1.5.
+esrt:a77b326c-bbf9-4867-af3b-a01f96f274f5  USB-C PD firmware
