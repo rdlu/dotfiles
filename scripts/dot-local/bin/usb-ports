@@ -35,8 +35,10 @@
 # Firmware: BIOS/EC from DMI, fwupd's pending updates (cached metadata, no
 # network) and failed attempts. On Lenovo machines it also compares BIOS and
 # labelled PD firmware against Lenovo's per-model update catalog — the only
-# source for them, since LVFS doesn't carry these models — fetched at most
-# once a day into ~/.cache/usb-ports/.
+# source for them, since LVFS doesn't carry these models. On Dell machines it
+# compares BIOS against Dell's catalog for the system ID (DMI product_sku),
+# which gets releases before LVFS does (needs bsdtar or cabextract). Catalogs
+# are fetched at most once a day into ~/.cache/usb-ports/.
 set -euo pipefail
 
 labels_file="${XDG_CONFIG_HOME:-$HOME/.config}/usb-ports/labels"
@@ -145,10 +147,52 @@ lenovo_latest() {
   return 0
 }
 
+# Latest BIOS in Dell's catalog for this system ID (DMI product_sku), as
+# "bios <ver> <date> <package-id> <criticality>"; cached for a day. Empty when
+# offline. A subshell, so the EXIT trap cleans up the scratch dir.
+dell_latest() (
+  local sku=$1 cache=${XDG_CACHE_HOME:-$HOME/.cache}/usb-ports/dell-$1.txt tmp path
+  if [[ -s $cache && -n $(find "$cache" -mmin -1440 2>/dev/null) ]]; then
+    cat "$cache"; return 0
+  fi
+  tmp=$(mktemp -d) || return 0
+  trap 'rm -rf "$tmp"' EXIT
+  # Both cabs hold one UTF-16LE, CRLF XML file.
+  unpack() {
+    curl -fsL --max-time 15 -o "$tmp/c.cab" "https://downloads.dell.com/$1" 2>/dev/null || return 1
+    rm -f "$tmp"/*.xml
+    if command -v bsdtar >/dev/null; then
+      bsdtar -xf "$tmp/c.cab" -C "$tmp" 2>/dev/null
+    else
+      cabextract -q -d "$tmp" "$tmp/c.cab" >/dev/null 2>&1
+    fi || return 1
+    iconv -f UTF-16LE -t UTF-8 "$tmp"/*.xml 2>/dev/null | tr -d '\r'
+  }
+  # The index maps system ID → per-model cab, whose folder changes per release.
+  path=$(unpack catalog/CatalogIndexPC.cab |
+    awk -v id="systemID=\"$sku\"" '/<GroupManifest/ { b = "" } { b = b $0 "\n" }
+      /<\/GroupManifest>/ && index(b, id) { print b; exit }' |
+    grep -oE 'path="[^"]+\.cab"' | head -1 | cut -d'"' -f2 || true)
+  [[ -n $path ]] || return 0
+  mkdir -p "${cache%/*}"
+  # BIOS components aren't in version order; take the highest.
+  unpack "$path" | awk '
+    function attr(n) { return match($0, n "=\"[^\"]*\"") ? substr($0, RSTART + length(n) + 2, RLENGTH - length(n) - 3) : "" }
+    /<SoftwareComponent / { bios = 0; crit = ""; v = attr("vendorVersion"); d = attr("releaseDate"); p = attr("packageID") }
+    /<ComponentType value="BIOS"/ { bios = 1 }
+    /<Criticality / { c = 1; next }
+    c && /<Display/ { crit = $0; sub(/.*CDATA\[/, "", crit); sub(/\]\].*/, "", crit); c = 0 }
+    /<\/SoftwareComponent>/ && bios && v != "" { print v "\t" d "\t" p "\t" crit }' |
+    sort -t$'\t' -k1,1V | tail -1 | awk -F'\t' '{ print "bios", $1, $2, $3, $4 }' >"$cache.tmp" 2>/dev/null || true
+  [[ -s $cache.tmp ]] && mv "$cache.tmp" "$cache" && cat "$cache"
+  rm -f "$cache.tmp"
+  return 0
+)
+
 firmware() {
   echo
   echo "${B}Firmware$N"
-  local vendor bios_id bios_rel bios_date ec mtm latest lb lb_prefix lb_nn cur_nn
+  local vendor bios_id bios_rel bios_date ec mtm latest lb lb_prefix lb_nn cur_nn sku dell_upd=''
   vendor=$(rd /sys/class/dmi/id/sys_vendor)
   bios_id=$(rd /sys/class/dmi/id/bios_version); bios_id=${bios_id%% *}
   bios_rel=$(rd /sys/class/dmi/id/bios_release)
@@ -176,11 +220,34 @@ firmware() {
           "(${lb_prefix}uj${lb_nn}w.exe); the bootable ISO flasher fails on this machine"
       fi
     fi
+  elif [[ $vendor == "Dell Inc." ]]; then
+    sku=$(rd /sys/class/dmi/id/product_sku)
+    local re='^bios ([^ ]+) (.+) ([^ ]+) ([^ ]+)$'
+    if ! command -v bsdtar >/dev/null && ! command -v cabextract >/dev/null; then
+      echo "  ${D}can't read Dell's catalog (install libarchive) — latest versions not checked$N"
+    else
+      latest=$(dell_latest "$sku")
+      if [[ -z $latest ]]; then
+        echo "  ${D}Dell catalog for $sku unreachable (offline?) — latest versions not checked$N"
+      elif [[ $latest =~ $re ]]; then
+        if [[ $(printf '%s\n' "$bios_id" "${BASH_REMATCH[1]}" | sort -V | tail -1) == "$bios_id" ]]; then
+          echo "  ${D}latest BIOS in Dell's catalog: ${BASH_REMATCH[1]} — up to date$N"
+          ok "BIOS up to date ($bios_id)"
+        else
+          echo "  ${Y}Dell has BIOS ${BASH_REMATCH[1]} (${BASH_REMATCH[4]}, ${BASH_REMATCH[2]})$N" \
+            "${D}https://www.dell.com/support/home/us/en/19/Drivers/DriversDetails?driverId=${BASH_REMATCH[3]}$N"
+          # Warned after the fwupd query below, which says whether LVFS has it yet.
+          dell_upd="BIOS update available: $bios_id → ${BASH_REMATCH[1]} (${BASH_REMATCH[4]}, ${BASH_REMATCH[2]})"
+        fi
+      fi
+    fi
   fi
 
   # fwupd: labelled capsule devices, failed attempts, pending updates.
   command -v fwupdmgr >/dev/null && command -v jq >/dev/null || {
-    echo "  ${D}fwupd/jq not installed — skipping capsule firmware checks$N"; return 0; }
+    echo "  ${D}fwupd/jq not installed — skipping capsule firmware checks$N"
+    [[ -n $dell_upd ]] && warn "$dell_upd — flash from F12 → BIOS Flash Update with the .exe on the ESP"
+    return 0; }
   local devs upd g name ver lpd failed=()
   devs=$(fwupdmgr get-devices --json 2>/dev/null || true)
   lpd=$(awk '$1=="pd"{print $2}' <<<"${latest:-}")
@@ -209,6 +276,16 @@ firmware() {
   else
     echo "  ${D}fwupd: no pending updates (cached metadata; fwupdmgr refresh to re-check)$N"
   fi
+  if [[ -n $dell_upd ]]; then
+    if grep -q '^System Firmware ' <<<"$upd"; then
+      warn "$dell_upd — fwupd has it too: fwupdmgr update"
+    else
+      # Dell's catalog runs ahead of LVFS (2.31.0 wasn't there after a refresh).
+      warn "$dell_upd — not on LVFS yet; flash from F12 → BIOS Flash Update with the" \
+        ".exe on the ESP, or wait for fwupdmgr"
+    fi
+  fi
+  return 0
 }
 
 # External connectors that are lit, as DRM names (DP-2, HDMI-A-1).
