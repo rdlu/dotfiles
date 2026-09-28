@@ -22,6 +22,15 @@
 # on its socket. Firmware that fwupd lists only as "UEFI Device Firmware" gets
 # a name the same way, by its ESRT GUID:
 #   esrt:<guid>  <label>               e.g.  esrt:a77b326c-…  USB-C PD firmware
+# The USB 2 and USB 3 halves of a socket are paired by the kernel's `peer`
+# link when firmware describes it (daisy). Where it doesn't (the XPS 9320's
+# Thunderbolt ports have none), pair them by hand, USB 2 key → USB 3 key:
+#   peer:<usb2-key>  <usb3-key>        e.g.  peer:0000:00:14.0-1  0000:00:0d.0-1
+# (plug a USB 3 device in; the USB 3 key is its SuperSpeed root port's
+# <pci-address>-<port>, which matches the USB 2 one by port number on Intel).
+#
+# Thunderbolt/USB4 domains, when present, get their own section: security
+# level and each attached device's authorization and link speed.
 #
 # Firmware: BIOS/EC from DMI, fwupd's pending updates (cached metadata, no
 # network) and failed attempts. On Lenovo machines it also compares BIOS and
@@ -77,6 +86,31 @@ tree() {
       "$(rd "$d/idVendor")" "$(rd "$d/idProduct")" "$(speed "$(rd "$d/speed")")" \
       "$(rd "$d/product")"
   done
+}
+
+# SuperSpeed root hub's bus number on PCI controller <pci-address>, for a
+# peer: pairing. A controller has one USB 2 and one USB 3 root hub.
+ss_bus() {
+  local h
+  for h in /sys/bus/usb/devices/usb[0-9]*; do
+    [[ $(basename "$(readlink -f "$h/..")") == "$1" ]] || continue
+    case $(rd "$h/speed") in 5000|10000|20000) echo "${h##*/usb}"; return 0 ;; esac
+  done
+  return 0
+}
+
+# Root port "<bus>-<port>" (either half) → socket label; filled by sections()
+# so the kernel log can say which socket a device path is on.
+declare -A sock=()
+
+# Socket label for a kernel message naming a USB device ("usb 2-3.1: …") or a
+# root port ("usb usb2-port3: …"); empty when unlabelled.
+sock_of() {
+  local re1='usb ([0-9]+)-([0-9]+)[.:]' re2='usb usb([0-9]+)-port([0-9]+)'
+  if [[ $1 =~ $re1 || $1 =~ $re2 ]]; then
+    echo "${sock[${BASH_REMATCH[1]}-${BASH_REMATCH[2]}]:-}"
+  fi
+  return 0
 }
 
 snapshot() {
@@ -187,23 +221,83 @@ lit_connectors() {
   return 0
 }
 
+# Thunderbolt/USB4: domain security and each attached device (router). Only
+# where the bus exists — daisy's USB-C ports aren't USB4, so no section there.
+thunderbolt() {
+  local tb=/sys/bus/thunderbolt/devices doms d r n dom sec secs=() unauth=() devs=0 link bolt
+  doms=("$tb"/domain[0-9]*)
+  [[ -e ${doms[0]} ]] || return 0
+  echo
+  echo "${B}Thunderbolt / USB4$N"
+  for d in "${doms[@]}"; do
+    dom=${d##*/domain}
+    sec=$(rd "$d/security")
+    [[ " ${secs[*]} " == *" ${sec:-?} "* ]] || secs+=("${sec:-?}")
+    # The host router (<dom>-0) says which controller this domain is.
+    printf '  domain%s  security %s%s  %s%s %s, gen %s%s\n' "$dom" "${sec:-?}" \
+      "$([[ $(rd "$d/iommu_dma_protection") == 1 ]] && echo ", IOMMU DMA protection")" \
+      "$D" "$(rd "$tb/$dom-0/vendor_name")" "$(rd "$tb/$dom-0/device_name")" \
+      "$(rd "$tb/$dom-0/generation")" "$N"
+  done
+  # Device routers are <dom>-<route>; <dom>-0 is the host, and names with
+  # "." or ":" are XDomain services and retimers, not devices.
+  for r in "$tb"/[0-9]*-[0-9a-f]*; do
+    n=${r##*/}
+    [[ -e $r/authorized && $n != *-0 && $n != *[.:]* ]] || continue
+    devs=$((devs + 1))
+    link=''
+    [[ -n $(rd "$r/rx_speed") ]] &&
+      link="rx $(rd "$r/rx_speed")×$(rd "$r/rx_lanes")  tx $(rd "$r/tx_speed")×$(rd "$r/tx_lanes")"
+    bolt=''
+    # boltd's view, if installed: whether the device is enrolled (auto-authorized next time).
+    command -v boltctl >/dev/null &&
+      bolt=$(boltctl info "$(rd "$r/unique_id")" 2>/dev/null | awk '/stored:/ { print "stored " $NF; exit }' || true)
+    printf '  %s  %s %s  %s  gen %s  %s%s%s\n' "$n" "$(rd "$r/vendor_name")" "$(rd "$r/device_name")" \
+      "$(case $(rd "$r/authorized") in 0) echo "${Y}not authorized$N" ;; *) echo "${G}authorized$N" ;; esac)" \
+      "$(rd "$r/generation")" "$D" "$link${bolt:+  $bolt}" "$N"
+    [[ $(rd "$r/authorized") == 0 ]] && unauth+=("$(rd "$r/device_name") ($n)")
+  done
+  ((devs)) || echo "  ${D}no Thunderbolt/USB4 devices attached$N"
+  if ((${#unauth[@]})); then
+    warn "Thunderbolt device(s) not authorized, so no PCIe tunnels: ${unauth[*]} —" \
+      "boltctl authorize <uuid> (or enroll to make it stick)"
+  else
+    ok "Thunderbolt/USB4: ${#doms[@]} domain(s), security ${secs[*]}, $devs device(s) attached"
+  fi
+  return 0
+}
+
 sections() {
   echo "${B}USB ports$N"
-  local p bus port peer pbus pport pci key hs ss top name ss_seen=0 ss_down=0 t tc lit_dp
+  local p bus port peer pbus pport pkey pci key hs ss top name ss_seen=0 ss_down=0 t tc lit_dp any_peer=0
   lit_dp=$(lit_connectors | grep '^DP-' | tr '\n' ' ' || true)
+  sock=()
+  # With peer links on the machine, a port without one is really USB 2-only;
+  # with none at all, firmware just doesn't describe them, and the USB 3 half
+  # is unknown rather than absent.
+  compgen -G '/sys/bus/usb/devices/usb*/*-0:1.0/usb*-port*/peer' >/dev/null && any_peer=1
   for p in /sys/bus/usb/devices/usb*/*-0:1.0/usb*-port*; do
     [[ $(rd "$p/connect_type") == hotplug ]] || continue
     bus=${p##*/usb}; port=${bus#*-port}; bus=${bus%-port*}
     # Visit each physical port once, from its USB 2 (480M root hub) side.
     [[ $(rd "/sys/bus/usb/devices/usb$bus/speed") == 480 ]] || continue
-    peer=$(readlink -f "$p/peer" 2>/dev/null || true)
-    pbus='' pport=''
-    if [[ -n $peer ]]; then
-      pbus=${peer##*/usb}; pport=${pbus#*-port}; pbus=${pbus%-port*}
-    fi
     pci=$(basename "$(readlink -f "/sys/bus/usb/devices/usb$bus/..")")
     key="$pci-$port"
     name=${label[$key]:-$key}
+    # readlink -f prints a path even for a missing link, so test it first.
+    pbus='' pport=''
+    if [[ -e $p/peer ]]; then
+      peer=$(readlink -f "$p/peer")
+      pbus=${peer##*/usb}; pport=${pbus#*-port}; pbus=${pbus%-port*}
+    elif [[ -n ${label[peer:$key]:-} ]]; then
+      pkey=${label[peer:$key]%% *}
+      pbus=$(ss_bus "${pkey%-*}")
+      [[ -n $pbus ]] && pport=${pkey##*-}
+    fi
+    if [[ -n ${label[$key]:-} ]]; then
+      sock[$bus-$port]=${label[$key]}
+      [[ -n $pbus ]] && sock[$pbus-$pport]=${label[$key]}
+    fi
     hs=0 ss=0
     [[ -e /sys/bus/usb/devices/$bus-$port ]] && hs=1
     [[ -n $pbus && -e /sys/bus/usb/devices/$pbus-$pport ]] && ss=1
@@ -215,6 +309,8 @@ sections() {
       tree "$pbus" "$pport"
     elif [[ -n $pbus ]]; then
       echo "    USB 3 half: ${D}idle$N"
+    elif ((!any_peer)); then
+      echo "    USB 3 half: ${Y}unknown$N ${D}(no peer link — add a peer: line)$N"
     fi
     if ((hs)); then
       echo "    USB 2 half: ${G}linked$N"
@@ -253,7 +349,7 @@ sections() {
 
   echo
   echo "${B}USB-C (UCSI)$N"
-  local t n partner psy online ports=(/sys/class/typec/port[0-9]) sinks=()
+  local t n partner psy psys online ports=(/sys/class/typec/port[0-9]) sinks=()
   if [[ ! -e ${ports[0]} ]]; then
     echo "  ${Y}no USB-C ports registered$N"
     ports=()
@@ -264,7 +360,9 @@ sections() {
   fi
   for t in "${ports[@]}"; do
     n=${t##*/}; partner=$t/$n-partner
-    psy=/sys/class/power_supply/ucsi-source-psy-USBC000:00$((${n#port} + 1))
+    # UCSI names its supply <acpi-dev><1-based connector>: USBC000:00 + 1 → …:001.
+    psys=(/sys/class/power_supply/ucsi-source-psy-*:00$((${n#port} + 1)))
+    psy=${psys[0]}
     online=$(rd "$psy/online")
     [[ -n ${label[typec:$n]:-} ]] && n+=" (${label[typec:$n]})"
     if [[ -d $partner ]]; then
@@ -278,6 +376,8 @@ sections() {
       echo "  $n: ${D}empty$N"
     fi
   done
+
+  thunderbolt
 
   echo
   echo "${B}Display connectors$N"
@@ -317,19 +417,29 @@ sections() {
 
   echo
   echo "${B}Power$N"
-  local ac cap st end src=() s
+  local ac cap st end src=() s i v a srcs=''
   ac=$(rd /sys/class/power_supply/AC/online)
   cap=$(rd /sys/class/power_supply/BAT0/capacity)
   st=$(rd /sys/class/power_supply/BAT0/status)
   end=$(rd /sys/class/power_supply/BAT0/charge_control_end_threshold)
   for s in /sys/class/power_supply/ucsi-source-psy-*; do
-    [[ $(rd "$s/online") == 1 ]] && src+=("port$((10#${s##*:} - 1))")
+    [[ $(rd "$s/online") == 1 ]] || continue
+    i=port$((10#${s##*:} - 1))
+    [[ -n ${label[typec:$i]:-} ]] && i+=" (${label[typec:$i]})"
+    # What the PD contract settled on; the partner's supports_usb_power_delivery
+    # can say "no" while this still reads 20 V (seen on the XPS's dock).
+    v=$(rd "$s/voltage_now") a=$(rd "$s/current_max")
+    if [[ $v =~ ^[0-9]+$ && $a =~ ^[0-9]+$ ]] && ((v && a)); then
+      i+=" $(awk -v v="$v" -v a="$a" 'BEGIN { printf "%gV %gA ≈ %.0fW", v / 1e6, a / 1e6, v * a / 1e12 }')"
+    fi
+    src+=("$i")
   done
+  ((${#src[@]})) && srcs=$(printf '%s, ' "${src[@]}") && srcs=${srcs%, }
   echo "  AC: $([[ $ac == 1 ]] && echo "${G}online$N" || echo "${Y}offline$N")" \
-    "${src[*]:+ via USB-C ${src[*]}}  battery: ${cap:-?}% $st${end:+  (charge limit $end%)}"
+    "${srcs:+ via USB-C $srcs}  battery: ${cap:-?}% $st${end:+  (charge limit $end%)}"
   if [[ $ac == 1 ]]; then
     if ((${#src[@]})); then
-      ok "charging power arriving via USB-C ${src[*]}"
+      ok "charging power arriving via USB-C $srcs"
     else
       ok "on AC power (via a port UCSI doesn't report, e.g. a hub's charging pass-through)"
     fi
@@ -337,18 +447,53 @@ sections() {
 
   echo
   echo "${B}Kernel log (this boot)$N"
-  local log hits benign
-  log=$(journalctl -k -b -q -p warning --no-pager 2>/dev/null || true)
+  local log hits benign resets l msg secs where re k per=() n_reset=0
+  declare -A nres=()
+  # Monotonic timestamps: seconds since boot tell an at-boot failure (a dock
+  # enumerating before the TB controller settled) from one while in use.
+  log=$(journalctl -k -b -q -p warning --no-pager -o short-monotonic 2>/dev/null || true)
   # Real failures only. amdgpu's LTTPR/REG_WAIT noise shows up on healthy boots.
   hits=$(grep -iE 'ucsi.*(fail|error)|over-current|device descriptor read|not accepting address|unable to enumerate|cannot enable|link training.*fail|HC died|xhci.*error' <<<"$log" || true)
   benign=$(grep -cE 'LTTPR|REG_WAIT' <<<"$log" || true)
+  re='^\[ *([0-9]+)\.[0-9]+\] [^ ]+ kernel: (.*)$'
   if [[ -n $hits ]]; then
-    echo "$hits" | tail -n 5 | cut -c1-160 | sed 's/^/  /'
+    tail -n 5 <<<"$hits" | while IFS= read -r l; do
+      if [[ $l =~ $re ]]; then
+        secs=${BASH_REMATCH[1]} msg=${BASH_REMATCH[2]}
+        where=$(sock_of "$msg")
+        printf '  %s[%5ss]%s %s%s%s\n' "$D" "$secs" "$N" "${msg:0:120}" \
+          "${where:+  ← $where}" "$( ((secs < 60)) && echo " $D(at boot)$N")"
+      else
+        echo "  ${l:0:160}"
+      fi
+    done
     fail "$(grep -c . <<<"$hits") USB/USB-C/display error line(s) in the kernel log — see above"
   else
+    ((benign)) || benign=''  # grep -c says 0, not nothing — and Intel never has any
     echo "  ${D}no USB, USB-C or link-training errors${benign:+ ($benign benign amdgpu LTTPR/REG_WAIT lines)}$N"
     ok "kernel log clean"
   fi
+  # Link resets are info-level, so not in the warnings above. A couple while a
+  # dock settles is normal; a steady trickle is a flaky cable or marginal link.
+  resets=$(journalctl -k -b -q --no-pager -o short-monotonic 2>/dev/null |
+    grep -E 'reset (SuperSpeed|high-speed)' || true)
+  if [[ -n $resets ]]; then
+    while IFS= read -r l; do
+      [[ $l =~ $re ]] || continue
+      msg=${BASH_REMATCH[2]}
+      where=$(sock_of "$msg")
+      [[ -z $where && $msg =~ usb\ ([0-9]+-[0-9]+) ]] && where="port ${BASH_REMATCH[1]}"
+      k=${where:-unknown port}
+      nres[$k]=$((${nres[$k]:-0} + 1)); n_reset=$((n_reset + 1))
+    done <<<"$resets"
+    for k in "${!nres[@]}"; do per+=("$k ×${nres[$k]}"); done
+    k=$(printf '%s\n' "${per[@]}" | sort | awk 'NR > 1 { printf ", " } { printf "%s", $0 }')
+    echo "  ${D}$n_reset USB link reset(s): $k$N"
+    ((n_reset >= 5)) &&
+      warn "$n_reset USB link resets this boot on $k" \
+        "— flaky cable/dock or a marginal SuperSpeed link; reseat or swap the cable"
+  fi
+  return 0
 }
 
 health() {

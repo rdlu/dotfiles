@@ -1,0 +1,16 @@
+# usb-ports labels for xps (Dell XPS 9320): <pci-address>-<port> <label>
+# Mapped 2026-09-28: dock on the left socket showed up on 3-1/2-1, the monitor
+# (DP alt mode) on the right. Both sockets are Thunderbolt 4: USB 2 on the PCH
+# xHCI (00:14.0), USB 3 on the TCSS xHCI (00:0d.0).
+0000:00:14.0-1  USB-C (left)
+0000:00:14.0-3  USB-C (right)
+
+# Firmware gives these ports no `peer` links, so pair the halves by hand
+# (USB 2 key → USB 3 key; same port number on both controllers).
+peer:0000:00:14.0-1  0000:00:0d.0-1
+peer:0000:00:14.0-3  0000:00:0d.0-3
+
+# UCSI ports: port0 = left (the dock, and charging through it), port1 = right
+# (the monitor, partner with one alt mode and no USB data).
+typec:port0  USB-C (left)
+typec:port1  USB-C (right)
