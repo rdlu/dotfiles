@@ -428,4 +428,3 @@ printing:
 
 keyboard-firmware:
   - vial-appimage
-  - zmk-studio-bin
