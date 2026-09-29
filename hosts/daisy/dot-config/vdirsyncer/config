@@ -1,0 +1,29 @@
+# vdirsyncer: Google Calendar <-> local vdir (~/.local/share/calendars/google),
+# which khal reads. Daisy-only while trialing khal vs chroncal.
+#
+# The OAuth client ID/secret live in oo7 (Secret Service), never in this
+# public repo — see `secret-tool lookup service google-caldav key client_id`.
+# The refresh token vdirsyncer writes after sign-in stays in ~/.local/share.
+#
+#   vdirsyncer discover   # first run: opens the browser for Google sign-in
+#   vdirsyncer sync       # then systemctl --user enable --now vdirsyncer.timer
+
+[general]
+status_path = "~/.local/share/vdirsyncer/status/"
+
+[pair google]
+a = "google_local"
+b = "google_remote"
+collections = ["from b"]
+metadata = ["color", "displayname"]
+
+[storage google_local]
+type = "filesystem"
+path = "~/.local/share/calendars/google/"
+fileext = ".ics"
+
+[storage google_remote]
+type = "google_calendar"
+token_file = "~/.local/share/vdirsyncer/google_token"
+client_id.fetch = ["command", "secret-tool", "lookup", "service", "google-caldav", "key", "client_id"]
+client_secret.fetch = ["command", "secret-tool", "lookup", "service", "google-caldav", "key", "client_secret"]

@@ -1,0 +1,27 @@
+# khal: reads the vdir vdirsyncer keeps in sync with Google Calendar
+# (see ../vdirsyncer/config). Date/time formats follow LC_TIME (pt_BR).
+# Daisy-only while trialing khal vs chroncal.
+
+[calendars]
+
+[[google]]
+path = ~/.local/share/calendars/google/*
+type = discover
+color = auto
+
+[locale]
+firstweekday = 6  # Sunday, as pt_BR calendars do (0 = Monday)
+# pt_BR's %X includes seconds; dates keep the locale's dd/mm/yyyy.
+timeformat = %H:%M
+datetimeformat = %d/%m/%Y %H:%M
+longdatetimeformat = %d/%m/%Y %H:%M
+
+[default]
+highlight_event_days = True
+
+[view]
+# Defaults append {description}, which dumps Google Meet boilerplate into
+# every line; ikhal still shows it when an event is opened. `list`/`calendar`
+# use agenda_event_format, everything else event_format.
+agenda_event_format = {calendar-color}{cancelled}{start-end-time-style} {title}{repeat-symbol}{alarm-symbol}{reset}
+event_format = {calendar-color}{cancelled}{start}-{end} {title}{repeat-symbol}{alarm-symbol}{reset}
