@@ -47,7 +47,8 @@ window-rule {
 }
 
 // The Suika Box vault launchers (dev.rdlu.SuikaBox nvim inbox, and the
-// daisy-only dev.rdlu.ClinSuikaBox clin TUI): open full-width.
+// daisy-only dev.rdlu.ClinSuikaBox / dev.rdlu.EmeraldianSuikaBox TUIs): open
+// full-width.
 window-rule {
     match app-id="SuikaBox$"
     default-column-width { proportion 1.0; }

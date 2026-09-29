@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Emeraldian (Suika Box)
+GenericName=Note Manager
+Comment=Ghostty running the emeraldian TUI over the Suika Box vault (trial vs clin)
+Exec=ghostty "--title=Emeraldian Suika Box" --class=dev.rdlu.EmeraldianSuikaBox "--working-directory=/home/rdlu/Documents/Suika Box" -e mise exec -- emeraldian "/home/rdlu/Documents/Suika Box"
+Icon=SuikaBox
+Type=Application
+Terminal=false
+Keywords=Notes;Markdown;Vault;Obsidian;Notas;
+Categories=Utility;TextEditor;
+StartupNotify=false
