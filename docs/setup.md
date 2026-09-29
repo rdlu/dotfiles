@@ -19,6 +19,16 @@ just full-auto-gui   # the above + kitty + the niri/waybar graphical stack
 interactive — it pauses so you can review `/etc/xdg/reflector/reflector.conf`
 and add the Chaotic AUR include to `/etc/pacman.conf`.
 
+On a host that loads the `audio-production` category, also add this under
+`[options]` in `/etc/pacman.conf`. `zam-plugins` pulls in
+`zam-plugins-standalone`, which ships one launcher entry per plugin (17 of
+them) that clutter the app launcher; the plugins and standalone binaries are
+unaffected. Reinstall the package afterwards to drop already-installed entries:
+
+```ini
+NoExtract   = usr/share/applications/com.zamaudio.*
+```
+
 If you are not running `full-auto`, run `just packages` first: it sets up
 Flatpak/Flathub, reflector mirrors, the Chaotic AUR repository, and the
 `paru` AUR helper that every other recipe uses.
