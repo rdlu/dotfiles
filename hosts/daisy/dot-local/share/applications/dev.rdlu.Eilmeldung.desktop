@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=eilmeldung
+GenericName=RSS Reader
+Comment=Ghostty running eilmeldung, the terminal RSS reader
+Exec=ghostty --title=eilmeldung --class=dev.rdlu.Eilmeldung -e mise exec -- eilmeldung
+Icon=com.gitlab.newsflash
+Type=Application
+Terminal=false
+Keywords=RSS;Feeds;News;Atom;Reader;Notícias;Noticias;Leitor;
+Categories=Network;Feed;News;
+StartupNotify=false

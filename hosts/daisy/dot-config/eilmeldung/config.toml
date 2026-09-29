@@ -1,0 +1,10 @@
+# eilmeldung — only settings that differ from the defaults (upstream advises
+# against copying examples/default-config.toml). Local RSS: no account and no
+# secrets, so this file is safe in the public repo. news-flash state
+# (newsflash.json) lands beside it unstowed; the article DB lives in
+# ~/.local/state/eilmeldung.
+sync_every_minutes = 30
+
+[login_setup]
+login_type = "no_login"
+provider = "local_rss"
