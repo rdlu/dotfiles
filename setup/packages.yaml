@@ -325,7 +325,6 @@ desktop:
   - dex
   - dgop
   - gnome-epub-thumbnailer
-  - gnome-shell-extension-appindicator
   - hyprpicker
   - matugen
   - nirius

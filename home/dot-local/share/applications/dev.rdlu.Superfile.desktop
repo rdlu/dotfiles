@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=Superfile
+GenericName=File Manager
+Comment=Ghostty running the superfile (spf) terminal file manager
+Exec=ghostty --title=Superfile --class=dev.rdlu.Superfile -e spf
+TryExec=spf
+Icon=system-file-manager
+Type=Application
+Terminal=false
+Keywords=Files;File Manager;Explorer;Browser;spf;
+Categories=System;FileTools;
+StartupNotify=false
