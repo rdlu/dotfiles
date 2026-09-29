@@ -22,3 +22,9 @@
 # config rewrites itself, so it stays unstowed in ~/.config/emeraldian, with
 # the assistant set to provider = "offline". Daisy-only while under test.
 "github:iamrohithrnair/emeraldian" = { version = "latest", bin = "emeraldian", matching_regex = "x86_64-unknown-linux-gnu\\.tar\\.gz$" }
+
+# eilmeldung: ratatui RSS reader (news-flash library). Trialing as a local-only
+# replacement for the FreshRSS on mocha; config (local_rss, no secrets) is
+# stowed at hosts/daisy/dot-config/eilmeldung. Static musl release binary.
+# Daisy-only while under test.
+"github:christo-auer/eilmeldung" = { version = "latest", bin = "eilmeldung", matching_regex = "x86_64-unknown-linux-musl-.*\\.tar\\.gz$" }
