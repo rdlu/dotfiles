@@ -6,6 +6,6 @@ Exec=ghostty "--title=Emeraldian Suika Box" --class=dev.rdlu.EmeraldianSuikaBox 
 Icon=SuikaBox
 Type=Application
 Terminal=false
-Keywords=Notes;Markdown;Vault;Obsidian;Notas;
+Keywords=Notes;Markdown;Vault;Obsidian;Notas;Journal;Anotações;Anotacoes;
 Categories=Utility;TextEditor;
 StartupNotify=false

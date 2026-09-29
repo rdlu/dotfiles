@@ -6,6 +6,6 @@ Exec=ghostty "--title=Clin Suika Box" --class=dev.rdlu.ClinSuikaBox "--working-d
 Icon=SuikaBox
 Type=Application
 Terminal=false
-Keywords=Notes;Markdown;Vault;
+Keywords=Notes;Markdown;Vault;Journal;Anotações;Anotacoes;
 Categories=Utility;TextEditor;
 StartupNotify=false
