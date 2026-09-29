@@ -7,6 +7,6 @@ TryExec=yazi
 Icon=yazi
 Type=Application
 Terminal=false
-Keywords=Files;File Manager;Explorer;Browser;
+Keywords=Files;File Manager;Explorer;Browser;Folders;Arquivos;Pastas;Explorador;
 Categories=System;FileTools;
 StartupNotify=false
