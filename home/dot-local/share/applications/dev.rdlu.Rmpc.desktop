@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=rmpc
+GenericName=Music Player (MPD)
+Comment=Ghostty running rmpc, the terminal MPD client
+Exec=ghostty --title=rmpc --class=dev.rdlu.Rmpc -e rmpc
+TryExec=rmpc
+Icon=mpd
+Type=Application
+Terminal=false
+Keywords=Music;Audio;Player;MPD;Música;Musica;Tocador;Reprodutor;
+Categories=AudioVideo;Audio;Player;Music;
+StartupNotify=false
