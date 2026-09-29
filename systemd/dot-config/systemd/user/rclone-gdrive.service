@@ -1,0 +1,21 @@
+[Unit]
+Description=rclone mount of Google Drive at ~/GoogleDrive
+Documentation=man:rclone(1) https://rclone.org/drive/
+# The rclone config (Drive token + OAuth client) is per-host and encrypted;
+# its password lives in the Secret Service (oo7), fetched at start:
+#   secret-tool lookup service rclone key config_password
+# Nothing secret is in this unit or in the repo.
+
+[Service]
+Type=notify
+ExecStartPre=/usr/bin/mkdir -p %h/GoogleDrive
+ExecStart=/usr/bin/rclone mount gdrive: %h/GoogleDrive \
+    --password-command "secret-tool lookup service rclone key config_password" \
+    --vfs-cache-mode full --vfs-cache-max-size 10G \
+    --dir-cache-time 5m --poll-interval 1m
+ExecStop=/usr/bin/fusermount3 -u %h/GoogleDrive
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=default.target
