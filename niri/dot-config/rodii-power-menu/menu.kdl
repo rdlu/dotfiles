@@ -24,6 +24,8 @@
 // a variant overrides icon / label / run / keywords / hint. `detail "cmd"`
 // shows its output as a right-hand column. All state/detail commands run in
 // parallel; any slower than state-timeout-ms show their last known value.
+// A detail shows its cached value at once and refreshes in the background;
+// add fresh=#true to wait for it like a state (for fast, often-changing ones).
 //
 // Icons: write nerd-font glyphs as escapes ("\u{f023}"): the private-use ones
 // are invisible and get lost in edits. Commands containing " go in raw strings:
@@ -49,7 +51,12 @@ page "Power" {
     }
 
     group "Network" icon="\u{f0928}" hint="Wi-Fi · Bluetooth" {
-        item "Wi-Fi" icon="\u{f0928}" run="ghostty --title=Impala --class=Impala -e impala" keywords="wifi wireless impala"
+        item "Wi-Fi" icon="\u{f0928}" run="ghostty --title=Impala --class=Impala -e impala" keywords="wifi wireless impala" {
+            // The connected network, straight from the kernel (~1 ms, any
+            // interface name, works under iwd or NetworkManager). fresh: it
+            // changes when you move, so the menu waits for it.
+            detail "iw dev | sed -n 's/^[[:space:]]*ssid //p' | head -n1 | grep . || echo 'not connected'" fresh=#true
+        }
         item "Bluetooth" icon="\u{f294}" run="ghostty --title=BlueTUI --class=bluetui -e bluetui" keywords="bt bluetui headphones"
     }
 
