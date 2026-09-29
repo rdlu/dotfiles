@@ -48,10 +48,9 @@ page "Power" {
         when "*" icon="🔑" label="SSH key: agent DOWN → diagnose" run=#"ghostty --title="SSH Unlock" --class=ssh-unlock -e ssh-unlock"#
     }
 
-    group "Network" icon="\u{f0928}" hint="Wi-Fi · Bluetooth · SMB" {
+    group "Network" icon="\u{f0928}" hint="Wi-Fi · Bluetooth" {
         item "Wi-Fi" icon="\u{f0928}" run="ghostty --title=Impala --class=Impala -e impala" keywords="wifi wireless impala"
         item "Bluetooth" icon="\u{f294}" run="ghostty --title=BlueTUI --class=bluetui -e bluetui" keywords="bt bluetui headphones"
-        item "SMB Shares" icon="🗂️" run=#"ghostty --title="SMB Manager" --class=smb-tui -e smb-tui"# keywords="samba"
     }
 
     group "Audio" icon="\u{f028}" hint="mute · mixers" {
@@ -83,7 +82,8 @@ page "Power" {
 }
 
 page "Tools" {
-    group "Sharing" icon="\u{f1e0}" hint="LocalSend · SSH/rsync in" {
+    group "Sharing" icon="\u{f1e0}" hint="SMB · LocalSend · SSH/rsync in" {
+        item "SMB Shares" icon="🗂️" run=#"ghostty --title="SMB Manager" --class=smb-tui -e smb-tui"# keywords="samba"
         item "LocalSend share (temp)" icon="📤" run="localsend-here on"
         item "LocalSend close" icon="🔒" run="localsend-here off"
         item "SSH/rsync in (temp)" icon="🔑" run="ssh-here on"
