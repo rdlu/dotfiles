@@ -1,0 +1,102 @@
+// rodii-power-menu — the niri power / system menu (Mod+Escape), which-key style.
+// Binary: ~/Projects/rodii-power-menu. Read on every open: edit, press
+// Mod+Escape, no rebuild.
+//
+//   rodii-power-menu validate   check this file (line numbers, like niri validate)
+//   rodii-power-menu print      every page as fuzzel gets it, with live states
+//
+// Pages open in file order: Mod+Escape shows the first; Mod+Escape again while
+// it's open flips to the next (wraps). Esc goes back a level / closes.
+// Search is flat: typing on any page finds every item on every page and group.
+//
+// Nodes (inside a page, group or define):
+//   item "Label" icon=… run=… keywords=…   a command; run is `sh -c`, with
+//                                         ~/.local/bin on PATH
+//   group "Label" icon=… hint=… { … }      a ▸ row opening a submenu (nests)
+//   link "Label" page="Name" hint=…        a ▸ row jumping to another page
+//   use "id"                               the item/group that has id="id"
+//                                          (defined anywhere, in any order)
+// Any of them can take id="…" so it can be `use`d elsewhere. `define { … }`
+// holds items only reachable through `use`.
+//
+// Live items: an item with a `state` command (child node) and `when` variants.
+// The command's first output line picks the matching `when` ("*" = fallback);
+// a variant overrides icon / label / run / keywords / hint. `detail "cmd"`
+// shows its output as a right-hand column. All state/detail commands run in
+// parallel; any slower than state-timeout-ms show their last known value.
+//
+// Icons: write nerd-font glyphs as escapes ("\u{f023}"): the private-use ones
+// are invisible and get lost in edits. Commands containing " go in raw strings:
+// #"…"#. Put /- before any node to switch it off.
+
+state-timeout-ms 40
+fuzzel "--font=JetBrainsMono Nerd Font Mono:size=14"
+
+page "Power" {
+    item "Lock" icon="\u{f023}" run="loginctl lock-session"
+    item "Suspend" icon="\u{f0904}" run="systemctl suspend" keywords="sleep"
+    item "Reboot [Restart]" icon="\u{f0709}" run="systemctl reboot"
+    item "Shutdown" icon="\u{f0425}" run="systemctl poweroff" keywords="power off"
+    item "Exit session" icon="\u{f0a48}" run="niri msg action quit" keywords="logout log out quit niri"
+
+    // FIDO2 key in the shared ssh-agent: 0 = loaded, 1 = no identities, else
+    // no agent. Unlocking needs a TTY (passphrase + YubiKey touch).
+    item "SSH key" keywords="yubikey fido" {
+        state "ssh-add -l >/dev/null 2>&1; echo $?"
+        when "0" icon="🔓" label="SSH key: loaded → lock (drop from agent)" run="ssh-unlock lock"
+        when "1" icon="🔒" label="SSH key: locked → unlock" run=#"ghostty --title="SSH Unlock" --class=ssh-unlock -e ssh-unlock"#
+        when "*" icon="🔑" label="SSH key: agent DOWN → diagnose" run=#"ghostty --title="SSH Unlock" --class=ssh-unlock -e ssh-unlock"#
+    }
+
+    item "Bluetooth" id="bluetooth" icon="\u{f294}" run="ghostty --title=BlueTUI --class=bluetui -e bluetui" keywords="bt bluetui headphones"
+    item "Sound" id="sound" icon="\u{f028}" run="ghostty --title=Wiremix --class=Wiremix -e wiremix -v output" keywords="volume mixer output"
+
+    group "Audio" icon="\u{f028}" hint="mute · mixers" {
+        // Live state: the action that WOULD happen, plus the default device.
+        // pactl answers ~2x faster than wpctl; the device name (detail) is
+        // only descriptive, so it refreshes in the background.
+        item "Mute speakers" icon="\u{f028}" run="swayosd-client --output-volume mute-toggle" keywords="mute unmute volume" {
+            state "pactl get-sink-mute @DEFAULT_SINK@"
+            when "Mute: yes" label="Unmute speakers"
+            detail #"wpctl inspect @DEFAULT_AUDIO_SINK@ | awk -F'"' '/node.nick/ {n=$2} /node.description/ {d=$2} END {print n ? n : d}'"#
+        }
+        item "Mute mic" icon="\u{f130}" run="swayosd-client --input-volume mute-toggle" keywords="mute unmute volume" {
+            state "pactl get-source-mute @DEFAULT_SOURCE@"
+            when "Mute: yes" label="Unmute mic"
+            detail #"wpctl inspect @DEFAULT_AUDIO_SOURCE@ | awk -F'"' '/node.nick/ {n=$2} /node.description/ {d=$2} END {print n ? n : d}'"#
+        }
+        use "sound"
+        item "Microphone" icon="\u{f028}" run="ghostty --title=Wiremix --class=Wiremix -e wiremix -v input" keywords="volume mixer input"
+    }
+
+    group "Displays" icon="\u{f0379}" hint="DDC · monitor layout" {
+        item "External Display (DDC)" icon="\u{f0379}" run=#"ghostty --title="External Display" --class=ext-display -e ext-display"# keywords="brightness"
+        item "Monitor layout" icon="\u{f0379}" run=#"ghostty --title="Monitor Layout" --class=dev.rdlu.MonitorTui -e monitor-tui"#
+    }
+
+    item "System Monitor" icon="\u{ed2f}" run="ghostty --class=btop --title=btop -e btop" keywords="btop top processes"
+    /- item "Waybar restart" icon="\u{f0709}" run="systemctl --user restart waybar.service"
+    link "More tools" icon="\u{f035c}" page="Tools" hint="Mod+Esc again"
+}
+
+page "Tools" {
+    group "Network" icon="\u{f0928}" hint="Wi-Fi · Bluetooth · SMB" {
+        item "Wi-Fi" icon="\u{f0928}" run="ghostty --title=Impala --class=Impala -e impala" keywords="wifi wireless impala"
+        use "bluetooth"
+        item "SMB Shares" icon="🗂️" run=#"ghostty --title="SMB Manager" --class=smb-tui -e smb-tui"# keywords="samba"
+    }
+
+    group "Sharing" icon="\u{f1e0}" hint="LocalSend · SSH/rsync in" {
+        item "LocalSend share (temp)" icon="📤" run="localsend-here on"
+        item "LocalSend close" icon="🔒" run="localsend-here off"
+        item "SSH/rsync in (temp)" icon="🔑" run="ssh-here on"
+        item "SSH/rsync close" icon="🔒" run="ssh-here off"
+    }
+
+    // Caffeine is ON when swayidle is NOT active (caffeine stopped it).
+    item "Caffeine" icon="☕" keywords="awake idle" {
+        state "systemctl --user is-active -q swayidle.service && echo off || echo on"
+        when "on" label="Caffeine: ON (keeping awake) → turn OFF" run="caffeine off"
+        when "off" label="Caffeine: OFF → keep awake (turn ON)" run="caffeine on"
+    }
+}
