@@ -47,7 +47,8 @@ window-rule {
 }
 
 // The Notes vault launchers (dev.rdlu.Notes nvim inbox, and the
-// daisy-only dev.rdlu.ClinNotes clin TUI): open full-width.
+// daisy-only dev.rdlu.ClinNotes / dev.rdlu.EmeraldianNotes TUIs): open
+// full-width.
 window-rule {
     match app-id="Notes$"
     default-column-width { proportion 1.0; }
