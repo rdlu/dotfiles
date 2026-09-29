@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=Yazi
+GenericName=File Manager
+Comment=Ghostty running the yazi terminal file manager
+Exec=ghostty --title=Yazi --class=dev.rdlu.Yazi -e yazi
+TryExec=yazi
+Icon=yazi
+Type=Application
+Terminal=false
+Keywords=Files;File Manager;Explorer;Browser;
+Categories=System;FileTools;
+StartupNotify=false
