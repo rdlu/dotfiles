@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Zone Timeline
+GenericName=World Clock
+Comment=Ghostty running ztl (zonetimeline-tui), time-zone overlap planner
+Exec=ghostty --title=ztl --class=dev.rdlu.Ztl -e mise exec -- ztl
+Icon=orage_globaltime
+Type=Application
+Terminal=false
+Keywords=Time;Timezone;Clock;World;Meeting;Schedule;ztl;Fuso;Horário;Horario;Relógio;Relogio;Mundial;Reunião;Reuniao;
+Categories=Utility;Clock;
+StartupNotify=false

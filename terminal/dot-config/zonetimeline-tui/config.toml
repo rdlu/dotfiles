@@ -1,0 +1,12 @@
+# ztl (zonetimeline-tui) — see terminal/dot-config/mise/config.toml.
+# Munich = Europe/Berlin, Barcelona = Europe/Madrid, Beijing = Asia/Shanghai
+# (IANA has no per-city entries for them). `local` follows the system zone.
+[general]
+zones = ["local", "Europe/Berlin", "Europe/Madrid", "America/New_York", "America/Los_Angeles", "Asia/Shanghai"]
+nhours = 24
+default_view = "timeline"
+sort_mode = "utc_offset_asc"
+
+[overlap]
+default_window = "09:00-18:00"
+shoulder_hours = 1
