@@ -11,3 +11,8 @@
 # continuously). Kept for testing. Feature branch: pam-message-display.
 # Daisy-only while under test (this overlay is stowed only there).
 "cargo:https://github.com/rdlu/rustlock" = "HEAD"
+
+# chroncal: Go TUI/CLI calendar with built-in CalDAV + Google OAuth. Trialing
+# against khal+vdirsyncer (packages.yaml `calendar`); keep only the winner.
+# Daisy-only while under test.
+"github:DouglasdeMoura/chroncal" = { version = "latest", bin = "chroncal", matching_regex = "linux_amd64\\.tar\\.gz$" }

@@ -423,6 +423,11 @@ apps:
   - transmission-gtk
   - zen-browser-bin
 
+calendar: # terminal calendar trial vs chroncal (mise, daisy overlay)
+  - khal
+  - vdirsyncer
+  - python-aiohttp-oauthlib # optional dep: vdirsyncer Google storage; list it or orphan cleanup drops it
+
 printing:
   - epson-inkjet-printer-escpr
 
