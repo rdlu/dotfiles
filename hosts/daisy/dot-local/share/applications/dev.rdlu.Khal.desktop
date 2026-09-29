@@ -6,6 +6,6 @@ Exec=ghostty --title=Khal --class=dev.rdlu.Khal -e ikhal
 Icon=office-calendar
 Type=Application
 Terminal=false
-Keywords=Calendar;Agenda;Events;Google;
+Keywords=Calendar;Agenda;Events;Schedule;Google;Calendário;Calendario;Eventos;Compromissos;
 Categories=Office;Calendar;
 StartupNotify=false

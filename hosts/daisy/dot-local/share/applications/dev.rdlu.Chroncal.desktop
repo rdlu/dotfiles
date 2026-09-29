@@ -6,6 +6,6 @@ Exec=ghostty --title=Chroncal --class=dev.rdlu.Chroncal -e mise exec -- chroncal
 Icon=calendar
 Type=Application
 Terminal=false
-Keywords=Calendar;Agenda;Events;Tasks;Google;
+Keywords=Calendar;Agenda;Events;Schedule;Tasks;Google;Calendário;Calendario;Eventos;Compromissos;Tarefas;
 Categories=Office;Calendar;
 StartupNotify=false

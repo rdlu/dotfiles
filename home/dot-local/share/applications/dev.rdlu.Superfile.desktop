@@ -7,6 +7,6 @@ TryExec=spf
 Icon=system-file-manager
 Type=Application
 Terminal=false
-Keywords=Files;File Manager;Explorer;Browser;spf;
+Keywords=Files;File Manager;Explorer;Browser;Folders;Arquivos;Pastas;Explorador;spf;
 Categories=System;FileTools;
 StartupNotify=false
