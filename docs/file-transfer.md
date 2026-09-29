@@ -30,7 +30,7 @@ transfers over TCP `53317`.
 - **Home network:** permanently allowed on the `home` zone — your phone just
   finds the machine.
 - **Untrusted network:** open it for the session from the niri power menu
-  (**Mod+Escape**):
+  (**Mod+Escape** twice → **Sharing**):
 
 | Action | Menu entry | Command |
 | --- | --- | --- |
@@ -103,7 +103,7 @@ self-closing.
 | --- | --- |
 | Helper scripts | `~/.local/bin/{localsend-here, ssh-here, add-rsync-key}` |
 | System setup | `~/.local/bin/{setup-file-transfer, harden-file-transfer-ssh}` |
-| Menu entries | niri power menu (`menu-power`) |
+| Menu entries | niri power menu (`rodii-power-menu`, Tools → Sharing) |
 | Doc templates | `~/.local/share/file-transfer/*.md` → rendered into `~/Downloads/Transfers/` |
 | Packages | `file-transfer` category in `setup/packages.yaml` |
 | Recipes | `just file-transfer`, `just file-transfer-harden` |

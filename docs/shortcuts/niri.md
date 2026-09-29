@@ -19,13 +19,14 @@ binds see also the [wl-kbptr guide](../wl-kbptr.md).
 | `Mod+D` | Run an Application: fuzzel |
 | `Mod+Slash` | Run an Application: fuzzel |
 | `Super+Alt+L` | Lock the Screen |
-| `Mod+Escape` | Menu Power |
+| `Mod+Escape` | Menu Power (press again: Tools) |
 | `Mod+Shift+Escape` | Menu Just: dotfiles commands |
 | `Mod+E` | File Manager: superfile |
 | `Mod+Y` | File Manager: yazi |
 | `Mod+Shift+C` | Color Picker: hyprpicker |
 | `Mod+XF86MonBrightnessUp` | External monitor brightness up *(works on lock screen)* |
 | `Mod+XF86MonBrightnessDown` | External monitor brightness down *(works on lock screen)* |
+| `Mod+Shift+Ctrl+S` | Swap Workspaces Between Monitors |
 | `Mod+Period` | Emoji Finder |
 | `Mod+V` | Manage clipboard |
 | `Mod+B` | Hide Waybar |
@@ -110,8 +111,8 @@ binds see also the [wl-kbptr guide](../wl-kbptr.md).
 | `Mod+K` | Focus window or workspace up |
 | `Mod+Ctrl+J` | Move window down or to workspace down |
 | `Mod+Ctrl+K` | Move window up or to workspace up |
-| `Mod+Shift+Ctrl+J` | Move Workspace to Monitor Left |
-| `Mod+Shift+Ctrl+K` | Move Workspace to Monitor Right |
+| `Mod+Shift+Ctrl+U` | Move Workspace to Previous Monitor |
+| `Mod+Shift+Ctrl+I` | Move Workspace to Next Monitor |
 | `Mod+Page_Down` | Focus workspace down |
 | `Mod+Page_Up` | Focus workspace up |
 | `Mod+U` | Focus workspace down |
@@ -164,6 +165,8 @@ binds see also the [wl-kbptr guide](../wl-kbptr.md).
 | `Mod+Shift+Ctrl+Up` | Move column to monitor up |
 | `Mod+Shift+Ctrl+Right` | Move column to monitor right |
 | `Mod+Shift+Ctrl+H` | Move column to monitor left |
+| `Mod+Shift+Ctrl+J` | Move column to monitor down |
+| `Mod+Shift+Ctrl+K` | Move column to monitor up |
 | `Mod+Shift+Ctrl+L` | Move column to monitor right |
 
 ### Layout & sizing
@@ -185,8 +188,6 @@ binds see also the [wl-kbptr guide](../wl-kbptr.md).
 | `Mod+F` | Toggle window floating |
 | `Mod+Shift+F` | Switch focus between floating and tiling |
 | `Mod+W` | Toggle column tabbed display |
-| `Mod+Space` | Switch layout next |
-| `Mod+Shift+Space` | Switch layout prev |
 
 ### Screenshots & screencasting
 

@@ -14,7 +14,7 @@
 # Usage: ssh-unlock [unlock | lock | status]   (default: unlock)
 #   unlock  interactive: add the key, explaining each prompt
 #   lock    drop every identity from the agent (ssh-add -D), notify
-#   status  print loaded | locked | noagent — for menu-power's live-state entry
+#   status  print loaded | locked | noagent (the power menu checks `ssh-add -l` directly)
 #
 # Reached from the niri power menu (Mod+Escape); also on PATH.
 

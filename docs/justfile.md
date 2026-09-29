@@ -46,7 +46,7 @@ Tasks are defined in the repo-root `mise.toml` — every recipe is equally runna
 | `just herdr-plugins` | ghzinga's viewer binary `gzg` comes from mise (cargo:ghzinga). |  |
 | `just keybase-ssh` | Import the Keybase PGP key into GPG and expose it for SSH auth |  |
 | `just pkg-categories` | List the manifest categories with their package counts |  |
-| `just pkg-install` | Install the package manifest (all of setup/packages.yaml, or one category) |  |
+| `just pkg-install` | Install this host's missing manifest packages (or one category, or `all`) |  |
 | `just syncthing-file-sync` |  |  |
 
 ### Stow (symlink management)
@@ -82,6 +82,7 @@ Tasks are defined in the repo-root `mise.toml` — every recipe is equally runna
 | --- | --- | --- |
 | `just doctor` | Health check: tools present, shell, host overlay, services, mise, key symlinks |  |
 | `just pkg-drift` | Explicit installs (post day-0) not yet in the manifest or any recipe |  |
+| `just pkg-missing` | Manifest packages this host expects but lacks (setup/hosts/<hostname>.categories) |  |
 | `just pkg-tui` | Interactive manifest manager: browse categories, install/remove/audit (fzf TUI) |  |
 | `just update` | Bring an existing machine fully up to date (each step best-effort) |  |
 
