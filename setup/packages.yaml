@@ -416,6 +416,10 @@ apps:
   - transmission-gtk
   - zen-browser-bin
 
+calendar: # terminal calendar trial vs chroncal (mise, daisy overlay)
+  - khal
+  - vdirsyncer
+
 printing:
   - epson-inkjet-printer-escpr
 
