@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Chroncal
+GenericName=Calendar
+Comment=Ghostty running the chroncal calendar TUI (Google Calendar via CalDAV)
+Exec=ghostty --title=Chroncal --class=dev.rdlu.Chroncal -e mise exec -- chroncal
+Icon=calendar
+Type=Application
+Terminal=false
+Keywords=Calendar;Agenda;Events;Tasks;Google;
+Categories=Office;Calendar;
+StartupNotify=false

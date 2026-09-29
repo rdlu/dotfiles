@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Khal
+GenericName=Calendar
+Comment=Ghostty running ikhal over the vdirsyncer-synced Google Calendar
+Exec=ghostty --title=Khal --class=dev.rdlu.Khal -e ikhal
+Icon=office-calendar
+Type=Application
+Terminal=false
+Keywords=Calendar;Agenda;Events;Google;
+Categories=Office;Calendar;
+StartupNotify=false
