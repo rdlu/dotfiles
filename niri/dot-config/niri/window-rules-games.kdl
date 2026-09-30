@@ -28,6 +28,10 @@ window-rule {
   match app-id=r#"^soh\.elf$"#                 // Ship of Harkinian (OoT)
   match app-id="^Starship$"                   // Star Fox 64
   match app-id="^BanjoRecompiled$"
+  match app-id="^DKR-R$"                      // Diddy Kong Racing
+  match app-id="^Pilotwings64Recomp$"
+  match app-id="^SMB1R$"                      // Super Mario Bros. Remastered
+  match app-id="^tmc_pc$"                     // The Minish Cap (Project Picori)
   match app-id="^MarioKart64Recompiled$"
   match app-id="^Zelda64Recompiled$"          // Majora's Mask
   match app-id="^WaveRace64Recomp$"
