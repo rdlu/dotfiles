@@ -85,6 +85,8 @@ file-transfer:
 file-transfer-harden:
   @mise run file-transfer-harden
 
+[group("file-transfer")]
+
 # Install this host's missing manifest packages (or one category, or `all`)
 [group("install-other")]
 pkg-install category="":
