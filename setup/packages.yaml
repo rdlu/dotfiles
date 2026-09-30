@@ -259,7 +259,6 @@ network:
   - nmap
   - ntp # sntp/ntpdate for the date-ntp abbrs (ntpd itself stays off; timesyncd syncs)
   - openbsd-netcat
-  - rclone
   - socat
   - sshfs
   - tigervnc
@@ -272,6 +271,7 @@ file-transfer:
   - localsend
   - rsync
   - openssh
+  - rclone # Google Drive mount (systemd rclone-gdrive.service, both hosts)
 
 keybase: # keybase-ssh recipe installs this (keybase-bin provides keybase + kbfs)
   - keybase-bin
