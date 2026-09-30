@@ -414,7 +414,7 @@ apps:
   - transmission-gtk
   - zen-browser-bin
 
-calendar: # terminal calendar trial vs chroncal (mise, daisy overlay)
+calendar: # khal+vdirsyncer; chroncal comes from mise (terminal package)
   - khal
   - vdirsyncer
 
