@@ -45,9 +45,9 @@ page "Power" {
     // no agent. Unlocking needs a TTY (passphrase + YubiKey touch).
     item "SSH key" keywords="yubikey fido" {
         state "ssh-add -l >/dev/null 2>&1; echo $?"
-        when "0" icon="🔓" label="SSH key: loaded → lock (drop from agent)" run="ssh-unlock lock"
-        when "1" icon="🔒" label="SSH key: locked → unlock" run=#"ghostty --title="SSH Unlock" --class=ssh-unlock -e ssh-unlock"#
-        when "*" icon="🔑" label="SSH key: agent DOWN → diagnose" run=#"ghostty --title="SSH Unlock" --class=ssh-unlock -e ssh-unlock"#
+        when "0" icon="\u{f0306}" label="SSH key: loaded → lock (drop from agent)" run="ssh-unlock lock"
+        when "1" icon="\u{f0341}" label="SSH key: locked → unlock" run=#"ghostty --title="SSH Unlock" --class=ssh-unlock -e ssh-unlock"#
+        when "*" icon="\u{f1983}" label="SSH key: agent DOWN → diagnose" run=#"ghostty --title="SSH Unlock" --class=ssh-unlock -e ssh-unlock"#
     }
 
     group "Network" icon="\u{f0928}" hint="Wi-Fi · Bluetooth" {
@@ -113,17 +113,17 @@ page "Tools" {
     }
 
     group "Sharing" icon="\u{f1e0}" hint="SMB · LocalSend · SSH/rsync in" {
-        item "SMB Shares" icon="🗂️" run=#"ghostty --title="SMB Manager" --class=smb-tui -e smb-tui"# keywords="samba"
-        item "LocalSend share (temp)" icon="📤" run="localsend-here on"
-        item "LocalSend close" icon="🔒" run="localsend-here off"
-        item "SSH/rsync in (temp)" icon="🔑" run="ssh-here on"
-        item "SSH/rsync close" icon="🔒" run="ssh-here off"
+        item "SMB Shares" icon="\u{f0870}" run=#"ghostty --title="SMB Manager" --class=smb-tui -e smb-tui"# keywords="samba"
+        item "LocalSend share (temp)" icon="\u{f048a}" run="localsend-here on"
+        item "LocalSend close" icon="\u{f07ed}" run="localsend-here off"
+        item "SSH/rsync in (temp)" icon="\u{f0318}" run="ssh-here on"
+        item "SSH/rsync close" icon="\u{f0319}" run="ssh-here off"
     }
 
     // Caffeine is ON when swayidle is NOT active (caffeine stopped it).
-    item "Caffeine" icon="☕" keywords="awake idle" {
+    item "Caffeine" icon="\u{f0176}" keywords="awake idle" {
         state "systemctl --user is-active -q swayidle.service && echo off || echo on"
         when "on" label="Caffeine: ON (keeping awake) → turn OFF" run="caffeine off"
-        when "off" label="Caffeine: OFF → keep awake (turn ON)" run="caffeine on"
+        when "off" icon="\u{f0faa}" label="Caffeine: OFF → keep awake (turn ON)" run="caffeine on"
     }
 }
