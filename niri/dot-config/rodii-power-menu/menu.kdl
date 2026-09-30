@@ -35,7 +35,7 @@ state-timeout-ms 40
 fuzzel "--font=JetBrainsMono Nerd Font Mono:size=14"
 
 page "Power" {
-    item "Lock" icon="\u{f023}" run="loginctl lock-session"
+    item "Lock" icon="\u{f033e}" run="loginctl lock-session"
     item "Suspend" icon="\u{f0904}" run="systemctl suspend" keywords="sleep"
     item "Reboot [Restart]" icon="\u{f0709}" run="systemctl reboot"
     item "Shutdown" icon="\u{f0425}" run="systemctl poweroff" keywords="power off"
@@ -57,33 +57,33 @@ page "Power" {
             // changes when you move, so the menu waits for it.
             detail "iw dev | sed -n 's/^[[:space:]]*ssid //p' | head -n1 | grep . || echo 'not connected'" fresh=#true
         }
-        item "Bluetooth" icon="\u{f294}" run="ghostty --title=BlueTUI --class=bluetui -e bluetui" keywords="bt bluetui headphones"
+        item "Bluetooth" icon="\u{f00af}" run="ghostty --title=BlueTUI --class=bluetui -e bluetui" keywords="bt bluetui headphones"
     }
 
-    group "Audio" icon="\u{f028}" hint="mute · mixers" {
+    group "Audio" icon="\u{f057e}" hint="mute · mixers" {
         // Live state: the action that WOULD happen, plus the default device.
         // pactl answers ~2x faster than wpctl; the device name (detail) is
         // only descriptive, so it refreshes in the background.
-        item "Mute speakers" icon="\u{f028}" run="swayosd-client --output-volume mute-toggle" keywords="mute unmute" {
+        item "Mute speakers" icon="\u{f057e}" run="swayosd-client --output-volume mute-toggle" keywords="mute unmute" {
             state "pactl get-sink-mute @DEFAULT_SINK@"
-            when "Mute: yes" label="Unmute speakers"
+            when "Mute: yes" icon="\u{f0581}" label="Unmute speakers"
             detail #"wpctl inspect @DEFAULT_AUDIO_SINK@ | awk -F'"' '/node.nick/ {n=$2} /node.description/ {d=$2} END {print n ? n : d}'"#
         }
-        item "Mute mic" icon="\u{f130}" run="swayosd-client --input-volume mute-toggle" keywords="mute unmute" {
+        item "Mute mic" icon="\u{f036c}" run="swayosd-client --input-volume mute-toggle" keywords="mute unmute" {
             state "pactl get-source-mute @DEFAULT_SOURCE@"
-            when "Mute: yes" label="Unmute mic"
+            when "Mute: yes" icon="\u{f036d}" label="Unmute mic"
             detail #"wpctl inspect @DEFAULT_AUDIO_SOURCE@ | awk -F'"' '/node.nick/ {n=$2} /node.description/ {d=$2} END {print n ? n : d}'"#
         }
-        item "Sound" icon="\u{f028}" run="ghostty --title=Wiremix --class=Wiremix -e wiremix -v output" keywords="volume mixer output"
-        item "Microphone" icon="\u{f028}" run="ghostty --title=Wiremix --class=Wiremix -e wiremix -v input" keywords="mixer input mic"
+        item "Sound" icon="\u{f066a}" run="ghostty --title=Wiremix --class=Wiremix -e wiremix -v output" keywords="volume mixer output"
+        item "Microphone" icon="\u{f036f}" run="ghostty --title=Wiremix --class=Wiremix -e wiremix -v input" keywords="mixer input mic"
     }
 
     group "Displays" icon="\u{f0379}" hint="DDC · monitor layout" {
-        item "External Display (DDC)" icon="\u{f0379}" run=#"ghostty --title="External Display" --class=ext-display -e ext-display"# keywords="brightness"
-        item "Monitor layout" icon="\u{f0379}" run=#"ghostty --title="Monitor Layout" --class=dev.rdlu.MonitorTui -e monitor-tui"#
+        item "External Display (DDC)" icon="\u{f00df}" run=#"ghostty --title="External Display" --class=ext-display -e ext-display"# keywords="brightness"
+        item "Monitor layout" icon="\u{f037a}" run=#"ghostty --title="Monitor Layout" --class=dev.rdlu.MonitorTui -e monitor-tui"#
     }
 
-    item "System Monitor" icon="\u{ed2f}" run="ghostty --class=btop --title=btop -e btop" keywords="top processes"
+    item "System Monitor" icon="\u{f0127}" run="ghostty --class=btop --title=btop -e btop" keywords="top processes"
     /- item "Waybar restart" icon="\u{f0709}" run="systemctl --user restart waybar.service"
     link "More tools" icon="\u{f035c}" page="Tools" hint="Mod+Esc again"
 }
@@ -112,7 +112,7 @@ page "Tools" {
         item "Copy timestamp (ms)" icon="\u{f03a0}" keywords="timestamp epoch unix millis milliseconds" run=##"v=$(date +%s%3N); printf %s "$v" | wl-copy && notify-send -a Clocks -t 2500 "Copied" "$v""## detail="date +%s%3N" fresh=#true
     }
 
-    group "Sharing" icon="\u{f1e0}" hint="SMB · LocalSend · SSH/rsync in" {
+    group "Sharing" icon="\u{f0497}" hint="SMB · LocalSend · SSH/rsync in" {
         item "SMB Shares" icon="\u{f0870}" run=#"ghostty --title="SMB Manager" --class=smb-tui -e smb-tui"# keywords="samba"
         item "LocalSend share (temp)" icon="\u{f048a}" run="localsend-here on"
         item "LocalSend close" icon="\u{f07ed}" run="localsend-here off"
