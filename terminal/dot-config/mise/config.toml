@@ -46,6 +46,13 @@ gleam = "1.18.1"
 # ztl (zonetimeline-tui): time-zone overlap TUI. Only prebuilt on GitHub
 # releases (AUR has zonetimeline-bin too); zones in ~/.config/zonetimeline-tui.
 "github:findyourexit/zonetimeline-tui" = { version = "latest", bin = "ztl", matching_regex = "x86_64-unknown-linux-gnu\\.tar\\.gz$" }
+# goose: AI agent CLI (aaif-goose, ex-block). AUR only ships the Electron
+# desktop bundle; the CLI is a plain release tarball. Pick the non-vulkan gnu
+# build (the -vulkan one is for local-inference GPU offload, unused here).
+"github:aaif-goose/goose" = { version = "latest", bin = "goose", matching_regex = "goose-x86_64-unknown-linux-gnu\\.tar\\.gz$" }
+# claude-agent-acp: ACP adapter goose's `claude-acp` provider spawns, so goose
+# runs on the Claude subscription via the pacman `claude` CLI (no API key).
+"npm:@agentclientprotocol/claude-agent-acp" = "latest"
 "pipx:llm" = "latest"
 "pipx:xxh-xxh" = "latest"
 "pipx:epy-reader" = "latest"
