@@ -1,0 +1,570 @@
+#!/bin/bash
+# rclone-gdrive — set up, check and maintain the Google Drive mount
+# (systemd user unit rclone-gdrive.service: `rclone mount gdrive: ~/GoogleDrive`).
+#
+# The rclone config (~/.config/rclone/rclone.conf: Drive token + OAuth client)
+# is per-host and ENCRYPTED; its password lives in the Secret Service (oo7):
+#   secret-tool lookup service rclone key config_password
+# Each host has its own Google OAuth client (Desktop app). Nothing secret is in
+# the repo, and this script never prints a secret.
+#
+#   rclone-gdrive setup            # first-time install; re-run = "all fine"
+#   rclone-gdrive status           # read-only health check; exit 1 if not healthy
+#   rclone-gdrive reauth           # token expired/revoked: re-consent in the browser
+#   rclone-gdrive rotate-client    # new OAuth client id/secret, re-consent
+#   rclone-gdrive rotate-password  # new keyring password for the config (lockout-safe)
+#
+# Anything that rewrites rclone.conf stops the unit first (the running mount
+# may rewrite the token under us) and starts it again afterwards.
+#
+# rotate-password never leaves a config nobody can decrypt: the new password is
+# staged under `key config_password_next` next to the current one, the config
+# is re-encrypted from one to the other (no plaintext on disk) and checked, and
+# only then promoted. A backup (encrypted with the old password) sits at
+# <config>.rotate-backup until the end. If anything fails or is interrupted —
+# even a crash — the next run resolves the leftovers from whichever password
+# actually decrypts the config.
+#
+# Testing against a throwaway config: `--config PATH` or $RCLONE_CONFIG. Also
+# $RCLONE_GDRIVE_UNIT (default rclone-gdrive.service) and $RCLONE_GDRIVE_MOUNT
+# (default ~/GoogleDrive). The unit itself always mounts the default config.
+# Guide: docs/file-transfer.md#google-drive (just gdrive <command>).
+set -euo pipefail
+umask 077
+
+remote=gdrive
+unit="${RCLONE_GDRIVE_UNIT:-rclone-gdrive.service}"
+mnt="${RCLONE_GDRIVE_MOUNT:-$HOME/GoogleDrive}"
+mnt_disp="${mnt/#$HOME/\~}"
+self=$(readlink -f -- "${BASH_SOURCE[0]}")
+
+# Keyring entries (attributes) and the matching rclone --password-command.
+# The staging entry differs in the VALUE of `key`, not by an extra attribute:
+# a Secret Service lookup matches items with a superset of the attributes, so
+# an extra attribute would make the main lookup ambiguous.
+kr_main=(service rclone key config_password)
+kr_next=(service rclone key config_password_next)
+label_main='rclone config password'
+label_next='rclone config password (rotation in progress)'
+pw_main="secret-tool lookup ${kr_main[*]}"
+pw_next="secret-tool lookup ${kr_next[*]}"
+pw_rotate="\"$self\" __rotation-password"
+
+if [[ -t 1 ]]; then
+  B=$'\e[1m' D=$'\e[2m' R=$'\e[31m' G=$'\e[32m' Y=$'\e[33m' N=$'\e[0m'
+else
+  B='' D='' R='' G='' Y='' N=''
+fi
+
+step() { printf '\n%s%s==> %s%s\n' "$B" "$Y" "$*" "$N"; }
+ok() { printf '  %s✓%s %s\n' "$G" "$N" "$*"; }
+bad() { printf '  %s✗%s %s\n' "$R" "$N" "$*"; }
+skip() { printf '  %s– %s%s\n' "$D" "$*" "$N"; }
+note() { printf '  %s%s%s\n' "$D" "$*" "$N"; }
+die() { printf '%srclone-gdrive: %s%s\n' "$R" "$*" "$N" >&2; exit 1; }
+
+usage() {
+  cat <<EOF
+Usage: rclone-gdrive [--config PATH] <command>
+
+Google Drive mount ($unit → $mnt_disp). The rclone config is
+per-host and encrypted; its password lives in the Secret Service (oo7).
+
+Commands:
+  setup            First-time install on this host: keyring password, encrypted
+                   config, the '$remote:' remote (asks for this host's OAuth client),
+                   enable + start the unit. Idempotent: re-running just checks.
+  status           Read-only health check (tools, keyring, config, token, unit,
+                   mount). Exit 1 if anything is wrong. Never prints secrets.
+  reauth           Token expired or revoked: re-consent in the browser.
+  rotate-client    Switch to a new Google OAuth client (id + secret), re-consent.
+  rotate-password  New keyring password for the config encryption (lockout-safe;
+                   also resolves an interrupted rotation).
+  help             This text.
+
+Options:
+  --config PATH    Use this rclone config (default: \$RCLONE_CONFIG, then rclone's
+                   default). The unit always mounts rclone's default config.
+
+Also: just gdrive <command>. Guide: docs/file-transfer.md (Google Drive).
+EOF
+}
+
+# ---------------------------------------------------------------- arguments
+
+cmd=""
+while (($#)); do
+  case "$1" in
+    --config) (($# >= 2)) || die "--config needs a path"; export RCLONE_CONFIG="$2"; shift 2 ;;
+    --config=*) export RCLONE_CONFIG="${1#--config=}"; shift ;;
+    -h | --help | help) cmd=help; shift ;;
+    -*) usage >&2; exit 2 ;;
+    *) [[ -z $cmd ]] || { usage >&2; exit 2; }; cmd="$1"; shift ;;
+  esac
+done
+
+# Internal: the --password-command used while re-encrypting. rclone calls it
+# once to decrypt (current password) and once with RCLONE_PASSWORD_CHANGE=1 for
+# the new one (the staged entry).
+if [[ $cmd == __rotation-password ]]; then
+  if [[ ${RCLONE_PASSWORD_CHANGE:-} == 1 ]]; then
+    exec secret-tool lookup "${kr_next[@]}"
+  fi
+  exec secret-tool lookup "${kr_main[@]}"
+fi
+
+case "$cmd" in
+  "" | help) usage; exit 0 ;;
+  setup | status | reauth | rotate-client | rotate-password) ;;
+  *) printf 'rclone-gdrive: unknown command: %s\n\n' "$cmd" >&2; usage >&2; exit 2 ;;
+esac
+
+# Every rclone call decrypts with the main keyring password and never prompts.
+export RCLONE_PASSWORD_COMMAND="$pw_main"
+export RCLONE_ASK_PASSWORD=false
+unset RCLONE_CONFIG_PASS
+
+# ---------------------------------------------------------------- helpers
+
+have() { command -v "$1" >/dev/null 2>&1; }
+
+need_tools() {
+  local t missing=()
+  for t in rclone fusermount3 secret-tool; do have "$t" || missing+=("$t"); done
+  ((${#missing[@]} == 0)) && return 0
+  die "missing: ${missing[*]} — install with: just pkg-install file-transfer"
+}
+
+conf="" conf_default="" rotate_backup="" client_backup=""
+resolve_config() {
+  conf=$(rclone config file 2>/dev/null | tail -n1)
+  conf_default=$(env -u RCLONE_CONFIG rclone config file 2>/dev/null | tail -n1)
+  [[ -n $conf ]] || die "could not work out the rclone config path"
+  rotate_backup="$conf.rotate-backup"
+  client_backup="$conf.pre-change"
+}
+
+warn_custom_config() {
+  [[ $conf == "$conf_default" ]] && return 0
+  note "config: $conf (not the default — the unit mounts $conf_default)"
+}
+
+# Keyring: presence only, the value never reaches a variable or the terminal.
+kr_has() {
+  local n
+  n=$(secret-tool lookup "$@" 2>/dev/null | head -c1 | wc -c) || true
+  ((n > 0))
+}
+kr_same() { cmp -s <(secret-tool lookup "${kr_main[@]}" 2>/dev/null) <(secret-tool lookup "${kr_next[@]}" 2>/dev/null); }
+kr_generate() { # label attrs...
+  local label=$1
+  shift
+  head -c 32 /dev/urandom | base64 | tr -d '\n' | secret-tool store --label="$label" "$@"
+}
+kr_promote_next() {
+  kr_has "${kr_next[@]}" || return 1
+  secret-tool lookup "${kr_next[@]}" | secret-tool store --label="$label_main" "${kr_main[@]}"
+}
+kr_clear_next() { secret-tool clear "${kr_next[@]}" 2>/dev/null || true; }
+
+conf_exists() { [[ -s $conf ]]; }
+is_encrypted() { grep -qm1 '^RCLONE_ENCRYPT_V' "${1:-$conf}" 2>/dev/null; }
+# Does FILE decrypt with PASSWORD-COMMAND? (`encryption set` exits 0 even when
+# it failed, so every change is verified with this.)
+decrypts() { # file pwcmd
+  is_encrypted "$1" || return 1
+  RCLONE_CONFIG="$1" RCLONE_PASSWORD_COMMAND="$2" rclone config encryption check >/dev/null 2>&1
+}
+has_remote() { # [pwcmd]
+  local remotes
+  remotes=$(RCLONE_PASSWORD_COMMAND="${1:-$pw_main}" rclone listremotes 2>/dev/null) || return 1
+  grep -qx "$remote:" <<<"$remotes"
+}
+
+# Cheap authenticated API call. Runs on a throwaway copy of the (still
+# encrypted) config, so a token refresh can't rewrite the real one.
+token_err=""
+token_works() {
+  local tmp err rc=0
+  tmp=$(mktemp -p "${XDG_RUNTIME_DIR:-/tmp}" rclone-gdrive.XXXXXX)
+  err=$(mktemp -p "${XDG_RUNTIME_DIR:-/tmp}" rclone-gdrive.XXXXXX)
+  cp -- "$conf" "$tmp"
+  RCLONE_CONFIG="$tmp" timeout 60 rclone --contimeout 10s --timeout 20s --low-level-retries 2 \
+    about "$remote:" >/dev/null 2>"$err" || rc=$?
+  token_err=$(grep -v '^\s*$' "$err" | tail -n1 | sed -E 's/^[0-9\/]+ [0-9:]+ [A-Z]+ *: *//' | cut -c1-160)
+  ((rc != 124)) || token_err="timed out after 60s (offline?)"
+  rm -f -- "$tmp" "$err"
+  return "$rc"
+}
+
+unit_installed() { systemctl --user cat "$unit" >/dev/null 2>&1; }
+unit_active() { systemctl --user is-active --quiet "$unit" 2>/dev/null; }
+unit_enabled() { systemctl --user is-enabled --quiet "$unit" 2>/dev/null; }
+is_mounted() { findmnt -rn -M "$mnt" -o FSTYPE 2>/dev/null | grep -qx 'fuse.rclone'; }
+
+paused=0
+pause_mount() {
+  if unit_active; then
+    note "stopping $unit while the config changes"
+    systemctl --user stop "$unit"
+    paused=1
+  fi
+}
+
+verify_mount() { # [seconds to wait for the mount to appear]
+  local i n wait=${1:-15}
+  for ((i = 1; i < wait; i++)); do is_mounted && break; sleep 1; done
+  is_mounted || { bad "$mnt_disp is not mounted — journalctl --user -u $unit"; return 1; }
+  n=$(timeout 20 ls -A -- "$mnt" 2>/dev/null | wc -l) || { bad "$mnt_disp is mounted but not responding"; return 1; }
+  ok "mounted at $mnt_disp ($n top-level entries)"
+}
+
+resume_mount() {
+  if ((paused)) || unit_enabled; then
+    systemctl --user start "$unit"
+    paused=0
+    ok "$unit started"
+    verify_mount
+  else
+    note "$unit is not enabled — not starting it (rclone-gdrive setup enables it)"
+  fi
+}
+
+# Backup of the config around reauth / rotate-client, restored on failure.
+client_backup_pending=0
+begin_client_backup() { cp -p -- "$conf" "$client_backup"; client_backup_pending=1; }
+drop_client_backup() { rm -f -- "$client_backup"; client_backup_pending=0; }
+restore_client_backup() {
+  ((client_backup_pending)) || return 0
+  mv -f -- "$client_backup" "$conf"
+  client_backup_pending=0
+  printf '  %s↩%s restored the previous config (old client + token)\n' "$Y" "$N" >&2
+}
+
+rotating=0
+on_exit() {
+  local rc=$?
+  trap - EXIT
+  [[ -t 0 ]] && stty echo 2>/dev/null # in case ^C hit the hidden secret prompt
+  restore_client_backup || rc=1
+  if ((rotating)); then
+    rotating=0
+    printf '\n%s==> rotation did not finish — resolving%s\n' "$Y" "$N" >&2
+    recover_rotation >&2 || rc=1
+  fi
+  if ((paused)); then
+    printf '  restarting %s\n' "$unit" >&2
+    systemctl --user start "$unit" >&2 || true
+  fi
+  exit "$rc"
+}
+trap on_exit EXIT
+trap 'exit 130' INT TERM HUP
+
+# Resolve what an interrupted rotate-password left behind (staged keyring
+# entry and/or backup), from whichever password decrypts what. Deletes
+# nothing it cannot prove is redundant.
+recover_rotation() {
+  local has_next=0 has_bak=0
+  kr_has "${kr_next[@]}" && has_next=1
+  [[ -e $rotate_backup ]] && has_bak=1
+  ((has_next || has_bak)) || return 0
+
+  if decrypts "$conf" "$pw_main"; then
+    # never re-encrypted, or already promoted: the leftovers are redundant
+    kr_clear_next
+    rm -f -- "$rotate_backup"
+    ok "config decrypts with the keyring password; discarded rotation leftovers"
+  elif ((has_next)) && decrypts "$conf" "$pw_next"; then
+    # re-encrypted with the staged password but not promoted yet
+    if ! kr_promote_next || ! decrypts "$conf" "$pw_main"; then
+      bad "could not promote the staged password (kept: keyring key config_password_next)"
+      return 1
+    fi
+    kr_clear_next
+    rm -f -- "$rotate_backup"
+    ok "config was on the new password — finished promoting it"
+  elif ((has_bak)) && decrypts "$rotate_backup" "$pw_main"; then
+    cp -p -- "$rotate_backup" "$conf"
+    decrypts "$conf" "$pw_main" || { bad "restoring $rotate_backup failed (kept it)"; return 1; }
+    kr_clear_next
+    rm -f -- "$rotate_backup"
+    ok "restored the pre-rotation config (still on the old password)"
+  elif ((has_bak && has_next)) && decrypts "$rotate_backup" "$pw_next"; then
+    cp -p -- "$rotate_backup" "$conf"
+    if ! kr_promote_next || ! decrypts "$conf" "$pw_main"; then
+      bad "could not promote the staged password (kept: $rotate_backup, key config_password_next)"
+      return 1
+    fi
+    kr_clear_next
+    rm -f -- "$rotate_backup"
+    ok "restored the backup and promoted the matching password"
+  else
+    bad "neither the config nor $rotate_backup decrypts with a stored password"
+    note "nothing was deleted: $conf, $rotate_backup, keyring key config_password_next"
+    return 1
+  fi
+}
+
+prompt_client() { # sets cid, csec
+  [[ -t 0 ]] || die "needs an interactive terminal (prompts for the OAuth client)"
+  cid="" csec=""
+  while [[ -z $cid ]]; do read -rp "  client ID: " cid; done
+  [[ $cid == *.apps.googleusercontent.com ]] ||
+    note "that doesn't end in .apps.googleusercontent.com — double-check it"
+  while [[ -z $csec ]]; do read -rsp "  client secret (hidden): " csec; echo; done
+}
+
+google_client_guide() {
+  cat <<EOF
+  ${B}Create a Google OAuth client for this host${N} (one per host), in
+  https://console.cloud.google.com/ (any project of yours):
+    1. APIs & Services → Library → enable ${B}Google Drive API${N}.
+    2. OAuth consent screen (Google Auth Platform): user type ${B}External${N}, then
+       Audience → ${B}Publish app${N} so it is "In production". In "Testing" Google
+       expires the refresh token after 7 days. Unverified is fine for personal
+       use — click through the warning at consent.
+    3. Credentials (Clients) → Create → OAuth client ID → ${B}Desktop app${N},
+       named after this host ($(hostname 2>/dev/null || uname -n)).
+  Paste its ID and secret below. The browser opens for consent next (when
+  asked, answer ${B}y${N} to the web browser, ${B}n${N} to Shared Drive).
+EOF
+}
+
+reconnect_hint() {
+  note "browser consent: 'y' for the web browser, 'n' for Shared Drive;"
+  note "at 'Google hasn't verified this app': Advanced → Go to … (unsafe)"
+}
+
+# Everything that edits the config: tools, leftovers, a decryptable config.
+preflight_edit() {
+  need_tools
+  resolve_config
+  warn_custom_config
+  recover_rotation || die "resolve the interrupted rotation above first"
+  kr_has "${kr_main[@]}" || die "no keyring password (service rclone key config_password) — run: rclone-gdrive setup"
+  conf_exists || die "no config at $conf — run: rclone-gdrive setup"
+  decrypts "$conf" "$pw_main" || die "$conf is not encrypted or does not decrypt with the keyring password — run: rclone-gdrive status"
+}
+
+# ---------------------------------------------------------------- commands
+
+cmd_status() {
+  local fail=0 t pw=0 enc=0 rem=0
+  echo "${B}Google Drive mount on $(hostname 2>/dev/null || uname -n)${N}"
+
+  for t in rclone fusermount3 secret-tool; do
+    if have "$t"; then ok "$t"; else bad "$t missing — just pkg-install file-transfer"; fail=1; fi
+  done
+  if ! have rclone || ! have secret-tool; then
+    echo; bad "can't check further without rclone + secret-tool"; return 1
+  fi
+  resolve_config
+  warn_custom_config
+
+  if kr_has "${kr_main[@]}"; then ok "keyring password: yes"; pw=1
+  else bad "keyring password: no — rclone-gdrive setup"; fail=1; fi
+  if kr_has "${kr_next[@]}" || [[ -e $rotate_backup ]]; then
+    bad "interrupted password rotation — rclone-gdrive rotate-password resolves it"; fail=1
+  fi
+  [[ -e $client_backup ]] && { bad "leftover $client_backup from an interrupted reauth/rotate-client"; fail=1; }
+
+  if ! conf_exists; then bad "config: missing ($conf)"; fail=1
+  elif ! is_encrypted; then bad "config: NOT encrypted — rclone-gdrive setup encrypts it"; fail=1
+  elif ((!pw)); then skip "config: encrypted (can't check the password)"
+  elif decrypts "$conf" "$pw_main"; then ok "config: encrypted, decrypts with the keyring password"; enc=1
+  else bad "config: encrypted, but NOT with the keyring password"; fail=1; fi
+
+  if ((enc)) || { conf_exists && ! is_encrypted; }; then
+    if has_remote; then ok "remote: $remote:"; rem=1
+    else bad "remote: no $remote: — rclone-gdrive setup"; fail=1; fi
+  else skip "remote: (config unreadable)"; fi
+
+  if ((rem)); then
+    if token_works; then ok "token: works (Drive API answered)"
+    else bad "token: ${token_err:-failed} — rclone-gdrive reauth"; fail=1; fi
+  else skip "token: (no remote)"; fi
+
+  if ! have systemctl; then skip "unit: no systemctl"
+  elif ! unit_installed; then bad "unit: $unit not installed — just stow"; fail=1
+  else
+    if unit_enabled; then ok "unit: enabled"; else bad "unit: not enabled — rclone-gdrive setup"; fail=1; fi
+    if unit_active; then ok "unit: active"; else bad "unit: not active — journalctl --user -u $unit"; fail=1; fi
+  fi
+  verify_mount 1 || fail=1
+
+  echo
+  if ((fail)); then echo "${R}${B}Not healthy.${N}"; return 1; fi
+  echo "${G}${B}Healthy.${N}"
+}
+
+cmd_setup() {
+  local host
+  host=$(hostname 2>/dev/null || uname -n)
+  echo "${B}== Google Drive mount setup on $host ==${N}"
+
+  step "Prerequisites"
+  need_tools
+  ok "rclone, fusermount3, secret-tool"
+  resolve_config
+  warn_custom_config
+  recover_rotation || die "resolve the interrupted rotation above first"
+  unit_installed || die "$unit is not installed — run: just stow"
+  ok "$unit installed"
+
+  step "Keyring password (Secret Service)"
+  if kr_has "${kr_main[@]}"; then
+    ok "present"
+  elif conf_exists && is_encrypted; then
+    die "$conf is encrypted but the keyring has no password for it. Restore the keyring entry, or move the config aside and re-run setup."
+  else
+    kr_generate "$label_main" "${kr_main[@]}"
+    kr_has "${kr_main[@]}" || die "storing the password in the keyring failed"
+    ok "generated and stored (never shown)"
+  fi
+
+  step "Encrypted rclone config"
+  mkdir -p -- "$(dirname -- "$conf")"
+  if ! conf_exists; then
+    rclone config encryption set </dev/null >/dev/null 2>&1 || true
+    decrypts "$conf" "$pw_main" || die "creating an encrypted config at $conf failed"
+    ok "created $conf (encrypted, empty)"
+  elif ! is_encrypted; then
+    pause_mount
+    rclone config encryption set </dev/null >/dev/null 2>&1 || true
+    decrypts "$conf" "$pw_main" || die "encrypting $conf failed (it is unchanged)"
+    ok "encrypted the existing plaintext config"
+  elif decrypts "$conf" "$pw_main"; then
+    ok "$conf is encrypted with the keyring password"
+  else
+    die "$conf is encrypted, but not with the keyring password — see rclone-gdrive status"
+  fi
+
+  step "Remote $remote:"
+  if has_remote; then
+    ok "present"
+  else
+    google_client_guide
+    echo
+    prompt_client
+    pause_mount
+    # Save the remote without authorizing (so the secret is on the command
+    # line for an instant, not for the whole browser round-trip), then consent.
+    rclone config create "$remote" drive client_id="$cid" client_secret="$csec" scope=drive \
+      --non-interactive </dev/null >/dev/null
+    unset csec
+    has_remote || die "creating $remote: failed"
+    reconnect_hint
+    if ! rclone config reconnect "$remote:" || ! token_works; then
+      rclone config delete "$remote" >/dev/null 2>&1 || true
+      die "authorization failed${token_err:+ ($token_err)} — removed the half-made $remote:, re-run setup"
+    fi
+    ok "created and authorized"
+  fi
+
+  step "Token"
+  token_works || die "token doesn't work: ${token_err:-failed} — run: rclone-gdrive reauth"
+  ok "Drive API answered"
+
+  step "systemd unit"
+  if ! unit_enabled; then
+    systemctl --user daemon-reload
+    systemctl --user enable "$unit" >/dev/null 2>&1
+    ok "enabled"
+  else
+    ok "already enabled"
+  fi
+  if ((paused)) || ! unit_active; then
+    systemctl --user start "$unit"
+    paused=0
+    ok "started"
+  else
+    ok "already running"
+  fi
+  verify_mount || die "the mount didn't come up"
+
+  echo
+  echo "${G}✓ Google Drive is set up at $mnt_disp.${N} Check any time: rclone-gdrive status"
+}
+
+cmd_reauth() {
+  echo "${B}== Re-authorize $remote: ==${N}"
+  preflight_edit
+  has_remote || die "no $remote: remote — run: rclone-gdrive setup"
+  pause_mount
+  begin_client_backup
+  reconnect_hint
+  rclone config reconnect "$remote:" || die "reconnect failed"
+  token_works || die "token still doesn't work: ${token_err:-failed}"
+  drop_client_backup
+  ok "token works"
+  resume_mount
+}
+
+cmd_rotate_client() {
+  local old_cid
+  echo "${B}== Switch $remote: to a new OAuth client ==${N}"
+  preflight_edit
+  has_remote || die "no $remote: remote — run: rclone-gdrive setup"
+  # only the (non-secret) client ID leaves rclone here
+  old_cid=$(rclone config show "$remote" 2>/dev/null | sed -n 's/^client_id = //p') || true
+
+  google_client_guide
+  echo
+  prompt_client
+  pause_mount
+  begin_client_backup
+  # the old token is bound to the old client, so re-consent is required
+  rclone config update "$remote" client_id="$cid" client_secret="$csec" \
+    --non-interactive </dev/null >/dev/null
+  unset csec
+  reconnect_hint
+  rclone config reconnect "$remote:" || die "reconnect failed"
+  token_works || die "the new client doesn't work: ${token_err:-failed}"
+  drop_client_backup
+  ok "now using the new client; token works"
+  resume_mount
+
+  echo
+  echo "${Y}Now delete the OLD client in Google Cloud Console → Credentials:${N}"
+  echo "  ${old_cid:-(its ID was not set in the config)}"
+}
+
+cmd_rotate_password() {
+  echo "${B}== Rotate the config encryption password ==${N}"
+  preflight_edit
+  pause_mount
+
+  step "Re-encrypting"
+  rotating=1 # from here on, any exit resolves via recover_rotation
+  cp -p -- "$conf" "$rotate_backup"
+  ok "backup: $rotate_backup (old password)"
+  kr_generate "$label_next" "${kr_next[@]}"
+  kr_has "${kr_next[@]}" || die "staging the new password in the keyring failed"
+  ! kr_same || die "the staged password equals the current one"
+  ok "new password staged in the keyring (key config_password_next)"
+  RCLONE_PASSWORD_COMMAND="$pw_rotate" rclone config encryption set </dev/null >/dev/null 2>&1 || true
+  decrypts "$conf" "$pw_next" || die "re-encrypting with the new password failed"
+  has_remote "$pw_next" || die "the re-encrypted config lost $remote:"
+  ok "config re-encrypted and verified with the new password"
+
+  step "Promoting"
+  kr_promote_next || die "storing the new password as config_password failed"
+  decrypts "$conf" "$pw_main" || die "the keyring password doesn't decrypt the config after promoting"
+  kr_clear_next
+  rm -f -- "$rotate_backup"
+  rotating=0
+  ok "keyring config_password replaced; staging entry and backup removed"
+
+  resume_mount
+  echo
+  echo "${G}✓ Password rotated.${N}"
+}
+
+case "$cmd" in
+  setup) cmd_setup ;;
+  status) cmd_status ;;
+  reauth) cmd_reauth ;;
+  rotate-client) cmd_rotate_client ;;
+  rotate-password) cmd_rotate_password ;;
+esac

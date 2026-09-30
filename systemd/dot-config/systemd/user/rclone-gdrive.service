@@ -5,6 +5,9 @@ Documentation=man:rclone(1) https://rclone.org/drive/
 # its password lives in the Secret Service (oo7), fetched at start:
 #   secret-tool lookup service rclone key config_password
 # Nothing secret is in this unit or in the repo.
+# Set up a host with `rclone-gdrive setup` (or `just gdrive setup`); check it
+# with `rclone-gdrive status`. reauth / rotate-client / rotate-password are
+# there too — see docs/file-transfer.md#google-drive.
 
 [Service]
 Type=notify

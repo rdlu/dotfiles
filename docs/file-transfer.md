@@ -5,6 +5,9 @@ phone ↔ computer, and **rsync over SSH** for computer ↔ computer. Everything
 local-network only, opened *temporarily* on untrusted networks (and auto-closed),
 and installs from a single recipe.
 
+The one cloud exception is a [Google Drive mount](#google-drive) at
+`~/GoogleDrive`, maintained with `rclone-gdrive`.
+
 ## Install
 
 ```sh
@@ -97,6 +100,81 @@ self-closing.
 - LLMNR is disabled (`file-transfer-harden`) — SMB discovery (mDNS + NetBIOS) is unaffected.
 - Every temporary firewall hole is runtime-only with a 30-minute expiry.
 
+## Google Drive
+
+`rclone-gdrive.service` (systemd user unit) runs `rclone mount gdrive: ~/GoogleDrive`
+with a full VFS cache. Everything that makes it work is **per host** and never in
+this repo:
+
+- the rclone config `~/.config/rclone/rclone.conf` (Drive token + OAuth client),
+  **encrypted**;
+- its password, in the Secret Service (oo7):
+  `secret-tool lookup service rclone key config_password`;
+- a Google OAuth client of its own (Desktop app), **one per host**.
+
+`rclone-gdrive` (also `just gdrive <subcommand>`) sets that up and maintains it.
+
+### Create the Google OAuth client (once per host)
+
+In the [Google Cloud Console](https://console.cloud.google.com/), in any project
+of yours:
+
+1. **APIs & Services → Library** → enable the **Google Drive API**.
+2. **OAuth consent screen** (Google Auth Platform): user type **External**, then
+   under **Audience** click **Publish app** so the status is **In production**.
+3. **Credentials** (Clients) → **Create credentials → OAuth client ID** →
+   application type **Desktop app**, named after the host (`xps`, `daisy`).
+   Keep the client ID and secret for `rclone-gdrive setup`.
+
+!!! warning "Publish the app — don't leave it in Testing"
+    While the consent screen is in **Testing**, Google expires the refresh token
+    after **7 days** and the mount stops working every week. Published but
+    *unverified* is fine for personal use: at consent Google shows "Google hasn't
+    verified this app" — click **Advanced → Go to … (unsafe)**.
+
+One client per host means a host can be revoked or rotated without touching the
+other.
+
+### Subcommands
+
+| Command | When |
+| --- | --- |
+| `rclone-gdrive setup` | First time on a host. Checks the tools, generates the keyring password if there is none (never shown), encrypts an existing plaintext config, asks for the OAuth client and opens the browser for consent, then enables and starts the unit and checks the mount. Idempotent: on a finished host it just reports everything is fine. |
+| `rclone-gdrive status` | Anytime. Read-only: tools, keyring password (yes/no), config encrypted and decryptable, `gdrive:` present, token works (one Drive API call, on a throwaway copy of the config), unit enabled + active, mount up. Exit 1 if anything is wrong; never prints a secret. |
+| `rclone-gdrive reauth` | The token expired or was revoked (`status` says so, the mount errors). Re-consent in the browser. |
+| `rclone-gdrive rotate-client` | New OAuth client (the old one leaked, or you're cleaning up). Asks for the new ID + secret and re-consents (the token is bound to the client), then reminds you to delete the old client in the console. |
+| `rclone-gdrive rotate-password` | New keyring password for the config encryption. Also resolves a rotation that was interrupted. |
+
+At consent rclone asks two questions: answer **y** to "Use web browser" and **n**
+to "Shared Drive". Every command that rewrites the config stops the unit first
+(the running mount may rewrite the token) and starts it again afterwards. If
+`reauth` or `rotate-client` fails, or you press Ctrl-C at the browser step, the
+previous config (old client + token) is put back.
+
+`--config PATH` (or `$RCLONE_CONFIG`) points it at another config, e.g. a
+throwaway one for testing. The unit always mounts the default config.
+
+### How `rotate-password` avoids a lockout
+
+At every step, one of the passwords in the keyring decrypts one config on disk:
+
+1. Back up the config (still on the old password) to `rclone.conf.rotate-backup`.
+2. Generate the new password into a **staging** keyring entry
+   (`key config_password_next`), next to the current one.
+3. Re-encrypt straight from the old password to the new one
+   (`rclone config encryption set` with a password command that returns each in
+   turn), so no plaintext config is ever written. Check that the new one decrypts
+   it and `gdrive:` is still there.
+4. Promote: copy the staged password over `config_password`, check again, then
+   delete the staging entry and the backup.
+
+If a step fails, or the machine dies halfway, the next `rotate-password` (or
+`setup`) sees the leftovers and works out what to do from which password
+decrypts what: finish the promotion, restore the backup, or just clean up. If
+nothing decrypts, it stops and deletes nothing. rclone's exit code can't be
+trusted here (`encryption set` exits 0 even when it fails), so every step is
+checked with `rclone config encryption check`.
+
 ## Where it lives
 
 | Thing | Path |
@@ -106,4 +184,5 @@ self-closing.
 | Menu entries | niri power menu (`rodii-power-menu`, Tools → Sharing) |
 | Doc templates | `~/.local/share/file-transfer/*.md` → rendered into `~/Downloads/Transfers/` |
 | Packages | `file-transfer` category in `setup/packages.yaml` |
-| Recipes | `just file-transfer`, `just file-transfer-harden` |
+| Recipes | `just file-transfer`, `just file-transfer-harden`, `just gdrive <subcommand>` |
+| Google Drive | `~/.local/bin/rclone-gdrive`, `~/.config/systemd/user/rclone-gdrive.service` |

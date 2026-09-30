@@ -272,6 +272,8 @@ file-transfer:
   - rsync
   - openssh
   - rclone # Google Drive mount (systemd rclone-gdrive.service, both hosts)
+  - fuse3 # fusermount3 for the rclone mount (usually already pulled in as a dep)
+  - libsecret # secret-tool: the rclone config password lives in the keyring
 
 keybase: # keybase-ssh recipe installs this (keybase-bin provides keybase + kbfs)
   - keybase-bin

@@ -105,4 +105,5 @@ Tasks are defined in the repo-root `mise.toml` — every recipe is equally runna
 | --- | --- | --- |
 | `just file-transfer` | Set up LocalSend + rsync-over-ssh receiving (packages, firewall, folder, docs) |  |
 | `just file-transfer-harden` | Harden a receiving machine: inbound SSH key-only + LLMNR off (disables passwords!) |  |
+| `just gdrive` | Google Drive mount: setup \| status \| reauth \| rotate-client \| rotate-password |  |
 <!-- /gen:just-recipes -->

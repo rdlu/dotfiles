@@ -245,6 +245,16 @@ run = [
 description = "Harden a receiving machine: inbound SSH key-only + LLMNR off (disables passwords!)"
 run = 'scripts/dot-local/bin/harden-file-transfer-ssh'
 
+# Google Drive mount (rclone-gdrive.service → ~/GoogleDrive). Interactive:
+# setup / rotate-client prompt for the OAuth client, reauth opens the browser.
+# No subcommand = the script's usage.
+[tasks.gdrive]
+description = "Google Drive mount: setup | status | reauth | rotate-client | rotate-password"
+quiet = true
+raw = true
+usage = 'arg "[subcommand]" default="" help="setup, status, reauth, rotate-client, rotate-password, help"'
+run = 'scripts/dot-local/bin/rclone-gdrive ${usage_subcommand:+"$usage_subcommand"}'
+
 # setup/packages.yaml is the categorized manifest of everything intentionally
 # installed beyond the tasks above (built from pacman.log: explicit installs
 # after the day-0 CachyOS run). pkg-drift reports new intentional installs

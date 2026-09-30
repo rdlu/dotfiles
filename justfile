@@ -85,6 +85,11 @@ file-transfer:
 file-transfer-harden:
   @mise run file-transfer-harden
 
+# Google Drive mount: setup | status | reauth | rotate-client | rotate-password
+[group("file-transfer")]
+gdrive subcommand="":
+  @mise run gdrive "{{ subcommand }}"
+
 # Install this host's missing manifest packages (or one category, or `all`)
 [group("install-other")]
 pkg-install category="":
