@@ -102,6 +102,14 @@ page "Tools" {
             item "Copy date · Munich" icon="\u{f00ed}" keywords="iso date today munich germany" run=##"v=$(TZ=Europe/Berlin date +%F); printf %s "$v" | wl-copy && notify-send -a Clocks -t 2500 "Copied" "$v""## detail="TZ=Europe/Berlin date +%F" fresh=#true
             item "Copy datetime · Munich" icon="\u{f0150}" keywords="iso datetime now munich germany" run=##"v=$(TZ=Europe/Berlin date -Iseconds); printf %s "$v" | wl-copy && notify-send -a Clocks -t 2500 "Copied" "$v""## detail="TZ=Europe/Berlin date -Iseconds" fresh=#true
         }
+        group "Shenzhen" icon="\u{f01e7}" keywords="shenzhen shenzen china beijing shanghai asia" detail="TZ=Asia/Shanghai date '+%a %d %b  %H:%M  %Z'" fresh=#true {
+            item "Copy date · Shenzhen" icon="\u{f00ed}" keywords="iso date today shenzhen shenzen china beijing shanghai asia" run=##"v=$(TZ=Asia/Shanghai date +%F); printf %s "$v" | wl-copy && notify-send -a Clocks -t 2500 "Copied" "$v""## detail="TZ=Asia/Shanghai date +%F" fresh=#true
+            item "Copy datetime · Shenzhen" icon="\u{f0150}" keywords="iso datetime now shenzhen shenzen china beijing shanghai asia" run=##"v=$(TZ=Asia/Shanghai date -Iseconds); printf %s "$v" | wl-copy && notify-send -a Clocks -t 2500 "Copied" "$v""## detail="TZ=Asia/Shanghai date -Iseconds" fresh=#true
+        }
+        group "Los Angeles" icon="\u{f01e7}" keywords="los angeles la california pacific pst pdt usa" detail="TZ=America/Los_Angeles date '+%a %d %b  %H:%M  %Z'" fresh=#true {
+            item "Copy date · Los Angeles" icon="\u{f00ed}" keywords="iso date today los angeles la california pacific pst pdt usa" run=##"v=$(TZ=America/Los_Angeles date +%F); printf %s "$v" | wl-copy && notify-send -a Clocks -t 2500 "Copied" "$v""## detail="TZ=America/Los_Angeles date +%F" fresh=#true
+            item "Copy datetime · Los Angeles" icon="\u{f0150}" keywords="iso datetime now los angeles la california pacific pst pdt usa" run=##"v=$(TZ=America/Los_Angeles date -Iseconds); printf %s "$v" | wl-copy && notify-send -a Clocks -t 2500 "Copied" "$v""## detail="TZ=America/Los_Angeles date -Iseconds" fresh=#true
+        }
         group "UTC" icon="\u{f01e7}" keywords="utc gmt zulu" detail="date -u '+%a %d %b  %H:%M  UTC'" fresh=#true {
             item "Copy date · UTC" icon="\u{f00ed}" keywords="iso date today utc" run=##"v=$(date -u +%F); printf %s "$v" | wl-copy && notify-send -a Clocks -t 2500 "Copied" "$v""## detail="date -u +%F" fresh=#true
             item "Copy datetime · UTC" icon="\u{f0150}" keywords="iso datetime now utc zulu" run=##"v=$(date -u +%Y-%m-%dT%H:%M:%SZ); printf %s "$v" | wl-copy && notify-send -a Clocks -t 2500 "Copied" "$v""## detail="date -u +%Y-%m-%dT%H:%M:%SZ" fresh=#true
