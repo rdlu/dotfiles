@@ -11,6 +11,7 @@ Repo: [github.com/rdlu/dotfiles](https://github.com/rdlu/dotfiles)
 - **[Setup guide](setup.md)** — bootstrap a fresh machine, stow model, per-host overlays
 - **[Justfile reference](justfile.md)** — every recipe, generated from the live justfile
 - **[File transfer](file-transfer.md)** — LocalSend + rsync-over-ssh, temporary firewall openings, install recipe; the Google Drive mount
+- **[Calendar](calendar.md)** — khal + vdirsyncer and chroncal synced with Google Calendar; `calendar-google` setup/status/reauth/rotate-client
 - **[Neovim plugins](neovim-plugins.md)** — the day-to-day LazyVim plugins and keymaps as wired on `nvim-light`
 - **[tmux shortcuts](shortcuts/tmux.md)** — custom binds (generated from `tmux.conf`) + plugin cheatsheets
 - **[herdr shortcuts](shortcuts/herdr.md)** — agent multiplexer (prefix Ctrl+b); binds + plugins, generated from `config.toml`

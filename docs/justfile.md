@@ -99,6 +99,12 @@ Tasks are defined in the repo-root `mise.toml` — every recipe is equally runna
 | `just docs-setup` | One-time install of the docs toolchain (pandoc + typst; uv ships with CachyOS) |  |
 | `just docs-update` | Regenerate the generated markdown blocks from tmux.conf, binds.kdl, and the justfile |  |
 
+### calendar
+
+| Recipe | Description | Runs |
+| --- | --- | --- |
+| `just gcal` | Google Calendar (khal+vdirsyncer, chroncal): setup \| status \| reauth \| rotate-client [app] |  |
+
 ### file-transfer
 
 | Recipe | Description | Runs |

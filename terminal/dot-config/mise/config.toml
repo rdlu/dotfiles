@@ -37,9 +37,11 @@ gleam = "1.18.1"
 # chroncal: Go TUI/CLI calendar with built-in CalDAV + Google OAuth. Kept
 # alongside khal+vdirsyncer (packages.yaml `calendar`). mise's default
 # minimum_release_age may hold it a release behind — fine. Per host, once:
-# `chroncal account add` (own OAuth client in oo7), `chroncal service install`;
-# a local-only ~/.config/chroncal/config.toml sets security.allow_plaintext
-# while oo7's alias Unlock is broken.
+# `calendar-google setup chroncal` (account add + service install; see
+# docs/calendar.md). Its credential store can't use oo7 (alias Unlock), so it
+# falls back to a 0600 plaintext file — opt-in, via a local-only
+# ~/.config/chroncal/config.toml (daisy) or the script's --allow-plaintext.
+# The service unit pins this version's path: re-run setup after upgrading.
 "github:DouglasdeMoura/chroncal" = { version = "latest", bin = "chroncal", matching_regex = "linux_amd64\\.tar\\.gz$" }
 # ztl (zonetimeline-tui): time-zone overlap TUI. Only prebuilt on GitHub
 # releases (AUR has zonetimeline-bin too); zones in ~/.config/zonetimeline-tui.

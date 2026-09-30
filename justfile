@@ -90,6 +90,11 @@ file-transfer-harden:
 gdrive subcommand="":
   @mise run gdrive "{{ subcommand }}"
 
+# Google Calendar (khal+vdirsyncer, chroncal): setup | status | reauth | rotate-client [app]
+[group("calendar")]
+gcal subcommand="" app="":
+  @mise run gcal "{{ subcommand }}" "{{ app }}"
+
 # Install this host's missing manifest packages (or one category, or `all`)
 [group("install-other")]
 pkg-install category="":

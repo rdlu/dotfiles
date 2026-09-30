@@ -5,6 +5,7 @@
 # public repo — see `secret-tool lookup service google-caldav key client_id`.
 # The refresh token vdirsyncer writes after sign-in stays in ~/.local/share.
 #
+#   calendar-google setup # does all of it (docs/calendar.md); by hand:
 #   vdirsyncer discover   # first run: opens the browser for Google sign-in
 #   vdirsyncer sync       # then systemctl --user enable --now vdirsyncer.timer
 
@@ -16,6 +17,9 @@ a = "google_local"
 b = "google_remote"
 collections = ["from b"]
 metadata = ["color", "displayname"]
+# Create the local dir of each Google calendar without asking y/N per calendar
+# (discover is then non-interactive apart from the browser sign-in).
+implicit = "create"
 
 [storage google_local]
 type = "filesystem"

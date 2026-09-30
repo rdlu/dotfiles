@@ -428,6 +428,7 @@ calendar: # khal+vdirsyncer; chroncal comes from mise (terminal package)
   - khal
   - vdirsyncer
   - python-aiohttp-oauthlib # optional dep: vdirsyncer Google storage; list it or orphan cleanup drops it
+  - libsecret # secret-tool: vdirsyncer's OAuth client lives in the keyring (calendar-google)
 
 thunderbolt: # xps (Thunderbolt ports); daisy has no TB/USB4 domain
   - bolt # arrived as a gnome-control-center dep; listed so removing GNOME can't take it

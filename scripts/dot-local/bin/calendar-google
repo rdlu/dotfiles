@@ -1,0 +1,1107 @@
+#!/bin/bash
+# calendar-google — set up, check and maintain Google Calendar sync for the two
+# terminal calendars kept side by side on this host:
+#   khal + vdirsyncer  vdirsyncer.timer syncs Google ↔ ~/.local/share/calendars/google
+#   chroncal           chroncal-alarm.timer runs `chroncal service run` (alarms + sync)
+#
+# Each host has its own Google OAuth client (Desktop app); by default both apps
+# use it. Nothing secret is in the repo, and this script never prints a secret.
+#   vdirsyncer  client in the Secret Service (oo7), fetched by its config:
+#                 secret-tool lookup service google-caldav key client_id|client_secret
+#               refresh token: ~/.local/share/vdirsyncer/google_token
+#   chroncal    client + tokens in chroncal's own credential store: the keyring
+#               (service chroncal, username db_<namespace>_account_<id>) when it
+#               can use it, else — opt-in — a 0600 file
+#               ~/.config/chroncal/credentials/db_<namespace>/account_<id>.json.
+#               chroncal (go-keyring) unlocks /org/freedesktop/secrets/aliases/default,
+#               which oo7 answers with nothing, so on oo7 hosts it needs the file.
+#
+#   calendar-google setup [app]          # first-time install; re-run = "all fine"
+#   calendar-google status [app]         # read-only health check; exit 1 if not healthy
+#   calendar-google reauth [app]         # token expired/revoked: re-consent in the browser
+#   calendar-google rotate-client [app]  # new OAuth client id/secret, re-consent
+#   app: vdirsyncer | chroncal (default: both)
+#
+# reauth / rotate-client back up what they replace (vdirsyncer: the token file
+# → <token>.pre-change, the keyring client → key client_id_prev/client_secret_prev;
+# chroncal: its credential → a keyring entry or <file>.pre-change) and put it
+# back if consent or the check afterwards fails, or on Ctrl-C. A crash can
+# leave backups behind; the next reauth/rotate-client/setup keeps whichever
+# state actually works. Each app's timer is stopped while its credentials change.
+#
+# Testing against throwaway state: $VDIRSYNCER_CONFIG, $CHRONCAL_DB,
+# $XDG_CONFIG_HOME / $XDG_DATA_HOME (both apps honour them), and
+# $CALENDAR_GOOGLE_ACCOUNT (chroncal account name, default Google).
+# Guide: docs/calendar.md (just gcal <command> [app]).
+set -euo pipefail
+umask 077
+
+if [[ -t 1 ]]; then
+  B=$'\e[1m' D=$'\e[2m' R=$'\e[31m' G=$'\e[32m' Y=$'\e[33m' N=$'\e[0m'
+else
+  B='' D='' R='' G='' Y='' N=''
+fi
+
+step() { printf '\n%s%s==> %s%s\n' "$B" "$Y" "$*" "$N"; }
+ok() { printf '  %s✓%s %s\n' "$G" "$N" "$*"; }
+bad() { printf '  %s✗%s %s\n' "$R" "$N" "$*"; }
+skip() { printf '  %s– %s%s\n' "$D" "$*" "$N"; }
+note() { printf '  %s%s%s\n' "$D" "$*" "$N"; }
+die() { printf '%scalendar-google: %s%s\n' "$R" "$*" "$N" >&2; exit 1; }
+
+usage() {
+  cat <<EOF
+Usage: calendar-google <command> [vdirsyncer|chroncal]
+
+Google Calendar for the two terminal calendars on this host: khal + vdirsyncer
+(vdirsyncer.timer) and chroncal (chroncal-alarm.timer). One Google OAuth client
+(Desktop app) per host, shared by both apps unless you give chroncal its own.
+Without an app name a command covers both.
+
+Commands:
+  setup          First-time install: stores the OAuth client (asks for it once),
+                 browser sign-in for each app, first sync, enables the timers.
+                 Idempotent: re-running on a finished host just checks.
+  status         Read-only health check (tools, keyring, tokens, timers, sync,
+                 calendars, khal). Exit 1 if anything is wrong. Never prints secrets.
+  reauth         Token expired or revoked: re-consent in the browser.
+  rotate-client  Switch to a new Google OAuth client (id + secret), re-consent,
+                 then tells you which old client ID to delete.
+  help           This text.
+
+Also: just gcal <command> [app]. Guide: docs/calendar.md.
+EOF
+}
+
+# ---------------------------------------------------------------- arguments
+
+cmd="" target=""
+while (($#)); do
+  case "$1" in
+    -h | --help | help) cmd=help; shift ;;
+    -*) usage >&2; exit 2 ;;
+    *)
+      if [[ -z $cmd ]]; then cmd="$1"
+      elif [[ -z $target ]]; then target="$1"
+      else usage >&2; exit 2; fi
+      shift ;;
+  esac
+done
+
+case "$cmd" in
+  "" | help) usage; exit 0 ;;
+  setup | status | reauth | rotate-client) ;;
+  *) printf 'calendar-google: unknown command: %s\n\n' "$cmd" >&2; usage >&2; exit 2 ;;
+esac
+do_vd=1 do_cc=1
+case "$target" in
+  "" | both | all) ;;
+  vdirsyncer | vd | khal) do_cc=0 ;;
+  chroncal | cc) do_vd=0 ;;
+  *) printf 'calendar-google: unknown app: %s (vdirsyncer or chroncal)\n\n' "$target" >&2; usage >&2; exit 2 ;;
+esac
+
+host=$(hostname 2>/dev/null || uname -n)
+cfg_home=${XDG_CONFIG_HOME:-$HOME/.config}
+data_home=${XDG_DATA_HOME:-$HOME/.local/share}
+disp() { printf '%s' "${1/#$HOME/\~}"; }
+
+# ---------------------------------------------------------------- helpers
+
+have() { command -v "$1" >/dev/null 2>&1; }
+
+# Keyring: presence only, the value never reaches a variable or the terminal.
+kr_has() {
+  local n
+  n=$(secret-tool lookup "$@" 2>/dev/null | head -c1 | wc -c) || true
+  ((n > 0))
+}
+kr_clear() { secret-tool clear "$@" 2>/dev/null || true; }
+# kr_copy LABEL SRC-ATTRS... -- DST-ATTRS...: value goes pipe to pipe
+kr_copy() {
+  local label=$1 src=() dst=()
+  shift
+  while (($#)) && [[ $1 != -- ]]; do src+=("$1"); shift; done
+  shift
+  dst=("$@")
+  kr_has "${src[@]}" || return 1
+  secret-tool lookup "${src[@]}" | secret-tool store --label="$label" "${dst[@]}"
+}
+
+unit_active() { systemctl --user is-active --quiet "$1" 2>/dev/null; }
+unit_enabled() { systemctl --user is-enabled --quiet "$1" 2>/dev/null; }
+unit_installed() { systemctl --user cat "$1" >/dev/null 2>&1; }
+unit_prop() { systemctl --user show "$1" --property="$2" --value 2>/dev/null || true; }
+
+# Last run of a timer's service: "success (Wed 2026-09-30 10:00:00 -03)",
+# "never", or the failing Result. Returns 1 only on a failed last run.
+last_run=""
+unit_last_run() { # service
+  local res ts
+  res=$(unit_prop "$1" Result)
+  ts=$(unit_prop "$1" ExecMainExitTimestamp)
+  if [[ -z $ts || $ts == n/a ]]; then last_run="not run yet"; return 0; fi
+  if [[ $res == success ]]; then last_run="success ($ts)"; return 0; fi
+  last_run="${res:-unknown} ($ts)"
+  return 1
+}
+
+# Timers are stopped while their app's credentials change (a sync running
+# without a token would start its own browser sign-in) and started again after.
+paused=()
+pause_timer() { # timer service
+  local i
+  if unit_active "$1"; then
+    note "stopping $1 while the credentials change"
+    systemctl --user stop "$1"
+    paused+=("$1")
+  fi
+  for ((i = 0; i < 180; i++)); do
+    unit_active "$2" || return 0
+    ((i == 0)) && note "waiting for the running $2 to finish"
+    sleep 1
+  done
+  die "$2 is still running after 3 minutes — try again later"
+}
+# an interrupted run stops a timer and never starts it again
+restart_left_stopped() {
+  if unit_enabled "$1" && ! unit_active "$1"; then
+    systemctl --user start "$1" && ok "started $1 again (the interrupted run left it stopped)"
+  fi
+}
+resume_timers() {
+  local t
+  for t in "${paused[@]}"; do
+    systemctl --user start "$t"
+    ok "$t started again"
+  done
+  paused=()
+}
+
+confirm() { # question default(y|n)
+  local a=""
+  [[ -t 0 ]] || die "needs an interactive terminal (asks: $1)"
+  read -rp "  $1 " a || true
+  a=${a:-$2}
+  [[ $a == [yY]* ]]
+}
+
+prompt_client() { # sets cid, csec
+  [[ -t 0 ]] || die "needs an interactive terminal (prompts for the OAuth client)"
+  cid="" csec=""
+  while [[ -z $cid ]]; do read -rp "  client ID: " cid; done
+  [[ $cid == *.apps.googleusercontent.com ]] ||
+    note "that doesn't end in .apps.googleusercontent.com — double-check it"
+  while [[ -z $csec ]]; do read -rsp "  client secret (hidden): " csec; echo; done
+}
+
+google_client_guide() {
+  cat <<EOF
+  ${B}Create a Google OAuth client for this host${N} (one per host), in
+  https://console.cloud.google.com/ (any project of yours):
+    1. APIs & Services → Library → enable ${B}Google Calendar API${N} and ${B}CalDAV API${N}
+       (both apps talk CalDAV; without it Google answers 403 accessNotConfigured).
+    2. OAuth consent screen (Google Auth Platform): user type ${B}External${N}, then
+       Audience → ${B}Publish app${N} so it is "In production". In "Testing" Google
+       expires the refresh token after 7 days. Unverified is fine for personal
+       use — click through the warning at consent.
+    3. Credentials (Clients) → Create → OAuth client ID → ${B}Desktop app${N},
+       named after this host (e.g. "$host calendar").
+  Paste its ID and secret below.
+EOF
+}
+
+# What to do about a failed token check, from the error text.
+fix_hint() { # app error
+  case "$2" in
+    *invalid_client*) printf 'calendar-google rotate-client %s (client deleted, or wrong secret)' "$1" ;;
+    *accessNotConfigured* | *403*) printf 'enable the CalDAV API in the Google Cloud project of that client' ;;
+    *"timed out"*) printf 'check the network and retry' ;;
+    *) printf 'calendar-google reauth %s' "$1" ;;
+  esac
+}
+
+consent_hint() {
+  note "browser consent: pick your Google account; at 'Google hasn't verified this app'"
+  note "click Advanced → Go to … (unsafe); tick the calendar access box, then Continue."
+}
+
+# ---------------------------------------------------------------- vdirsyncer
+
+vd_timer=vdirsyncer.timer vd_service=vdirsyncer.service vd_pair=google
+# The OAuth client vdirsyncer's config fetches. Staging entries differ in the
+# VALUE of `key`, not by an extra attribute: a Secret Service lookup matches
+# items with a superset of the attributes, so an extra one would be ambiguous.
+kr_id=(service google-caldav key client_id)
+kr_secret=(service google-caldav key client_secret)
+kr_id_prev=(service google-caldav key client_id_prev)
+kr_secret_prev=(service google-caldav key client_secret_prev)
+label_id='Google Calendar OAuth client ID (vdirsyncer)'
+label_secret='Google Calendar OAuth client secret (vdirsyncer)'
+label_prev='(previous — calendar-google rotation in progress)'
+
+vconf="" vtoken="" vtoken_bak="" vstatus="" vlocal=""
+vd_resolve() {
+  if [[ -n ${VDIRSYNCER_CONFIG:-} ]]; then vconf=$VDIRSYNCER_CONFIG
+  elif [[ -e $HOME/.vdirsyncer/config ]]; then vconf=$HOME/.vdirsyncer/config
+  else vconf=$cfg_home/vdirsyncer/config; fi
+  [[ -r $vconf ]] || die "no vdirsyncer config at $(disp "$vconf") — run: just stow"
+  local a b
+  a=$(vconf_get "pair $vd_pair" a) b=$(vconf_get "pair $vd_pair" b)
+  [[ -n $a && -n $b ]] || die "$(disp "$vconf") has no [pair $vd_pair] with a/b storages"
+  vtoken=$(vconf_get "storage $b" token_file)
+  vlocal=$(vconf_get "storage $a" path)
+  vstatus=$(vconf_get general status_path)
+  [[ -n $vtoken ]] || die "$(disp "$vconf"): [storage $b] has no token_file"
+  vtoken_bak="$vtoken.pre-change"
+}
+vconf_get() { # section key → first value, quotes stripped, ~ expanded
+  local v
+  v=$(awk -v sec="[$1]" -v key="$2" '
+    /^[[:space:]]*\[/ { ins = ($0 == sec); next }
+    ins && $1 == key && $2 == "=" {
+      v = $0; sub(/^[^=]*=[[:space:]]*/, "", v); sub(/[[:space:]]+#.*$/, "", v)
+      gsub(/^"|"$/, "", v); print v; exit
+    }' "$vconf")
+  v=${v/#\~/$HOME}
+  printf '%s' "${v%/}"
+}
+
+vd_python() { # the interpreter vdirsyncer runs on (aiohttp-oauthlib must import there)
+  local line
+  line=$(head -n1 "$(command -v vdirsyncer)" 2>/dev/null) || true
+  line=${line#\#!}
+  line=${line# }
+  [[ $line == */env\ * ]] && line=${line#*/env }
+  [[ ${line##*/} == python* ]] && { printf '%s' "$line"; return; }
+  printf 'python3'
+}
+vd_oauthlib() { $(vd_python) -c 'import aiohttp_oauthlib' >/dev/null 2>&1; }
+
+vd_client_state() { # 2 = both entries, 1 = one of them, 0 = none
+  local n=0
+  kr_has "${kr_id[@]}" && n=$((n + 1))
+  kr_has "${kr_secret[@]}" && n=$((n + 1))
+  return $((2 - n))
+}
+vd_has_client() { kr_has "${kr_id[@]}" && kr_has "${kr_secret[@]}"; }
+vd_client_id() { secret-tool lookup "${kr_id[@]}" 2>/dev/null || true; } # an ID is not secret
+vd_store_client() { # uses cid, csec
+  printf '%s' "$cid" | secret-tool store --label="$label_id" "${kr_id[@]}"
+  printf '%s' "$csec" | secret-tool store --label="$label_secret" "${kr_secret[@]}"
+  [[ $(vd_client_id) == "$cid" ]] && kr_has "${kr_secret[@]}"
+}
+
+# A token file vdirsyncer can refresh (without one it starts a browser sign-in).
+vd_token_usable() {
+  [[ -s $vtoken ]] || return 1
+  python3 -c 'import json,sys
+d = json.load(open(sys.argv[1]))
+sys.exit(0 if isinstance(d, dict) and d.get("refresh_token") else 1)' "$vtoken" >/dev/null 2>&1
+}
+
+# Cheap authenticated check: CalDAV discovery with a throwaway config, status
+# dir and COPY of the token, so a refresh can't rewrite the real one and
+# nothing under ~/.local/share changes. No browser: only runs with a usable
+# token, with no display and a no-op $BROWSER.
+vd_err="" vd_ncal="" tmp_paths=() # tmp_paths: removed on any exit (a probe holds a token copy)
+vd_token_works() {
+  local tmp rc=0
+  vd_err="" vd_ncal=""
+  vd_token_usable || { vd_err="no usable token"; return 1; }
+  tmp=$(mktemp -d -p "${XDG_RUNTIME_DIR:-/tmp}" calendar-google.XXXXXX)
+  tmp_paths+=("$tmp")
+  cp -- "$vtoken" "$tmp/token"
+  cat >"$tmp/config" <<EOF
+[general]
+status_path = "$tmp/status/"
+
+[pair probe]
+a = "probe_local"
+b = "probe_remote"
+collections = ["from b"]
+implicit = "create"
+
+[storage probe_local]
+type = "filesystem"
+path = "$tmp/cal/"
+fileext = ".ics"
+
+[storage probe_remote]
+type = "google_calendar"
+token_file = "$tmp/token"
+client_id.fetch = ["command", "secret-tool", "lookup", "${kr_id[0]}", "${kr_id[1]}", "${kr_id[2]}", "${kr_id[3]}"]
+client_secret.fetch = ["command", "secret-tool", "lookup", "${kr_secret[0]}", "${kr_secret[1]}", "${kr_secret[2]}", "${kr_secret[3]}"]
+EOF
+  env -u DISPLAY -u WAYLAND_DISPLAY BROWSER=true VDIRSYNCER_CONFIG="$tmp/config" \
+    timeout 60 vdirsyncer discover --no-list probe </dev/null >"$tmp/out" 2>&1 || rc=$?
+  if ((rc == 0)); then
+    vd_ncal=$(python3 -c 'import json,sys; print(len(json.load(open(sys.argv[1]))["collections"]))' \
+      "$tmp/status/probe.collections" 2>/dev/null) || vd_ncal="?"
+  elif ((rc == 124)); then
+    vd_err="timed out after 60s (offline?)"
+  else
+    vd_err=$(grep -E '^(error|critical):' "$tmp/out" | grep -v -- '-vdebug' | tail -n1 |
+      sed -E 's/^[a-z]+: *//' | cut -c1-160) || true
+  fi
+  rm -rf -- "$tmp"
+  return "$rc"
+}
+
+vd_ncollections() { find "$vlocal" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l; }
+vd_nevents() { find "$vlocal" -name '*.ics' 2>/dev/null | wc -l; }
+vd_discovered() { [[ -s $vstatus/$vd_pair.collections ]]; }
+khal_lists() { timeout 30 khal list today 7d >/dev/null 2>&1; }
+
+# Backups around reauth / rotate-client, restored on failure.
+vd_token_pending=0
+vd_begin_token_backup() { # moves the token aside: the next discover signs in afresh
+  [[ -e $vtoken ]] && mv -f -- "$vtoken" "$vtoken_bak"
+  vd_token_pending=1
+}
+vd_drop_token_backup() { rm -f -- "$vtoken_bak"; vd_token_pending=0; }
+vd_restore_token_backup() {
+  ((vd_token_pending)) || return 0
+  vd_token_pending=0
+  [[ -e $vtoken_bak ]] || return 0
+  mv -f -- "$vtoken_bak" "$vtoken"
+  printf '  %s↩%s vdirsyncer: restored the previous token\n' "$Y" "$N" >&2
+}
+
+vd_client_pending=0
+vd_begin_client_backup() {
+  if ! { kr_copy "$label_id $label_prev" "${kr_id[@]}" -- "${kr_id_prev[@]}" &&
+    kr_copy "$label_secret $label_prev" "${kr_secret[@]}" -- "${kr_secret_prev[@]}" &&
+    kr_has "${kr_id_prev[@]}" && kr_has "${kr_secret_prev[@]}"; }; then
+    die "backing up the current client in the keyring failed"
+  fi
+  vd_client_pending=1
+}
+vd_drop_client_backup() { kr_clear "${kr_id_prev[@]}"; kr_clear "${kr_secret_prev[@]}"; vd_client_pending=0; }
+vd_restore_prev_client() {
+  kr_copy "$label_id" "${kr_id_prev[@]}" -- "${kr_id[@]}" &&
+    kr_copy "$label_secret" "${kr_secret_prev[@]}" -- "${kr_secret[@]}"
+}
+vd_restore_client_backup() {
+  ((vd_client_pending)) || return 0
+  vd_client_pending=0
+  if vd_restore_prev_client; then
+    vd_drop_client_backup
+    printf '  %s↩%s vdirsyncer: restored the previous OAuth client in the keyring\n' "$Y" "$N" >&2
+  else
+    printf '  %s✗%s vdirsyncer: could not restore the previous client (kept in keyring key client_id_prev/client_secret_prev)\n' "$R" "$N" >&2
+    return 1
+  fi
+}
+
+vd_leftovers() { [[ -e $vtoken_bak ]] || kr_has "${kr_id_prev[@]}" || kr_has "${kr_secret_prev[@]}"; }
+
+# What a crash in reauth/rotate-client left behind: keep whichever state works.
+vd_resolve_leftovers() {
+  vd_leftovers || return 0
+  step "vdirsyncer: resolving an interrupted reauth/rotate-client"
+  if vd_has_client && vd_token_works; then
+    rm -f -- "$vtoken_bak"
+    kr_clear "${kr_id_prev[@]}"; kr_clear "${kr_secret_prev[@]}"
+    ok "the current client + token work; discarded the leftovers"
+    restart_left_stopped "$vd_timer"
+    return 0
+  fi
+  if kr_has "${kr_id_prev[@]}" && kr_has "${kr_secret_prev[@]}"; then
+    vd_restore_prev_client || { bad "could not restore client_id_prev/client_secret_prev"; return 1; }
+  fi
+  [[ -e $vtoken_bak ]] && mv -f -- "$vtoken_bak" "$vtoken"
+  if vd_has_client && vd_token_works; then
+    kr_clear "${kr_id_prev[@]}"; kr_clear "${kr_secret_prev[@]}"
+    ok "restored the previous client/token, and it works"
+  else
+    kr_clear "${kr_id_prev[@]}"; kr_clear "${kr_secret_prev[@]}"
+    bad "restored the previous client/token, but it doesn't work either: ${vd_err:-failed}"
+    note "run: calendar-google reauth vdirsyncer"
+  fi
+  restart_left_stopped "$vd_timer"
+}
+
+vd_consent() { # fresh browser sign-in through vdirsyncer's own discover
+  consent_hint
+  vdirsyncer discover --no-list "$vd_pair"
+}
+
+# ---------------------------------------------------------------- chroncal
+
+cc_timer=chroncal-alarm.timer cc_service=chroncal-alarm.service
+cc_account=${CALENDAR_GOOGLE_ACCOUNT:-Google}
+cc_server=https://apidata.googleusercontent.com/caldav
+cc_kr_bak=(service calendar-google key chroncal_credential_backup)
+cc_unit_dir=$cfg_home/systemd/user
+cc_conf_dir=$cfg_home/chroncal
+
+cdb=""
+cc_resolve_db() { # chroncal's precedence: $CHRONCAL_DB > config.toml db > default
+  local v=""
+  if [[ -n ${CHRONCAL_DB:-} ]]; then cdb=$CHRONCAL_DB; return; fi
+  if [[ -r $cc_conf_dir/config.toml ]]; then
+    v=$(awk '/^[[:space:]]*\[/ { exit }
+      $1 == "db" && $2 == "=" { v = $0; sub(/^[^=]*=[[:space:]]*/, "", v); gsub(/^"|"[[:space:]]*$/, "", v); print v; exit }' \
+      "$cc_conf_dir/config.toml")
+  fi
+  cdb=${v/#\~/$HOME}
+  [[ -n $cdb ]] || cdb=$data_home/chroncal/chroncal.db
+}
+cc_has_db() { [[ -s $cdb ]]; } # chroncal creates the DB on first run — never trigger that from status
+
+# The Google (oauth2) account: prefer the one named $cc_account.
+cc_id="" cc_name="" cc_user=""
+cc_find_account() {
+  local out line
+  cc_id="" cc_name="" cc_user=""
+  cc_has_db || return 1
+  out=$(chroncal account list --output json 2>/dev/null) || return 2
+  line=$(python3 -c 'import json,sys
+want = sys.argv[1]
+acc = [a for a in json.load(sys.stdin)
+       if (a.get("auth_type") or "").lower() == "oauth2" and "google" in (a.get("server_url") or "")]
+acc.sort(key=lambda a: (want not in (a.get("name"), a.get("display_name")), a["id"]))
+if acc:
+    a = acc[0]
+    print(a["id"], a.get("display_name") or a.get("name") or "", a.get("username") or "", sep="\t")' \
+    "$cc_account" <<<"$out") || return 2
+  [[ -n $line ]] || return 1
+  IFS=$'\t' read -r cc_id cc_name cc_user <<<"$line"
+}
+
+# Where chroncal keeps this account's credential. The namespace is
+# <db uuid>-sha256("inode-<dev>-<ino>" of the db file), as chroncal computes it.
+cc_mode="" cc_file="" cc_file_bak="" cc_kr=()
+cc_locate_cred() {
+  local ns
+  cc_mode="none" cc_file="" cc_kr=()
+  ns=$(python3 -c 'import hashlib,os,sqlite3,sys,urllib.parse
+db = os.path.realpath(sys.argv[1])
+con = sqlite3.connect("file:" + urllib.parse.quote(db) + "?mode=ro", uri=True, timeout=10)
+uuid = con.execute("SELECT namespace FROM credential_namespace WHERE id = 1").fetchone()[0]
+st = os.stat(db)
+print(uuid + "-" + hashlib.sha256(f"inode-{st.st_dev:x}-{st.st_ino:x}".encode()).hexdigest())' \
+    "$cdb" 2>/dev/null) || return 1
+  cc_file=$cc_conf_dir/credentials/db_$ns/account_$cc_id.json
+  cc_file_bak=$cc_file.pre-change
+  cc_kr=(service chroncal username "db_${ns}_account_$cc_id")
+  if [[ -s $cc_file ]]; then cc_mode="file"
+  elif kr_has "${cc_kr[@]}"; then cc_mode="keyring"; fi
+}
+cc_cred_desc() {
+  case "$cc_mode" in
+    keyring) printf 'keyring (service chroncal)' ;;
+    file) # the namespace dir name is 100 characters: shorten it for display
+      local d=${cc_file%/*}
+      printf 'plaintext file %s/%s…/%s (keyring fallback)' "$(disp "${d%/*}")" "${d##*/}" "${cc_file##*/}" |
+        sed -E 's/(db_[0-9a-f]{8})[0-9a-f-]*…/\1…/' ;;
+    *) printf 'missing' ;;
+  esac
+}
+# only the (non-secret) client ID leaves the credential
+cc_client_id() {
+  local py='import json,sys; print(json.load(sys.stdin).get("oauth_client_id", ""))'
+  case "$cc_mode" in
+    file) python3 -c "$py" <"$cc_file" 2>/dev/null || true ;;
+    keyring) secret-tool lookup "${cc_kr[@]}" 2>/dev/null | python3 -c "$py" 2>/dev/null || true ;;
+  esac
+}
+
+# Live check: discovery against Google (refreshes the access token like any
+# chroncal run, and refreshes calendar names/colours in chroncal's DB).
+cc_err="" cc_ncal=""
+cc_token_works() {
+  local out rc=0
+  cc_err="" cc_ncal=""
+  out=$(timeout 90 chroncal account calendars list "$cc_id" --output json 2>/dev/null) || rc=$?
+  if ((rc == 0)); then
+    cc_ncal=$(python3 -c 'import json,sys; print(len(json.load(sys.stdin)["calendars"]))' <<<"$out" 2>/dev/null) || cc_ncal="?"
+    return 0
+  fi
+  if ((rc == 124)); then cc_err="timed out after 90s (offline?)"
+  else
+    cc_err=$(python3 -c 'import json,sys; print(json.load(sys.stdin).get("error", ""))' <<<"$out" 2>/dev/null |
+      cut -c1-160) || true
+  fi
+  return "$rc"
+}
+
+# Read-only: what the background sync last recorded.
+cc_sync_summary() { # prints "calendars<TAB>with errors<TAB>minutes since last sync<TAB>first error"
+  chroncal sync status --output json 2>/dev/null | python3 -c 'import json,sys
+from datetime import datetime, timezone
+rows = json.load(sys.stdin)
+errs = [r for r in rows if r.get("last_sync_error")]
+times = [datetime.fromisoformat(r["last_sync_at"].replace("Z", "+00:00")) for r in rows if r.get("last_sync_at")]
+age = int((datetime.now(timezone.utc) - max(times)).total_seconds() // 60) if times else -1
+first = errs[0]["last_sync_error"].replace("\t", " ").replace("\n", " ")[:160] if errs else ""
+print(len(rows), len(errs), age, first, sep="\t")'
+}
+
+cc_unit_binary() { # the binary chroncal-alarm.service runs ("" if no unit)
+  local f=$cc_unit_dir/$cc_service line
+  [[ -r $f ]] || return 0
+  line=$(grep -m1 '^ExecStart=' "$f") || return 0
+  line=${line#ExecStart=}
+  printf '%s' "${line%% *}"
+}
+cc_service_ok() {
+  local bin
+  bin=$(cc_unit_binary)
+  [[ -n $bin && -x $bin ]] && unit_enabled "$cc_timer" && unit_active "$cc_timer"
+}
+
+# The refusal chroncal prints (before any prompt or browser) when it has no keyring.
+cc_refused() { grep -q 'no secure credential store is available' "$1" 2>/dev/null; }
+cc_plaintext_offer() {
+  bad "chroncal can't use the keyring on this host"
+  note "(go-keyring unlocks the Secret Service alias 'default', which oo7 doesn't support)"
+  note "Fallback: chroncal keeps this account's credential (client secret + refresh"
+  note "token) in a 0600 file under $(disp "$cc_conf_dir")/credentials/ — outside the repo."
+  confirm "Store it in that plaintext file instead? [y/N]" n
+}
+# run_chroncal ARGS...: output passes through; retries once with
+# --allow-plaintext if chroncal has no keyring and you agree.
+run_chroncal() {
+  local err rc=0
+  err=$(mktemp -p "${XDG_RUNTIME_DIR:-/tmp}" calendar-google.XXXXXX)
+  tmp_paths+=("$err")
+  # stdout straight through (fd 3), stderr through tee (pipefail keeps chroncal's rc)
+  { chroncal "$@" 2>&1 1>&3 3>&- | tee "$err" >&2 3>&-; } 3>&1 || rc=$?
+  if ((rc != 0)) && cc_refused "$err"; then
+    rm -f -- "$err"
+    cc_plaintext_offer || return 1
+    rc=0
+    chroncal "$@" --allow-plaintext || rc=$?
+    return "$rc"
+  fi
+  rm -f -- "$err"
+  return "$rc"
+}
+
+cc_pending=0 cc_bak_mode=""
+cc_begin_backup() {
+  cc_locate_cred || die "could not work out where chroncal keeps the credential"
+  case "$cc_mode" in
+    file) cp -p -- "$cc_file" "$cc_file_bak" ;;
+    keyring)
+      if ! { kr_copy 'chroncal credential backup (calendar-google, in progress)' "${cc_kr[@]}" -- "${cc_kr_bak[@]}" &&
+        kr_has "${cc_kr_bak[@]}"; }; then
+        die "backing up chroncal's credential in the keyring failed"
+      fi ;;
+    *) die "chroncal's credential for account $cc_id is missing — remove the account (chroncal account remove $cc_id) and run: calendar-google setup chroncal" ;;
+  esac
+  cc_bak_mode=$cc_mode
+  cc_pending=1
+}
+cc_drop_backup() {
+  case "$cc_bak_mode" in
+    file) rm -f -- "$cc_file_bak" ;;
+    keyring) kr_clear "${cc_kr_bak[@]}" ;;
+  esac
+  cc_pending=0
+}
+cc_put_back() { # mode
+  case "$1" in
+    file) mv -f -- "$cc_file_bak" "$cc_file" ;;
+    keyring)
+      kr_clear "${cc_kr[@]}"
+      kr_copy "Password for '${cc_kr[3]}' on 'chroncal'" "${cc_kr_bak[@]}" -- "${cc_kr[@]}" || return 1
+      kr_clear "${cc_kr_bak[@]}" ;;
+  esac
+}
+cc_restore_backup() {
+  ((cc_pending)) || return 0
+  cc_pending=0
+  if cc_put_back "$cc_bak_mode"; then
+    printf '  %s↩%s chroncal: restored the previous credential (old client + token)\n' "$Y" "$N" >&2
+  else
+    printf '  %s✗%s chroncal: could not restore the previous credential (kept: keyring key chroncal_credential_backup)\n' "$R" "$N" >&2
+    return 1
+  fi
+}
+
+cc_leftovers() { [[ -n $cc_file && -e $cc_file_bak ]] || kr_has "${cc_kr_bak[@]}"; }
+cc_resolve_leftovers() {
+  cc_leftovers || return 0
+  step "chroncal: resolving an interrupted reauth/rotate-client"
+  if [[ $cc_mode != none ]] && cc_token_works; then
+    rm -f -- "$cc_file_bak"
+    kr_clear "${cc_kr_bak[@]}"
+    ok "the current credential works; discarded the backup"
+    restart_left_stopped "$cc_timer"
+    return 0
+  fi
+  if [[ -e $cc_file_bak ]]; then cc_put_back file
+  elif kr_has "${cc_kr_bak[@]}"; then cc_put_back keyring || { bad "could not restore the keyring backup"; return 1; }
+  fi
+  cc_locate_cred || true
+  if cc_token_works; then ok "restored the previous credential, and it works"
+  else
+    bad "restored the previous credential, but it doesn't work either: ${cc_err:-failed}"
+    note "run: calendar-google reauth chroncal"
+  fi
+  restart_left_stopped "$cc_timer"
+}
+
+# ---------------------------------------------------------------- exit handling
+
+done_apps=()
+on_exit() {
+  local rc=$?
+  trap - EXIT
+  [[ -t 0 ]] && stty echo 2>/dev/null # in case ^C hit the hidden secret prompt
+  unset csec cc_csec
+  ((${#tmp_paths[@]} == 0)) || rm -rf -- "${tmp_paths[@]}"
+  vd_restore_token_backup || rc=1
+  vd_restore_client_backup || rc=1
+  cc_restore_backup || rc=1
+  if ((rc != 0 && ${#done_apps[@]})); then
+    printf '  %s(already finished and kept: %s)%s\n' "$D" "${done_apps[*]}" "$N" >&2
+  fi
+  if ((${#paused[@]})); then
+    printf '  starting %s again\n' "${paused[*]}" >&2
+    systemctl --user start "${paused[@]}" >&2 || true
+  fi
+  exit "$rc"
+}
+trap on_exit EXIT
+trap 'exit 130' INT TERM HUP
+
+# ---------------------------------------------------------------- prerequisites
+
+need_tools() {
+  local missing=() mise_missing=()
+  if ((do_vd)); then
+    have khal || missing+=(khal)
+    have vdirsyncer || missing+=(vdirsyncer)
+    have vdirsyncer && ! vd_oauthlib && missing+=(python-aiohttp-oauthlib)
+  fi
+  have secret-tool || missing+=(libsecret)
+  have python3 || missing+=(python)
+  if ((do_cc)); then
+    have chroncal && chroncal --version >/dev/null 2>&1 || mise_missing+=(chroncal)
+  fi
+  ((${#missing[@]} == 0 && ${#mise_missing[@]} == 0)) && return 0
+  ((${#missing[@]})) && bad "missing: ${missing[*]} — install with: just pkg-install calendar"
+  ((${#mise_missing[@]})) && bad "missing: chroncal — install with: mise install (github:DouglasdeMoura/chroncal)"
+  die "prerequisites missing"
+}
+
+# ---------------------------------------------------------------- status
+
+status_vd() {
+  local fail=0 client=0 tok=0 n
+  echo
+  echo "${B}khal + vdirsyncer${N}"
+  if have khal; then ok "khal"; else bad "khal missing — just pkg-install calendar"; fail=1; fi
+  if ! have vdirsyncer; then bad "vdirsyncer missing — just pkg-install calendar"; return 1; fi
+  ok "vdirsyncer"
+  if vd_oauthlib; then ok "python-aiohttp-oauthlib"
+  else bad "python-aiohttp-oauthlib missing (vdirsyncer can't talk to Google) — just pkg-install calendar"; fail=1; fi
+  have secret-tool || { bad "can't check further without secret-tool"; return 1; }
+  vd_resolve
+
+  if vd_client_state; then ok "keyring client (service google-caldav key client_id/client_secret): yes"; client=1
+  elif (($? == 1)); then bad "keyring client: only one of client_id/client_secret — calendar-google setup vdirsyncer"; fail=1
+  else bad "keyring client: no — calendar-google setup vdirsyncer"; fail=1; fi
+  if vd_leftovers; then
+    bad "leftovers of an interrupted reauth/rotate-client ($(disp "$vtoken_bak") or key client_*_prev) — calendar-google reauth vdirsyncer resolves them"
+    fail=1
+  fi
+
+  if [[ ! -e $vtoken ]]; then bad "token: none at $(disp "$vtoken") — calendar-google setup vdirsyncer"; fail=1
+  elif ! vd_token_usable; then bad "token: $(disp "$vtoken") has no refresh token — calendar-google reauth vdirsyncer"; fail=1
+  else ok "token: present"; tok=1; fi
+
+  if ((client && tok)); then
+    if vd_token_works; then ok "token: works (Google CalDAV answered, $vd_ncal calendars)"
+    else bad "token: ${vd_err:-failed} — $(fix_hint vdirsyncer "$vd_err")"; fail=1; fi
+  else skip "token check: (no client or token)"; fi
+
+  if ! have systemctl; then skip "timer: no systemctl"
+  elif ! unit_installed "$vd_timer"; then bad "timer: $vd_timer not installed (the vdirsyncer package ships it)"; fail=1
+  else
+    if unit_enabled "$vd_timer"; then ok "timer: $vd_timer enabled"; else bad "timer: $vd_timer not enabled — calendar-google setup vdirsyncer"; fail=1; fi
+    if unit_active "$vd_timer"; then ok "timer: active"
+    elif unit_enabled "$vd_timer"; then bad "timer: not active — systemctl --user start $vd_timer"; fail=1; fi
+    if ! unit_last_run "$vd_service"; then bad "last sync: $last_run — journalctl --user -u $vd_service"; fail=1
+    elif [[ $last_run == "not run yet" ]]; then skip "last sync: not run yet"
+    else ok "last sync: $last_run"; fi
+  fi
+
+  if vd_discovered; then ok "discovered: yes (status in $(disp "$vstatus"))"
+  else bad "discovered: no — calendar-google setup vdirsyncer"; fail=1; fi
+  n=$(vd_ncollections)
+  if ((n > 0)); then ok "calendars: $n under $(disp "$vlocal") ($(vd_nevents) events)"
+  else bad "calendars: none under $(disp "$vlocal")"; fail=1; fi
+  if ! have khal; then :
+  elif ((n == 0)); then skip "khal list: (no calendars)"
+  elif khal_lists; then ok "khal list: works"
+  else bad "khal list: fails — khal list today 7d"; fail=1; fi
+  return "$fail"
+}
+
+status_cc() {
+  local fail=0 acc=0 sum ncal nerr age err ccid vcid bin
+  echo
+  echo "${B}chroncal${N}"
+  if ! have chroncal || ! chroncal --version >/dev/null 2>&1; then
+    bad "chroncal missing — mise install"; return 1
+  fi
+  ok "$(chroncal --version 2>/dev/null | head -n1)"
+  cc_resolve_db
+  if ! cc_has_db; then
+    bad "database: none at $(disp "$cdb") (chroncal never ran here) — calendar-google setup chroncal"; fail=1
+  elif cc_find_account; then
+    ok "account: $cc_name (#$cc_id, oauth2, $cc_user)"; acc=1
+  elif (($? == 2)); then bad "account: chroncal account list failed"; fail=1
+  else bad "account: no Google (oauth2) account — calendar-google setup chroncal"; fail=1; fi
+
+  if ((acc)); then
+    if cc_locate_cred && [[ $cc_mode != none ]]; then ok "credential: $(cc_cred_desc)"
+    else bad "credential: missing — calendar-google reauth chroncal"; fail=1; fi
+    if cc_leftovers; then
+      bad "leftover backup of an interrupted reauth/rotate-client — calendar-google reauth chroncal resolves it"; fail=1
+    fi
+    ccid=$(cc_client_id)
+    if ((do_vd)) && vd_has_client && [[ -n $ccid ]]; then
+      vcid=$(vd_client_id)
+      if [[ $ccid == "$vcid" ]]; then note "OAuth client: same as vdirsyncer's"
+      else note "OAuth client: its own (not vdirsyncer's)"; fi
+    fi
+    if sum=$(cc_sync_summary) && [[ -n $sum ]]; then
+      IFS=$'\t' read -r ncal nerr age err <<<"$sum"
+      if ((ncal == 0)); then bad "sync: no connected calendars"; fail=1
+      elif ((nerr > 0)); then bad "sync: $nerr of $ncal calendars report an error: $err"; fail=1
+      elif ((age < 0)); then bad "sync: $ncal calendars, never synced"; fail=1
+      elif ((age > 60)); then bad "sync: $ncal calendars, last sync $age min ago (the service syncs every 15 min)"; fail=1
+      else ok "sync: $ncal calendars, last sync $age min ago, no errors"; fi
+    else bad "sync: chroncal sync status failed"; fail=1; fi
+  fi
+
+  if ! have systemctl; then skip "service: no systemctl"
+  elif [[ ! -e $cc_unit_dir/$cc_service ]]; then
+    bad "service: $cc_service not installed — calendar-google setup chroncal"; fail=1
+  else
+    bin=$(cc_unit_binary)
+    if [[ -n $bin && -x $bin ]]; then ok "service: runs $(disp "$bin")"
+    else bad "service: runs $(disp "${bin:-?}"), which no longer exists (mise upgrade?) — calendar-google setup chroncal"; fail=1; fi
+    if unit_enabled "$cc_timer"; then ok "timer: $cc_timer enabled"; else bad "timer: $cc_timer not enabled"; fail=1; fi
+    if unit_active "$cc_timer"; then ok "timer: active"
+    elif unit_enabled "$cc_timer"; then bad "timer: not active — systemctl --user start $cc_timer"; fail=1; fi
+    if ! unit_last_run "$cc_service"; then bad "last run: $last_run — journalctl --user -u $cc_service"; fail=1
+    elif [[ $last_run == "not run yet" ]]; then skip "last run: not run yet"
+    else ok "last run: $last_run"; fi
+  fi
+  return "$fail"
+}
+
+cmd_status() {
+  local fail=0
+  echo "${B}Google Calendar on $host${N}"
+  if have secret-tool; then ok "secret-tool"; else bad "secret-tool missing — just pkg-install calendar"; fail=1; fi
+  if have python3; then ok "python3"; else bad "python3 missing"; echo; echo "${R}${B}Not healthy.${N}"; return 1; fi
+  if ((do_vd)); then status_vd || fail=1; fi
+  if ((do_cc)); then status_cc || fail=1; fi
+  echo
+  if ((fail)); then echo "${R}${B}Not healthy.${N}"; return 1; fi
+  echo "${G}${B}Healthy.${N}"
+}
+
+# ---------------------------------------------------------------- setup
+
+cc_csec="" cc_cid="" cc_email="" cc_same=1
+cmd_setup() {
+  local vd_need=0 cc_need=0 n did_discover=0 rc=0
+  echo "${B}== Google Calendar setup on $host ==${N}"
+
+  step "Prerequisites"
+  need_tools
+  ((do_vd)) && ok "khal, vdirsyncer, python-aiohttp-oauthlib"
+  ((do_cc)) && ok "$(chroncal --version 2>/dev/null | head -n1)"
+  ok "secret-tool, python3"
+  if ((do_vd)); then
+    vd_resolve
+    unit_installed "$vd_timer" || die "$vd_timer is not installed (it ships with the vdirsyncer package)"
+    vd_resolve_leftovers || die "resolve the vdirsyncer leftovers above first"
+    vd_has_client || vd_need=1
+  fi
+  if ((do_cc)); then
+    cc_resolve_db
+    if cc_find_account; then
+      cc_locate_cred || true
+      cc_resolve_leftovers || die "resolve the chroncal leftovers above first"
+    elif (($? == 2)); then die "chroncal account list failed"
+    else cc_need=1; fi
+  fi
+
+  # Every question first, then the browser windows.
+  if ((vd_need || cc_need)); then
+    step "Google OAuth client"
+    if ((vd_need)); then
+      rc=0
+      vd_client_state || rc=$?
+      ((rc != 1)) || note "only half of the keyring client is there — asking for both"
+      rc=0
+    fi
+    if ((vd_need)) || { ((cc_need)) && ! { ((do_vd)) || vd_has_client; }; }; then
+      [[ -t 0 ]] || die "needs an interactive terminal (prompts for the OAuth client)"
+      google_client_guide
+      echo
+      prompt_client
+      if ((vd_need)); then
+        vd_store_client || die "storing the client in the keyring failed"
+        ok "stored in the keyring (service google-caldav key client_id/client_secret)"
+      else
+        cc_cid=$cid cc_csec=$csec cc_same=0
+      fi
+      unset csec
+    fi
+    if ((cc_need)) && ((cc_same)) && vd_has_client; then
+      echo
+      note "chroncal keeps its own copy of the client (in its credential store)."
+      if confirm "chroncal: use the same client as vdirsyncer ($(vd_client_id))? [Y/n]" y; then
+        cc_same=1
+      else
+        cc_same=0
+        echo "  chroncal's own OAuth client (Desktop app, same project/APIs):"
+        prompt_client
+        cc_cid=$cid cc_csec=$csec
+        unset csec
+      fi
+    fi
+    if ((cc_need)); then
+      [[ -t 0 ]] || die "needs an interactive terminal (asks for the Google account)"
+      while [[ $cc_email != *@* ]]; do read -rp "  Google account (email) for chroncal: " cc_email; done
+    fi
+  fi
+
+  if ((do_vd)); then
+    step "vdirsyncer: OAuth client"
+    ok "in the keyring (client ID $(vd_client_id))"
+
+    step "vdirsyncer: token"
+    if vd_token_usable; then
+      ok "present ($(disp "$vtoken"))"
+    else
+      [[ -e $vtoken ]] && { mv -f -- "$vtoken" "$vtoken.unusable"; note "moved the unusable token aside: $(disp "$vtoken").unusable"; }
+      echo "  vdirsyncer opens the browser for Google sign-in (it prints the URL too):"
+      pause_timer "$vd_timer" "$vd_service"
+      vd_consent || die "vdirsyncer discover failed — see above; re-run setup"
+      did_discover=1
+      vd_token_usable || die "no token after sign-in"
+    fi
+    vd_token_works || die "token doesn't work: ${vd_err:-failed} — $(fix_hint vdirsyncer "$vd_err")"
+    ok "works (Google CalDAV answered, $vd_ncal calendars)"
+
+    step "vdirsyncer: calendars"
+    if ! vd_discovered; then
+      vdirsyncer discover --no-list "$vd_pair" </dev/null || die "vdirsyncer discover failed"
+      did_discover=1
+    fi
+    n=$(vd_ncollections)
+    if ((did_discover)) || ((n == 0)) || [[ -z $(find "$vlocal" -name '*.ics' -print -quit 2>/dev/null) ]]; then
+      note "first sync (can take a minute)"
+      vdirsyncer sync "$vd_pair" </dev/null || die "vdirsyncer sync failed — see above"
+      vdirsyncer metasync "$vd_pair" </dev/null >/dev/null 2>&1 || note "metasync (names/colours) failed — harmless, khal uses defaults"
+      ok "synced: $(vd_ncollections) calendars, $(vd_nevents) events under $(disp "$vlocal")"
+    else
+      ok "already synced: $n calendars, $(vd_nevents) events under $(disp "$vlocal")"
+    fi
+    if khal_lists; then ok "khal list works"; else bad "khal list fails — try: khal list today 7d"; fi
+
+    step "vdirsyncer: timer"
+    if unit_enabled "$vd_timer"; then ok "$vd_timer already enabled"
+    else
+      systemctl --user enable "$vd_timer" >/dev/null 2>&1 || die "systemctl --user enable $vd_timer failed"
+      ok "$vd_timer enabled"
+    fi
+    if unit_active "$vd_timer"; then ok "already running"
+    else systemctl --user start "$vd_timer"; ok "started (syncs every 15 min)"; fi
+    done_apps+=(vdirsyncer)
+  fi
+
+  if ((do_cc)); then
+    step "chroncal: account"
+    if ((!cc_need)); then
+      ok "$cc_name (#$cc_id, $cc_user)"
+      cc_locate_cred || true
+      [[ $cc_mode != none ]] || die "its credential is missing — run: calendar-google reauth chroncal"
+      ok "credential: $(cc_cred_desc)"
+      cc_token_works || die "token doesn't work: ${cc_err:-failed} — $(fix_hint chroncal "$cc_err")"
+      ok "works (Google CalDAV answered, $cc_ncal calendars)"
+    else
+      if ((cc_same)); then
+        cc_cid=$(vd_client_id)
+        # the secret goes straight from the keyring into chroncal's environment
+        # (chroncal takes it only from $GOOGLE_CLIENT_SECRET or a prompt, never argv)
+        cc_csec=$(secret-tool lookup "${kr_secret[@]}")
+      fi
+      echo "  chroncal opens the browser for Google sign-in, then imports every calendar"
+      echo "  and runs the first sync:"
+      consent_hint
+      GOOGLE_CLIENT_SECRET=$cc_csec run_chroncal account add "$cc_account" \
+        --server "$cc_server" --username "$cc_email" --auth oauth2 --oauth-client-id "$cc_cid" || rc=$?
+      unset cc_csec
+      if ((rc != 0)); then
+        if cc_find_account; then
+          die "chroncal added the account but the first sync failed — see above; check: chroncal sync status (then re-run setup)"
+        fi
+        die "adding the chroncal account failed — see above; nothing was kept, re-run setup"
+      fi
+      cc_find_account || die "chroncal reported success but has no Google account"
+      cc_locate_cred || true
+      ok "added $cc_name (#$cc_id); credential: $(cc_cred_desc)"
+    fi
+
+    step "chroncal: service"
+    if cc_service_ok; then
+      ok "$cc_timer enabled + active, runs $(disp "$(cc_unit_binary)")"
+    else
+      [[ -e $cc_unit_dir/$cc_service ]] && note "reinstalling (the unit is missing, disabled, or runs a binary that is gone)"
+      chroncal service install >/dev/null || die "chroncal service install failed"
+      cc_service_ok || die "$cc_timer is not running after install — journalctl --user -u $cc_service"
+      ok "installed: $cc_timer (alarms every minute, sync every 15 min)"
+      note "it runs $(disp "$(cc_unit_binary)") — after a mise upgrade prunes that version, re-run setup"
+    fi
+    done_apps+=(chroncal)
+  fi
+
+  resume_timers
+  echo
+  echo "${G}✓ Google Calendar is set up.${N} Check any time: calendar-google status"
+}
+
+# ---------------------------------------------------------------- reauth / rotate-client
+
+# Preconditions for commands that change credentials. Checks every targeted
+# app before touching anything.
+preflight_edit() {
+  need_tools
+  if ((do_vd)); then
+    vd_resolve
+    vd_has_client || die "vdirsyncer has no OAuth client in the keyring — run: calendar-google setup vdirsyncer"
+    vd_resolve_leftovers || die "resolve the vdirsyncer leftovers above first"
+  fi
+  if ((do_cc)); then
+    cc_resolve_db
+    cc_find_account || die "chroncal has no Google account — run: calendar-google setup chroncal"
+    cc_locate_cred || die "could not work out where chroncal keeps the credential"
+    cc_resolve_leftovers || die "resolve the chroncal leftovers above first"
+  fi
+}
+
+vd_reauth() {
+  step "vdirsyncer: re-consent"
+  pause_timer "$vd_timer" "$vd_service"
+  vd_begin_token_backup
+  vd_consent || die "vdirsyncer sign-in or discovery failed — see above"
+  vd_token_works || die "token still doesn't work: ${vd_err:-failed} — $(fix_hint vdirsyncer "$vd_err")"
+  vd_drop_token_backup
+  ok "token works (Google CalDAV answered, $vd_ncal calendars)"
+  done_apps+=(vdirsyncer)
+}
+
+cc_reauth() { # [new client id] — the new secret comes in via cc_csec
+  step "chroncal: re-consent"
+  pause_timer "$cc_timer" "$cc_service"
+  cc_begin_backup
+  consent_hint
+  if [[ -n ${1:-} ]]; then
+    GOOGLE_CLIENT_SECRET=$cc_csec run_chroncal account reauth "$cc_id" --oauth-client-id "$1" || die "chroncal reauth failed"
+    unset cc_csec
+  else
+    run_chroncal account reauth "$cc_id" || die "chroncal reauth failed"
+  fi
+  cc_locate_cred || true
+  cc_token_works || die "token still doesn't work: ${cc_err:-failed} — $(fix_hint chroncal "$cc_err")"
+  cc_drop_backup
+  ok "token works (Google CalDAV answered, $cc_ncal calendars)"
+  done_apps+=(chroncal)
+}
+
+cmd_reauth() {
+  echo "${B}== Re-authorize Google Calendar ==${N}"
+  preflight_edit
+  ((do_vd)) && vd_reauth
+  ((do_cc)) && cc_reauth
+  resume_timers
+  echo
+  echo "${G}✓ Re-authorized.${N}"
+}
+
+cmd_rotate_client() {
+  local vd_old="" cc_old="" new_vd="" new_cc="" id
+  echo "${B}== Switch to a new Google OAuth client ==${N}"
+  preflight_edit
+  # only the (non-secret) client IDs leave the stores here
+  if ((do_vd)); then vd_old=$(vd_client_id); fi
+  if ((do_cc)); then cc_old=$(cc_client_id); fi
+
+  [[ -t 0 ]] || die "needs an interactive terminal (prompts for the new OAuth client)"
+  google_client_guide
+  echo
+  prompt_client
+  if ((do_vd)); then new_vd=$cid; fi
+  if ((do_cc)); then
+    if ((do_vd)) && ! confirm "Use this client for chroncal too? [Y/n]" y; then
+      local vd_sec=$csec # cid/csec are what vd_store_client stores
+      echo "  chroncal's own OAuth client:"
+      prompt_client
+      cc_cid=$cid cc_csec=$csec
+      cid=$new_vd csec=$vd_sec
+      unset vd_sec
+    else
+      cc_cid=$cid cc_csec=$csec
+    fi
+    new_cc=$cc_cid
+  fi
+
+  if ((do_vd)); then
+    step "vdirsyncer: new client"
+    pause_timer "$vd_timer" "$vd_service"
+    vd_begin_client_backup
+    vd_begin_token_backup # the old token is bound to the old client
+    vd_store_client || die "storing the new client in the keyring failed"
+    unset csec
+    ok "stored in the keyring (the previous one is kept until this works)"
+    vd_consent || die "vdirsyncer sign-in or discovery failed — see above"
+    vd_token_works || die "the new client doesn't work: ${vd_err:-failed} — $(fix_hint vdirsyncer "$vd_err")"
+    vd_drop_token_backup
+    vd_drop_client_backup
+    ok "now using the new client; token works ($vd_ncal calendars)"
+    done_apps+=(vdirsyncer)
+  fi
+  unset csec
+  ((do_cc)) && cc_reauth "$cc_cid"
+
+  resume_timers
+  echo
+  echo "${G}✓ Switched to the new client.${N}"
+  # Old IDs that nothing uses any more can go.
+  local still="" printed=0
+  if ((!do_vd)) && vd_has_client; then still=$(vd_client_id); fi
+  if ((!do_cc)) && have chroncal; then
+    cc_resolve_db
+    if cc_find_account && cc_locate_cred; then still+=" $(cc_client_id)"; fi
+  fi
+  for id in $(printf '%s\n' "$vd_old" "$cc_old" | awk 'NF && !seen[$0]++'); do
+    [[ $id == "$new_vd" || $id == "$new_cc" ]] && continue
+    if [[ " $still " == *" $id "* ]]; then
+      echo "${Y}Old client $id is still used by the other app — keep it until you rotate that too.${N}"
+      continue
+    fi
+    ((printed++)) || echo "${Y}Now delete the OLD client in Google Cloud Console → Credentials:${N}"
+    echo "  $id"
+  done
+  ((printed)) || [[ -n $vd_old$cc_old ]] || echo "  (the old client ID was not recorded)"
+}
+
+case "$cmd" in
+  setup) cmd_setup ;;
+  status) cmd_status ;;
+  reauth) cmd_reauth ;;
+  rotate-client) cmd_rotate_client ;;
+esac
