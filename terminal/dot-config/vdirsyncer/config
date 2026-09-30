@@ -1,5 +1,5 @@
 # vdirsyncer: Google Calendar <-> local vdir (~/.local/share/calendars/google),
-# which khal reads. Daisy-only while trialing khal vs chroncal.
+# which khal reads. Runs alongside chroncal (both kept, both hosts).
 #
 # The OAuth client ID/secret live in oo7 (Secret Service), never in this
 # public repo — see `secret-tool lookup service google-caldav key client_id`.

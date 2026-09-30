@@ -1,6 +1,5 @@
 # khal: reads the vdir vdirsyncer keeps in sync with Google Calendar
 # (see ../vdirsyncer/config). Date/time formats follow LC_TIME (pt_BR).
-# Daisy-only while trialing khal vs chroncal.
 
 [calendars]
 

@@ -34,6 +34,13 @@ gleam = "1.18.1"
 # crates.io despite the README's `cargo install clin-rs`, so pull the prebuilt
 # x86_64 gnu tarball from GitHub releases (both hosts are x86_64 glibc).
 "github:reekta92/clin-rs" = { version = "latest", bin = "clin", matching_regex = "x86_64-unknown-linux-gnu\\.tar\\.gz$" }
+# chroncal: Go TUI/CLI calendar with built-in CalDAV + Google OAuth. Kept
+# alongside khal+vdirsyncer (packages.yaml `calendar`). mise's default
+# minimum_release_age may hold it a release behind — fine. Per host, once:
+# `chroncal account add` (own OAuth client in oo7), `chroncal service install`;
+# a local-only ~/.config/chroncal/config.toml sets security.allow_plaintext
+# while oo7's alias Unlock is broken.
+"github:DouglasdeMoura/chroncal" = { version = "latest", bin = "chroncal", matching_regex = "linux_amd64\\.tar\\.gz$" }
 # ztl (zonetimeline-tui): time-zone overlap TUI. Only prebuilt on GitHub
 # releases (AUR has zonetimeline-bin too); zones in ~/.config/zonetimeline-tui.
 "github:findyourexit/zonetimeline-tui" = { version = "latest", bin = "ztl", matching_regex = "x86_64-unknown-linux-gnu\\.tar\\.gz$" }

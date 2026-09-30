@@ -54,7 +54,7 @@ window-rule {
     default-column-width { proportion 1.0; }
 }
 
-// Terminal calendar launchers (daisy-only .desktop entries, dev.rdlu.Khal /
+// Terminal calendar launchers (home package .desktop entries, dev.rdlu.Khal /
 // dev.rdlu.Chroncal): open full-width so the month grid has room.
 window-rule {
     match app-id="^dev\\.rdlu\\.(Khal|Chroncal)$"

@@ -12,11 +12,6 @@
 # Daisy-only while under test (this overlay is stowed only there).
 "cargo:https://github.com/rdlu/rustlock" = "HEAD"
 
-# chroncal: Go TUI/CLI calendar with built-in CalDAV + Google OAuth. Trialing
-# against khal+vdirsyncer (packages.yaml `calendar`); keep only the winner.
-# Daisy-only while under test.
-"github:DouglasdeMoura/chroncal" = { version = "latest", bin = "chroncal", matching_regex = "linux_amd64\\.tar\\.gz$" }
-
 # emeraldian: Obsidian-vault TUI (live preview, backlinks, kitty-graphics
 # images). Trialing against clin over Suika Box; keep only the winner. Its
 # config rewrites itself, so it stays unstowed in ~/.config/emeraldian, with
