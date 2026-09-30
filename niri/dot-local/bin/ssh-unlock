@@ -57,6 +57,15 @@ function _notify -a title body
     notify-send -a ssh-unlock -i dialog-password "$title" "$body"
 end
 
+# Is any Yubico device (USB vendor 1050) on the bus? Read sysfs instead of
+# lsusb so it works without usbutils.
+function _yubikey_present
+    for v in /sys/bus/usb/devices/*/idVendor
+        test (cat $v 2>/dev/null) = 1050; and return 0
+    end
+    return 1
+end
+
 function _no_agent
     set_color red
     echo "No ssh-agent reachable."
@@ -113,6 +122,15 @@ switch $cmd
                     set_color normal
                     _pause
                     exit 1
+                end
+                # Only a warning: the passphrase prompt still runs, and the
+                # key may get plugged in before the touch is needed.
+                if not _yubikey_present
+                    set_color yellow
+                    echo "⚠ No YubiKey detected on USB."
+                    set_color normal
+                    echo "  Plug it in (or re-seat it — the hub port is flaky) before the touch step."
+                    echo
                 end
                 set_color --bold
                 echo "Unlocking $KEY"
