@@ -251,6 +251,16 @@ quiet = true
 raw = true
 usage = 'arg "[subcommand]" default="" help="setup, status, reauth, rotate-client, rotate-password, help"'
 
+# setup / rotate-client prompt for the OAuth client, every consent opens the
+# browser. No subcommand = the script's usage; app = vdirsyncer | chroncal.
+[tasks.gcal]
+quiet = true
+raw = true
+usage = '''
+arg "[subcommand]" default="" help="setup, status, reauth, rotate-client, help"
+arg "[app]" default="" help="vdirsyncer or chroncal (default: both)"
+'''
+
 # setup/packages.yaml is the categorized manifest of everything intentionally
 # installed beyond the tasks above (built from pacman.log: explicit installs
 # after the day-0 CachyOS run). pkg-drift reports new intentional installs
@@ -504,7 +514,7 @@ depends = ["docs-update"]
 run = [
   'mkdir -p docs/pdf',
   '''
-for page in setup file-transfer neovim-plugins justfile shortcuts/tmux shortcuts/herdr shortcuts/zellij shortcuts/niri shortcuts/shell wl-kbptr; do
+for page in setup file-transfer calendar neovim-plugins justfile shortcuts/tmux shortcuts/herdr shortcuts/zellij shortcuts/niri shortcuts/shell wl-kbptr; do
   out="$(basename "$page")"
   case "$out" in tmux|herdr|zellij|niri|shell) out="$out-shortcuts";; esac
   pandoc "docs/$page.md" -o "docs/pdf/$out.pdf" \
@@ -512,7 +522,7 @@ for page in setup file-transfer neovim-plugins justfile shortcuts/tmux shortcuts
 done
 ''',
   '''
-pandoc docs/setup.md docs/file-transfer.md docs/neovim-plugins.md docs/justfile.md \
+pandoc docs/setup.md docs/file-transfer.md docs/calendar.md docs/neovim-plugins.md docs/justfile.md \
   docs/shortcuts/tmux.md docs/shortcuts/herdr.md \
   docs/shortcuts/zellij.md docs/shortcuts/niri.md docs/shortcuts/shell.md \
   docs/wl-kbptr.md \
