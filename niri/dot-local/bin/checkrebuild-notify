@@ -14,12 +14,22 @@
 # Fix reported packages with: paru -S --rebuild <pkg>
 # (a "foreign" tag means AUR — those never get rebuilt by system updates)
 
+# Known false positives, matched against the package name (2nd column).
+# wps-office: prebuilt binary whose plugins resolve bundled libs from
+# /usr/lib/office6 only via the launcher, so bare ldd sees them "not found";
+# a rebuild repacks the same files and never clears it.
+set -l ignore wps-office
+
 set -l broken (checkrebuild 2>/dev/null)
 or begin
     notify-send -u low -a checkrebuild "Rebuild check failed" \
         "checkrebuild exited with an error — run it in a terminal."
     exit 1
 end
+
+set broken (for line in $broken
+    contains -- (string split \t -- $line)[2] $ignore; or echo $line
+end)
 
 test -n "$broken"; or exit 0
 
