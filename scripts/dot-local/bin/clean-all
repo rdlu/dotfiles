@@ -16,7 +16,9 @@
 #   --help      this help
 #
 # Targets that need root (pacman cache, orphans, snapshots, journal) call
-# sudo only at clean time — never while just browsing or previewing.
+# pkexec only at clean time — never while just browsing or previewing.
+# pkexec (a polkit prompt, no TTY needed) does not keep PATH, hence the
+# absolute binary paths.
 
 set -g SELF (status filename)
 set -g TMPDIR_TUI (mktemp -d /tmp/clean-all.XXXXXX)
@@ -144,7 +146,7 @@ function target_size --argument-names id
     switch $id
         case pacman-cache pacman-uninstalled; _hsize /var/cache/pacman/pkg
         case orphans;     echo (pacman -Qtdq 2>/dev/null | count)' pkgs'
-        case snapshots;   echo 'sudo'
+        case snapshots;   echo 'root'
         case flatpak;     echo 'scan'
         case journal;     journalctl --disk-usage 2>/dev/null | string match -rg '([0-9.,]+[KMGTi]+)'; or echo '?'
         case yay-cache;   _hsize ~/.cache/yay
@@ -157,7 +159,7 @@ function target_size --argument-names id
     end
 end
 
-# --- previews (dry-run; no sudo, no mutation) --------------------------------
+# --- previews (dry-run; no auth, no mutation) --------------------------------
 
 function target_preview --argument-names id
     set_color -o cyan; echo (target_label $id); set_color normal
@@ -184,8 +186,9 @@ function target_preview --argument-names id
         case snapshots
             echo 'Snapper root snapshots (selected at clean time):'
             echo
-            sudo -n snapper -c root list 2>/dev/null
-            or echo '  (run the target to authenticate with sudo and pick snapshots)'
+            # unprivileged works only for snapper ALLOW_USERS; never prompt here
+            /usr/bin/snapper -c root list 2>/dev/null
+            or echo '  (run the target to authenticate and pick snapshots)'
         case flatpak
             echo 'Unused flatpak runtimes (declining the prompt to list them):'
             echo
@@ -233,9 +236,9 @@ end
 function target_clean --argument-names id
     switch $id
         case pacman-cache
-            _confirm 'Keep only the latest 2 versions of each package?'; and sudo paccache -rk2
+            _confirm 'Keep only the latest 2 versions of each package?'; and pkexec /usr/bin/paccache -rk2
         case pacman-uninstalled
-            _confirm 'Remove all cached versions of uninstalled packages?'; and sudo paccache -ruk0
+            _confirm 'Remove all cached versions of uninstalled packages?'; and pkexec /usr/bin/paccache -ruk0
         case orphans
             clean_orphans
         case snapshots
@@ -243,7 +246,7 @@ function target_clean --argument-names id
         case flatpak
             _confirm 'Remove unused flatpak runtimes?'; and flatpak uninstall --unused
         case journal
-            _confirm 'Trim journal to the last 200M?'; and sudo journalctl --vacuum-size=200M
+            _confirm 'Trim journal to the last 200M?'; and pkexec /usr/bin/journalctl --vacuum-size=200M
         case yay-cache
             clean_aur_cache ~/.cache/yay
         case paru-cache
@@ -284,7 +287,10 @@ end
 
 # snapshot picker — its own little fzf, the way you like it
 function clean_snapshots
-    set -l rows (sudo snapper -c root list 2>/dev/null \
+    # unprivileged first (snapper ALLOW_USERS) — saves a prompt before the delete
+    set -l list (/usr/bin/snapper -c root list 2>/dev/null
+        or pkexec /usr/bin/snapper -c root list 2>/dev/null)
+    set -l rows (printf '%s\n' $list \
         | string match -r '^\s*[0-9]' | string match -rv '^\s*0\s*│')
     test (count $rows) -eq 0; and begin; echo 'No deletable snapshots.'; return; end
     set -l picked (printf '%s\n' $rows | fzf --multi --reverse --height 60% \
@@ -296,7 +302,7 @@ function clean_snapshots
         set -a nums (string trim (string split '│' -- $l)[1])
     end
     echo "Selected: $nums"
-    _confirm "Delete "(count $nums)" snapshot(s)?"; and sudo snapper -c root delete $nums
+    _confirm "Delete "(count $nums)" snapshot(s)?"; and pkexec /usr/bin/snapper -c root delete $nums
 end
 
 # orphan picker — same little fzf, biggest first, so the build tools can stay
@@ -326,7 +332,7 @@ function clean_orphans
         set -a names (string split -f1 \t -- $l)
     end
     printf '  %s\n' $names
-    _confirm "Remove "(count $names)" orphan(s)?"; and sudo pacman -Rns $names
+    _confirm "Remove "(count $names)" orphan(s)?"; and pkexec /usr/bin/pacman -Rns $names
 end
 
 # --- views -------------------------------------------------------------------
