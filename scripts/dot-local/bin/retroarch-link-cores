@@ -1,0 +1,84 @@
+#!/usr/bin/env fish
+
+# retroarch-link-cores - Link pacman's libretro cores into RetroArch's cores dir.
+#
+# RetroArch (and ES-DE) load cores from one folder, ~/.config/retroarch/cores,
+# which also holds the ones the in-app Core Downloader fetches. Cores installed
+# with pacman land in /usr/lib/libretro instead, so each needs a symlink here.
+#
+# For every core in /usr/lib/libretro:
+#   - missing here           -> link it
+#   - downloaded copy here   -> replace it with the link (pacman keeps it updated)
+# Links into /usr/lib/libretro whose core was uninstalled are removed.
+# Downloaded cores pacman doesn't ship are left alone.
+#
+# Flags:
+#   --dry-run   show what would change, change nothing
+#   --help      this help
+
+set -l src /usr/lib/libretro
+set -l dst ~/.config/retroarch/cores
+set -l dry false
+
+for arg in $argv
+    switch $arg
+        case --dry-run -n
+            set dry true
+        case --help -h
+            sed -n '3,17p' (status filename) | string replace -r '^# ?' ''
+            exit 0
+        case '*'
+            echo "retroarch-link-cores: unknown option $arg" >&2
+            exit 1
+    end
+end
+
+function _do --no-scope-shadowing
+    test $dry = true; or $argv
+end
+
+if pgrep -x retroarch >/dev/null
+    echo "retroarch-link-cores: RetroArch is running; close it first" >&2
+    exit 1
+end
+
+test $dry = true; or mkdir -p $dst
+set -l changed 0
+
+for so in $src/*_libretro.so
+    set -l name (path basename $so)
+    set -l target $dst/$name
+    if test -L $target; and test (readlink $target) = $so
+        continue
+    else if test -e $target; and not test -L $target
+        echo "replace  $name (downloaded copy -> pacman)"
+        _do rm $target
+    else if test -L $target
+        echo "relink   $name (was -> "(readlink $target)")"
+        _do rm $target
+    else
+        echo "link     $name"
+    end
+    _do ln -s $so $target
+    set changed (math $changed + 1)
+end
+
+for link in $dst/*_libretro.so
+    test -L $link; or continue
+    set -l to (readlink $link)
+    if string match -q "$src/*" -- $to; and not test -e $to
+        echo "remove   "(path basename $link)" (core uninstalled)"
+        _do rm $link
+        set changed (math $changed + 1)
+    end
+end
+
+set -l pac (count (find $dst -maxdepth 1 -type l -name '*_libretro.so'))
+set -l dl (count (find $dst -maxdepth 1 -type f -name '*_libretro.so'))
+if test $changed -eq 0
+    echo "Nothing to do: $pac pacman cores linked, $dl downloaded."
+else if test $dry = true
+    echo "Dry run: $changed change(s) pending."
+else
+    echo "Done: $changed change(s); $pac pacman cores linked, $dl downloaded."
+end
