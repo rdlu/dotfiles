@@ -58,12 +58,23 @@ window-rule {
   variable-refresh-rate true
 }
 
+// ES-DE sets no workspace: es-de-launch focuses the right one first (the
+// temporary games-side on the second screen, else games). Anchored, or it also
+// catches es-de-side.
 window-rule {
-    // Anchored: unanchored it also caught es-de-side (es-de-side's mpv window).
     match app-id="^es-de$"
     open-fullscreen true
     open-focused true
+    tiled-state false
+}
+
+// es-de-side's preview: behind the games on their workspace, never focused, so
+// ES-DE on the other screen keeps the controls.
+window-rule {
+    match app-id="^es-de-side$"
     open-on-workspace "games"
+    open-fullscreen true
+    open-focused false
     tiled-state false
 }
 

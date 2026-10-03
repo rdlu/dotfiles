@@ -1,16 +1,18 @@
 #!/usr/bin/fish
 
-# es-de-launch — start ES-DE sized for the screen niri will actually put it on.
+# es-de-launch — place ES-DE, and start it sized for the screen it lands on.
+#
+# Two screens, handheld style: ES-DE's menu goes alone on a temporary
+# "games-side" workspace on the bottom screen (by niri's layout; side by side,
+# the built-in panel), and the "games" workspace moves to the top one if it
+# isn't there, so es-de-side's preview and the games share it. --invert swaps
+# the two. One screen: ES-DE goes on "games" itself. The es-de window rule sets
+# no workspace; ES-DE opens where this script leaves focus.
 #
 # ES-DE runs through xwayland-satellite and renders at the resolution of its
-# "Display/monitor index" setting, but niri places the window by the es-de
-# window rule (open-on-workspace "games"), wherever that workspace lives right
-# now. When the two disagree ES-DE renders for the wrong screen and niri
-# stretches it: blurry on the external, wrong on the laptop panel.
-#
-# So: find the output that holds the "games" workspace (else the focused one)
-# and pass its physical mode as --resolution. The window size is what niri
-# gives it, so matching the resolution to it is all that keeps it sharp.
+# "Display/monitor index" setting, not of the screen niri gives it; when the
+# two disagree niri stretches the frame. So pass the target output's physical
+# mode as --resolution.
 #
 # Deliberately no --display: SDL's display numbering under xwayland-satellite
 # changed between runs (display 2 was eDP-1, then DP-2), and ES-DE writes
@@ -20,17 +22,53 @@
 # also renders natively at fractional scale, but both variables leak into
 # every emulator ES-DE launches, so X11 stays the backend.
 #
-# Usage: es-de-launch [es-de args...]
+# Usage: es-de-launch [--invert] [es-de args...]
 
 # niri's environment (and so fuzzel's) has no ~/.local/bin, where AM puts es-de.
 contains ~/.local/bin $PATH; or set -gx PATH ~/.local/bin $PATH
+
+set -l invert false
+if test "$argv[1]" = --invert
+    set invert true
+    set -e argv[1]
+end
 
 if not set -q NIRI_SOCKET; or not type -q jq
     exec es-de $argv
 end
 
-set -l output (niri msg --json workspaces | jq -r 'first(.[] | select(.name == "games") | .output) // empty')
-test -n "$output"; or set output (niri msg --json focused-output | jq -r '.name')
+# Outputs bottom to top (ties: built-in panel first): the menu takes the
+# first, the preview and games the last; --invert flips that.
+set -l order (niri msg --json outputs | jq -r '
+    to_entries | sort_by(-.value.logical.y, (.key | startswith("eDP") | not)) | .[].key')
+test $invert = true; and set order $order[-1..1]
+set -l side
+set -l games $order[-1]
+if test (count $order) -ge 2
+    set side $order[1]
+    set -l at (niri msg --json workspaces | jq -r 'first(.[] | select(.name == "games") | .output) // empty')
+    test "$at" = "$games"; or niri msg action move-workspace-to-monitor --reference games $games
+end
+
+set -l output $games
+if test -n "$side"
+    set output $side
+    niri msg action focus-monitor $side
+    # Reuse a games-side left by a crash if it's on this screen (else unname
+    # it); otherwise take the empty workspace niri always keeps last on the
+    # output, and name it for this session.
+    set -l old (niri msg --json workspaces | jq -r 'first(.[] | select(.name == "games-side") | .output) // empty')
+    test -n "$old"; and test "$old" != "$side"; and niri msg action unset-workspace-name games-side
+    if test "$old" = "$side"
+        niri msg action focus-workspace games-side
+    else
+        set -l last (niri msg --json workspaces | jq -r --arg o $side '[.[] | select(.output == $o) | .idx] | max')
+        niri msg action focus-workspace $last
+        niri msg action set-workspace-name games-side
+    end
+else
+    niri msg action focus-workspace games 2>/dev/null
+end
 
 # Physical size of the current mode, swapped when the output is rotated.
 set -l size (niri msg --json outputs | jq -r --arg o $output '

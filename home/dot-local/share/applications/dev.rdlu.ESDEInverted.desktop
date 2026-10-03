@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=ES-DE (menu on top)
+GenericName=Gaming Frontend
+Comment=ES-DE with the screens swapped: menu on the top screen, preview and games on the bottom one
+Exec=/home/rdlu/.local/bin/es-de-launch --invert
+Icon=es-de
+Type=Application
+Terminal=false
+Keywords=emulator;emulation;front-end;frontend;invert;swap;
+Categories=Game;Emulator;
+StartupNotify=true
+StartupWMClass=es-de

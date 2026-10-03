@@ -1,28 +1,30 @@
 #!/usr/bin/fish
 
-# es-de-side — show ES-DE's highlighted game on the other screen.
+# es-de-side — preview ES-DE's highlighted game on the big screen.
 #
-# While ES-DE runs on the screen holding the "games" workspace, an mpv window
-# on the other screen loops the highlighted game's video (or its art when
-# there's no video), and on the system view the system's logo on the theme's
-# wallpaper (rendered once per theme/scheme/size into ~/.cache/es-de-side).
-# Driven by ES-DE custom event scripts, stowed alongside in
-# ~/ES-DE/scripts/<event>/es-de-side; they need "Enable custom event scripts"
-# and "Browsing custom events" on in Other settings.
+# Handheld-style dual screen: es-de-launch puts ES-DE's menu on a temporary
+# "games-side" workspace on the second screen; this script keeps an mpv window
+# on the "games" workspace's screen, where games open too (in front of it).
+# It loops the highlighted game's video (or its art when there's no video),
+# and on the system view the system's logo on the theme's wallpaper (rendered
+# once per theme/scheme/size into ~/.cache/es-de-side). Driven by ES-DE custom
+# event scripts, stowed alongside in ~/ES-DE/scripts/<event>/es-de-side; they
+# need "Enable custom event scripts" and "Browsing custom events" on in Other
+# settings.
 #
-# Nothing here is permanent: `start` picks an empty workspace on the side
-# screen and names it "games-side" for the session; `stop` closes mpv and
-# unnames it, so niri drops the empty workspace again. With one screen
-# connected, `start` does nothing and every other command is a no-op.
+# Nothing here is permanent: `stop` closes mpv and unnames games-side, so niri
+# drops the empty workspace again. With one screen there is no games-side,
+# `start` does nothing and every other command is a no-op.
 #
 # Usage: es-de-side start                       (startup event)
 #        es-de-side select ROM NAME SYSTEM FULL (game-select event)
 #        es-de-side system SYSTEM FULL ROMPATH   (system-select event)
-#        es-de-side pause | resume              (game-start / game-end)
+#        es-de-side pause | resume              (game-start / game-end;
+#                                                resume refocuses ES-DE)
 #        es-de-side stop                        (quit event)
 
 set -g sock $XDG_RUNTIME_DIR/es-de-side.sock
-set -g side_file $XDG_RUNTIME_DIR/es-de-side.output # side output, written by start
+set -g view_file $XDG_RUNTIME_DIR/es-de-side.output # preview's output, written by start
 set -g current $XDG_RUNTIME_DIR/es-de-side.current  # what is highlighted right now
 set -g shown $XDG_RUNTIME_DIR/es-de-side.shown      # file mpv has loaded
 set -g workspace games-side
@@ -84,7 +86,7 @@ end
 # (backgroundArtPath and systemColor from its colors.xml — Canvas layout,
 # degrading to black and a white logo or the system's name elsewhere).
 function system_card --argument-names system fullname
-    set -l size (niri msg --json outputs | jq -r --arg o "$(cat $side_file 2>/dev/null)" '
+    set -l size (niri msg --json outputs | jq -r --arg o "$(cat $view_file 2>/dev/null)" '
         .[$o] | .modes[.current_mode] // empty | "\(.width)x\(.height)"')
     test -n "$size"; or return 1
     set -l theme_name (setting Theme)
@@ -156,33 +158,25 @@ function start
     set -q NIRI_SOCKET; or return 0
     ipc get_property pause; and return 0 # already running
 
-    set -l games (niri msg --json workspaces | jq -r 'first(.[] | select(.name == "games") | .output) // empty')
-    test -n "$games"; or set games (niri msg --json focused-output | jq -r '.name')
-    # The side screen is any other output, the built-in panel first.
-    set -l side (niri msg --json outputs | jq -r --arg g $games '
-        [keys[] | select(. != $g)] | (map(select(startswith("eDP"))) + .) | first // empty')
-    test -n "$side"; or return 0
+    # es-de-launch names games-side only when there is a second screen; ES-DE
+    # sits there and the preview takes the games workspace's screen.
+    niri msg --json workspaces | jq -e '.[] | select(.name == "games-side")' >/dev/null; or return 0
+    niri msg --json workspaces | jq -r 'first(.[] | select(.name == "games") | .output) // empty' >$view_file
 
-    # ES-DE fires startup before its window exists; focus has to come back to it.
-    set -l esde (wait_window es-de 20); or return 1
-
-    echo $side >$side_file
-    niri msg action focus-monitor $side
-    # niri always keeps an empty workspace last on each output: take that one.
-    set -l last (niri msg --json workspaces | jq -r --arg o $side '[.[] | select(.output == $o) | .idx] | max')
-    niri msg action focus-workspace $last
-    niri msg action set-workspace-name $workspace
-
+    # The es-de-side window rule puts it on "games" without taking focus.
     setsid -f mpv --idle=yes --force-window=yes --fullscreen \
-        --wayland-app-id=$app_id --title='ES-DE side' \
+        --wayland-app-id=$app_id --title='ES-DE preview' \
         --input-ipc-server=$sock --no-terminal \
         --loop-file=inf --image-display-duration=inf --keep-open=yes \
         --mute=yes --osc=no --osd-level=0 --cursor-autohide=always \
         --background-color='#000000' --hwdec=auto-safe \
         >/dev/null 2>&1 </dev/null
 
+    # Whatever order the two windows map in, ES-DE ends up with the controls
+    # (startup fires before ES-DE's own window exists, hence the waits).
+    set -l esde (wait_window es-de 20)
     wait_window $app_id 10 >/dev/null
-    niri msg action focus-window --id $esde
+    test -n "$esde"; and niri msg action focus-window --id $esde
 
     # Cover a crash or kill, where ES-DE never fires quit.
     while es_de_running
@@ -222,7 +216,7 @@ function stop
         test -S $sock; or break
         sleep 0.1
     end
-    rm -f $sock $side_file $current $shown
+    rm -f $sock $view_file $current $shown
     set -q NIRI_SOCKET; and niri msg action unset-workspace-name $workspace 2>/dev/null
     return 0
 end
@@ -241,6 +235,9 @@ switch "$argv[1]"
         ipc set_property pause yes
     case resume
         ipc set_property pause no
+        # The game closing leaves focus on the preview; ES-DE needs it back.
+        set -l esde (window_id es-de)
+        test -n "$esde"; and niri msg action focus-window --id $esde
     case stop
         stop
     case '*'
