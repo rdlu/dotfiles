@@ -146,6 +146,39 @@ print(vals.get("systemColor", ""))' $dir/colors.xml $scheme 2>/dev/null)
     echo $out
 end
 
+# With "Run in background" on, ES-DE only fires game-end once it gets focus
+# back — but the game closing hands focus to the preview, so it never would.
+# Follow the game's window instead: it's the first new window after
+# game-start. Move it onto "games" if no rule put it there (an emulator with
+# no niri rule opens next to ES-DE), and when it closes, focus ES-DE, which
+# wakes it into game-end.
+function watch_game
+    set -l skip '^es-de(-side)?$'
+    set -l before (niri msg --json windows | jq -r '.[].id')
+    set -l game
+    for i in (seq 240) # emulators can take a while: up to 2 minutes
+        set game (niri msg --json windows | jq -r --arg skip $skip --args '
+            first(.[] | select((.app_id // "" | test($skip)) | not)
+                      | select((.id | tostring) as $id | $ARGS.positional | index($id) | not)
+                      | .id) // empty' $before)
+        test -n "$game"; and break
+        sleep 0.5
+    end
+    test -n "$game"; or return 0
+
+    set -l on (niri msg --json windows | jq -r --argjson g $game '.[] | select(.id == $g) | .workspace_id')
+    set -l games_ws (niri msg --json workspaces | jq -r 'first(.[] | select(.name == "games") | .id) // empty')
+    if test -n "$games_ws"; and test "$on" != "$games_ws"
+        niri msg action move-window-to-workspace --window-id $game --focus true games
+    end
+
+    while niri msg --json windows | jq -e --argjson g $game 'any(.[]; .id == $g)' >/dev/null
+        sleep 0.5
+    end
+    set -l esde (window_id es-de)
+    test -n "$esde"; and niri msg action focus-window --id $esde
+end
+
 function system_select --argument-names system fullname
     test -n "$system"; or return 0
     test -S $sock; or return 0
@@ -233,6 +266,10 @@ switch "$argv[1]"
         system_select $argv[2..]
     case pause
         ipc set_property pause yes
+        # game-start blocks the launch, so the watcher goes in the background.
+        test -S $sock; and setsid -f $HOME/.local/bin/es-de-side watch >/dev/null 2>&1 </dev/null
+    case watch
+        watch_game
     case resume
         ipc set_property pause no
         # The game closing leaves focus on the preview; ES-DE needs it back.
