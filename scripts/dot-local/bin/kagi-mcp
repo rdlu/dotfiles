@@ -1,0 +1,6 @@
+#!/bin/sh
+# Kagi MCP server for Claude Code; API key comes from oo7, never from a file.
+KAGI_API_KEY=$(secret-tool lookup service kagi-api user rdlu) || {
+  echo "kagi-mcp: no key in keyring (service=kagi-api)" >&2; exit 1; }
+export KAGI_API_KEY
+exec uvx kagimcp
