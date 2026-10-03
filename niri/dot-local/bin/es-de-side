@@ -24,6 +24,7 @@
 set -g sock $XDG_RUNTIME_DIR/es-de-side.sock
 set -g side_file $XDG_RUNTIME_DIR/es-de-side.output # side output, written by start
 set -g current $XDG_RUNTIME_DIR/es-de-side.current  # what is highlighted right now
+set -g shown $XDG_RUNTIME_DIR/es-de-side.shown      # file mpv has loaded
 set -g workspace games-side
 set -g app_id es-de-side
 set -g settings ~/ES-DE/settings/es_settings.xml
@@ -63,9 +64,12 @@ function claim --argument-names key
     echo $key >$current
 end
 
+# ES-DE re-sends game-select for the same game right after game-start;
+# reloading would restart the paused video on its (usually black) first frame.
 function show --argument-names key file
     test "$(cat $current 2>/dev/null)" = "$key"; or return 0
-    ipc loadfile $file replace
+    test "$(cat $shown 2>/dev/null)" = "$file"; and return 0
+    ipc loadfile $file replace; and echo $file >$shown
 end
 
 function theme_dir
@@ -209,7 +213,7 @@ function select --argument-names rom
             return
         end
     end
-    ipc stop # no media: blank the screen rather than show the previous game
+    ipc stop; and rm -f $shown # no media: blank rather than show the previous game
 end
 
 function stop
@@ -218,10 +222,13 @@ function stop
         test -S $sock; or break
         sleep 0.1
     end
-    rm -f $sock $side_file $current
+    rm -f $sock $side_file $current $shown
     set -q NIRI_SOCKET; and niri msg action unset-workspace-name $workspace 2>/dev/null
     return 0
 end
+
+# Every event ES-DE sends, for working out what it fires when (tmpfs, per boot).
+echo (date +%T.%3N) $argv >>$XDG_RUNTIME_DIR/es-de-side.log
 
 switch "$argv[1]"
     case start
