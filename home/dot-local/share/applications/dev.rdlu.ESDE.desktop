@@ -2,8 +2,7 @@
 Name=ES-DE
 GenericName=Gaming Frontend
 Comment=ES-DE sized for the screen niri puts it on (es-de-launch)
-Exec=es-de-launch
-TryExec=es-de
+Exec=/home/rdlu/.local/bin/es-de-launch
 Icon=es-de
 Type=Application
 Terminal=false

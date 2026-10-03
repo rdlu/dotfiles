@@ -22,6 +22,9 @@
 #
 # Usage: es-de-launch [es-de args...]
 
+# niri's environment (and so fuzzel's) has no ~/.local/bin, where AM puts es-de.
+contains ~/.local/bin $PATH; or set -gx PATH ~/.local/bin $PATH
+
 if not set -q NIRI_SOCKET; or not type -q jq
     exec es-de $argv
 end
