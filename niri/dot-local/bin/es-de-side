@@ -4,7 +4,9 @@
 #
 # While ES-DE runs on the screen holding the "games" workspace, an mpv window
 # on the other screen loops the highlighted game's video (or its art when
-# there's no video). Driven by ES-DE custom event scripts, stowed alongside in
+# there's no video), and on the system view the system's logo on the theme's
+# wallpaper (rendered once per theme/scheme/size into ~/.cache/es-de-side).
+# Driven by ES-DE custom event scripts, stowed alongside in
 # ~/ES-DE/scripts/<event>/es-de-side; they need "Enable custom event scripts"
 # and "Browsing custom events" on in Other settings.
 #
@@ -15,13 +17,17 @@
 #
 # Usage: es-de-side start                       (startup event)
 #        es-de-side select ROM NAME SYSTEM FULL (game-select event)
+#        es-de-side system SYSTEM FULL ROMPATH   (system-select event)
 #        es-de-side pause | resume              (game-start / game-end)
 #        es-de-side stop                        (quit event)
 
 set -g sock $XDG_RUNTIME_DIR/es-de-side.sock
+set -g side_file $XDG_RUNTIME_DIR/es-de-side.output # side output, written by start
+set -g current $XDG_RUNTIME_DIR/es-de-side.current  # what is highlighted right now
 set -g workspace games-side
 set -g app_id es-de-side
 set -g settings ~/ES-DE/settings/es_settings.xml
+set -g cache ~/.cache/es-de-side
 
 function ipc --description 'send one mpv IPC command; fails if mpv is not up'
     test -S $sock; or return 1
@@ -50,6 +56,98 @@ function es_de_running
     pgrep -f '\.mount_[^/]+/usr/bin/es-de( |$)' >/dev/null
 end
 
+# Browsing events run in parallel threads and can finish out of order while
+# fast-scrolling; each one claims `current` first and only shows its file if
+# nothing newer has claimed it since.
+function claim --argument-names key
+    echo $key >$current
+end
+
+function show --argument-names key file
+    test "$(cat $current 2>/dev/null)" = "$key"; or return 0
+    ipc loadfile $file replace
+end
+
+function theme_dir
+    set -l theme (setting Theme)
+    for d in ~/ES-DE/themes/$theme /tmp/.mount_esde*/usr/bin/themes/$theme
+        test -d $d; and echo $d; and return 0
+    end
+    return 1
+end
+
+# Wallpaper + system logo, styled like the active theme's color scheme
+# (backgroundArtPath and systemColor from its colors.xml — Canvas layout,
+# degrading to black and a white logo or the system's name elsewhere).
+function system_card --argument-names system fullname
+    set -l size (niri msg --json outputs | jq -r --arg o "$(cat $side_file 2>/dev/null)" '
+        .[$o] | .modes[.current_mode] // empty | "\(.width)x\(.height)"')
+    test -n "$size"; or return 1
+    set -l theme_name (setting Theme)
+    set -l scheme (setting ThemeColorScheme)
+    set -l out $cache/$theme_name/$scheme/$size/$system.png
+    test -s $out; and echo $out; and return 0
+
+    set -l dir (theme_dir)
+    set -l wallpaper
+    set -l color ffffff
+    if test -n "$dir"; and test -f $dir/colors.xml
+        set -l vars (python3 -c '
+import sys, xml.etree.ElementTree as ET
+f, scheme = sys.argv[1:]
+vals = {}
+for cs in ET.parse(f).getroot().iter("colorScheme"):
+    if scheme in [n.strip() for n in cs.get("name", "").split(",")]:
+        for e in cs.findall("variables/*"):
+            vals[e.tag] = (e.text or "").strip()
+print(vals.get("backgroundArtPath", ""))
+print(vals.get("systemColor", ""))' $dir/colors.xml $scheme 2>/dev/null)
+        if test -n "$vars[1]"
+            set wallpaper $dir/(string replace -r '^\./' '' -- $vars[1]).*
+        end
+        test -n "$vars[2]"; and set color $vars[2]
+    end
+    # Auto collections are themed under their folder names (auto-favorites...).
+    set -l names $system auto-$system
+    switch $system
+        case all
+            set -a names auto-allgames
+        case recent lastplayed
+            set -a names auto-lastplayed
+    end
+    set -l logo
+    if test -n "$dir"
+        for n in $names
+            set logo $dir/_inc/system-logo/$n.svg
+            test -f $logo; and break
+            set logo (find $dir -ipath '*logo*' -iname "$n.*" -type f | head -1)
+            test -n "$logo"; and break
+        end
+    end
+
+    set -l w (string split x $size)[1]
+    set -l h (string split x $size)[2]
+    set -l box (math -s0 $w x 0.55)x(math -s0 $h x 0.35)
+    set -l bg -size $size xc:'#111111'
+    set -q wallpaper[1]; and set bg $wallpaper[1] -resize "$size^" -gravity center -extent $size
+    set -l fg -density 600 $logo[1] -resize $box
+    test -n "$logo[1]"; or set fg -pointsize 160 label:$fullname -resize $box
+
+    mkdir -p (path dirname $out)
+    magick $bg \( -background none $fg -fill "#$color" -colorize 100 \) \
+        -gravity center -composite $out.tmp.png 2>/dev/null; or return 1
+    mv $out.tmp.png $out
+    echo $out
+end
+
+function system_select --argument-names system fullname
+    test -n "$system"; or return 0
+    test -S $sock; or return 0
+    claim system:$system
+    set -l card (system_card $system $fullname); or return 0
+    show system:$system $card
+end
+
 function start
     set -q NIRI_SOCKET; or return 0
     ipc get_property pause; and return 0 # already running
@@ -64,6 +162,7 @@ function start
     # ES-DE fires startup before its window exists; focus has to come back to it.
     set -l esde (wait_window es-de 20); or return 1
 
+    echo $side >$side_file
     niri msg action focus-monitor $side
     # niri always keeps an empty workspace last on each output: take that one.
     set -l last (niri msg --json workspaces | jq -r --arg o $side '[.[] | select(.output == $o) | .idx] | max')
@@ -92,6 +191,7 @@ function select --argument-names rom
     # Blank parameters mean fast-scrolling: keep what's on screen.
     test -n "$rom"; or return 0
     test -S $sock; or return 0
+    claim game:$rom
 
     set -l romdir (string trim -r -c / -- (setting ROMDirectory))
     set -l media (string trim -r -c / -- (setting MediaDirectory))
@@ -105,7 +205,7 @@ function select --argument-names rom
     for type in videos miximages screenshots covers
         set -l found $media/$system/$type/$base.*
         if set -q found[1]
-            ipc loadfile $found[1] replace
+            show game:$rom $found[1]
             return
         end
     end
@@ -118,7 +218,7 @@ function stop
         test -S $sock; or break
         sleep 0.1
     end
-    rm -f $sock
+    rm -f $sock $side_file $current
     set -q NIRI_SOCKET; and niri msg action unset-workspace-name $workspace 2>/dev/null
     return 0
 end
@@ -128,6 +228,8 @@ switch "$argv[1]"
         start
     case select
         select $argv[2..]
+    case system
+        system_select $argv[2..]
     case pause
         ipc set_property pause yes
     case resume
@@ -135,6 +237,6 @@ switch "$argv[1]"
     case stop
         stop
     case '*'
-        echo "usage: es-de-side start | select ROM NAME SYSTEM FULL | pause | resume | stop" >&2
+        echo "usage: es-de-side start | select ROM NAME SYSTEM FULL | system SYSTEM FULL PATH | pause | resume | stop" >&2
         exit 2
 end
