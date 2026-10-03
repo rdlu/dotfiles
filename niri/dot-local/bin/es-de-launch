@@ -6,7 +6,9 @@
 # "games-side" workspace on the bottom screen (by niri's layout; side by side,
 # the built-in panel), and the "games" workspace moves to the top one if it
 # isn't there, so es-de-side's preview and the games share it. --invert swaps
-# the two. One screen: ES-DE goes on "games" itself. The es-de window rule sets
+# the two. --single skips all that: ES-DE alone on "games" (still moved to the
+# top screen, or the bottom one with --invert) and the games open over it,
+# no preview — what one connected screen gets anyway. The es-de window rule sets
 # no workspace; ES-DE opens where this script leaves focus.
 #
 # ES-DE runs through xwayland-satellite and renders at the resolution of its
@@ -22,14 +24,22 @@
 # also renders natively at fractional scale, but both variables leak into
 # every emulator ES-DE launches, so X11 stays the backend.
 #
-# Usage: es-de-launch [--invert] [es-de args...]
+# Usage: es-de-launch [--invert] [--single] [es-de args...]
 
 # niri's environment (and so fuzzel's) has no ~/.local/bin, where AM puts es-de.
 contains ~/.local/bin $PATH; or set -gx PATH ~/.local/bin $PATH
 
 set -l invert false
-if test "$argv[1]" = --invert
-    set invert true
+set -l single false
+while set -q argv[1]
+    switch $argv[1]
+        case --invert
+            set invert true
+        case --single
+            set single true
+        case '*'
+            break
+    end
     set -e argv[1]
 end
 
@@ -45,7 +55,7 @@ test $invert = true; and set order $order[-1..1]
 set -l side
 set -l games $order[-1]
 if test (count $order) -ge 2
-    set side $order[1]
+    test $single = true; or set side $order[1]
     set -l at (niri msg --json workspaces | jq -r 'first(.[] | select(.name == "games") | .output) // empty')
     test "$at" = "$games"; or niri msg action move-workspace-to-monitor --reference games $games
 end
@@ -67,6 +77,8 @@ if test -n "$side"
         niri msg action set-workspace-name games-side
     end
 else
+    # A games-side left by a crash would make es-de-side start its preview.
+    niri msg action unset-workspace-name games-side 2>/dev/null
     niri msg action focus-workspace games 2>/dev/null
 end
 

@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=ES-DE (single screen)
+GenericName=Gaming Frontend
+Comment=ES-DE alone on the games workspace with games opening over it, no second-screen preview
+Exec=/home/rdlu/.local/bin/es-de-launch --single
+Icon=es-de
+Type=Application
+Terminal=false
+Keywords=emulator;emulation;front-end;frontend;single;
+Categories=Game;Emulator;
+StartupNotify=true
+StartupWMClass=es-de
