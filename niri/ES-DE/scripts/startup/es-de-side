@@ -1,0 +1,3 @@
+#!/bin/sh
+# ES-DE startup event -> es-de-side (see that script).
+setsid -f "$HOME/.local/bin/es-de-side" start >/dev/null 2>&1 </dev/null

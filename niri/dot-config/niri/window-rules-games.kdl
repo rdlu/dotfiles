@@ -59,7 +59,8 @@ window-rule {
 }
 
 window-rule {
-    match app-id="es-de"
+    // Anchored: unanchored it also caught es-de-side (es-de-side's mpv window).
+    match app-id="^es-de$"
     open-fullscreen true
     open-focused true
     open-on-workspace "games"

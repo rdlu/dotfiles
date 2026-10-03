@@ -1,0 +1,3 @@
+#!/bin/sh
+# ES-DE game-end event -> es-de-side (see that script).
+exec "$HOME/.local/bin/es-de-side" resume

@@ -1,0 +1,140 @@
+#!/usr/bin/fish
+
+# es-de-side — show ES-DE's highlighted game on the other screen.
+#
+# While ES-DE runs on the screen holding the "games" workspace, an mpv window
+# on the other screen loops the highlighted game's video (or its art when
+# there's no video). Driven by ES-DE custom event scripts, stowed alongside in
+# ~/ES-DE/scripts/<event>/es-de-side; they need "Enable custom event scripts"
+# and "Browsing custom events" on in Other settings.
+#
+# Nothing here is permanent: `start` picks an empty workspace on the side
+# screen and names it "games-side" for the session; `stop` closes mpv and
+# unnames it, so niri drops the empty workspace again. With one screen
+# connected, `start` does nothing and every other command is a no-op.
+#
+# Usage: es-de-side start                       (startup event)
+#        es-de-side select ROM NAME SYSTEM FULL (game-select event)
+#        es-de-side pause | resume              (game-start / game-end)
+#        es-de-side stop                        (quit event)
+
+set -g sock $XDG_RUNTIME_DIR/es-de-side.sock
+set -g workspace games-side
+set -g app_id es-de-side
+set -g settings ~/ES-DE/settings/es_settings.xml
+
+function ipc --description 'send one mpv IPC command; fails if mpv is not up'
+    test -S $sock; or return 1
+    jq -cn '{command: $ARGS.positional}' --args $argv \
+        | socat - UNIX-CONNECT:$sock >/dev/null 2>&1
+end
+
+function setting --argument-names name
+    string match -r -g "name=\"$name\" value=\"([^\"]*)\"" <$settings
+end
+
+function window_id --argument-names app
+    niri msg --json windows | jq -r --arg a $app 'first(.[] | select(.app_id == $a) | .id) // empty'
+end
+
+function wait_window --argument-names app seconds
+    for i in (seq (math $seconds x 4))
+        set -l id (window_id $app)
+        test -n "$id"; and echo $id; and return 0
+        sleep 0.25
+    end
+    return 1
+end
+
+function es_de_running
+    pgrep -f '\.mount_[^/]+/usr/bin/es-de( |$)' >/dev/null
+end
+
+function start
+    set -q NIRI_SOCKET; or return 0
+    ipc get_property pause; and return 0 # already running
+
+    set -l games (niri msg --json workspaces | jq -r 'first(.[] | select(.name == "games") | .output) // empty')
+    test -n "$games"; or set games (niri msg --json focused-output | jq -r '.name')
+    # The side screen is any other output, the built-in panel first.
+    set -l side (niri msg --json outputs | jq -r --arg g $games '
+        [keys[] | select(. != $g)] | (map(select(startswith("eDP"))) + .) | first // empty')
+    test -n "$side"; or return 0
+
+    # ES-DE fires startup before its window exists; focus has to come back to it.
+    set -l esde (wait_window es-de 20); or return 1
+
+    niri msg action focus-monitor $side
+    # niri always keeps an empty workspace last on each output: take that one.
+    set -l last (niri msg --json workspaces | jq -r --arg o $side '[.[] | select(.output == $o) | .idx] | max')
+    niri msg action focus-workspace $last
+    niri msg action set-workspace-name $workspace
+
+    setsid -f mpv --idle=yes --force-window=yes --fullscreen \
+        --wayland-app-id=$app_id --title='ES-DE side' \
+        --input-ipc-server=$sock --no-terminal \
+        --loop-file=inf --image-display-duration=inf --keep-open=yes \
+        --mute=yes --osc=no --osd-level=0 --cursor-autohide=always \
+        --background-color='#000000' --hwdec=auto-safe \
+        >/dev/null 2>&1 </dev/null
+
+    wait_window $app_id 10 >/dev/null
+    niri msg action focus-window --id $esde
+
+    # Cover a crash or kill, where ES-DE never fires quit.
+    while es_de_running
+        sleep 3
+    end
+    stop
+end
+
+function select --argument-names rom
+    # Blank parameters mean fast-scrolling: keep what's on screen.
+    test -n "$rom"; or return 0
+    test -S $sock; or return 0
+
+    set -l romdir (string trim -r -c / -- (setting ROMDirectory))
+    set -l media (string trim -r -c / -- (setting MediaDirectory))
+    set -l rel (string replace -- "$romdir/" '' $rom)
+    test "$rel" != "$rom"; or return 0 # outside the ROM directory
+
+    # roms/<system>/<sub>/<Name>.zip -> media/<system>/<type>/<sub>/<Name>.*
+    set -l system (string split -m1 / -- $rel)[1]
+    set -l base (string replace -r '\.[^./]*$' '' -- (string split -m1 / -- $rel)[2])
+
+    for type in videos miximages screenshots covers
+        set -l found $media/$system/$type/$base.*
+        if set -q found[1]
+            ipc loadfile $found[1] replace
+            return
+        end
+    end
+    ipc stop # no media: blank the screen rather than show the previous game
+end
+
+function stop
+    ipc quit
+    for i in (seq 20)
+        test -S $sock; or break
+        sleep 0.1
+    end
+    rm -f $sock
+    set -q NIRI_SOCKET; and niri msg action unset-workspace-name $workspace 2>/dev/null
+    return 0
+end
+
+switch "$argv[1]"
+    case start
+        start
+    case select
+        select $argv[2..]
+    case pause
+        ipc set_property pause yes
+    case resume
+        ipc set_property pause no
+    case stop
+        stop
+    case '*'
+        echo "usage: es-de-side start | select ROM NAME SYSTEM FULL | pause | resume | stop" >&2
+        exit 2
+end
