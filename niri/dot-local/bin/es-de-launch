@@ -1,0 +1,43 @@
+#!/usr/bin/fish
+
+# es-de-launch — start ES-DE sized for the screen niri will actually put it on.
+#
+# ES-DE runs through xwayland-satellite and renders at the resolution of its
+# "Display/monitor index" setting, but niri places the window by the es-de
+# window rule (open-on-workspace "games"), wherever that workspace lives right
+# now. When the two disagree ES-DE renders for the wrong screen and niri
+# stretches it: blurry on the external, wrong on the laptop panel.
+#
+# So: find the output that holds the "games" workspace (else the focused one)
+# and pass its physical mode as --resolution. The window size is what niri
+# gives it, so matching the resolution to it is all that keeps it sharp.
+#
+# Deliberately no --display: SDL's display numbering under xwayland-satellite
+# changed between runs (display 2 was eDP-1, then DP-2), and ES-DE writes
+# --display back into es_settings.xml as DisplayIndex. --resolution isn't saved.
+#
+# Native Wayland (LD_PRELOAD the system sdl2-compat + SDL_VIDEODRIVER=wayland)
+# also renders natively at fractional scale, but both variables leak into
+# every emulator ES-DE launches, so X11 stays the backend.
+#
+# Usage: es-de-launch [es-de args...]
+
+if not set -q NIRI_SOCKET; or not type -q jq
+    exec es-de $argv
+end
+
+set -l output (niri msg --json workspaces | jq -r 'first(.[] | select(.name == "games") | .output) // empty')
+test -n "$output"; or set output (niri msg --json focused-output | jq -r '.name')
+
+# Physical size of the current mode, swapped when the output is rotated.
+set -l size (niri msg --json outputs | jq -r --arg o $output '
+    .[$o] | .modes[.current_mode] as $m
+    | if (.logical.transform | test("90|270")) then "\($m.height) \($m.width)"
+      else "\($m.width) \($m.height)" end' | string split ' ')
+
+set -l args
+if test (count $size) -eq 2
+    set -a args --resolution $size
+end
+
+exec es-de $args $argv
