@@ -3,7 +3,7 @@ Name=Tidewave Connect
 GenericName=Coding Agent
 Comment=Chromium app window for the local Phoenix Tidewave connect page (localhost:4000)
 Exec=chromium --profile-directory=Default --app=http://localhost:4000/tidewave/connect
-Icon=applications-development
+Icon=Tidewave
 Type=Application
 Terminal=false
 Keywords=Tidewave;Connect;Phoenix;Elixir;Agent;AI;
