@@ -119,6 +119,8 @@ window-rule {
 window-rule {
   match app-id="Rocket.Chat"
   match app-id="Fastmail"
+  match app-id="^discord$"
+  match app-id="^slack$"
   open-on-workspace "comms"
   // block-out-from "screencast"
   block-out-from "screen-capture"
