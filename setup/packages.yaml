@@ -45,6 +45,7 @@ cli-essentials: # cli-tools
   - eza
   - jaq
   - jnv
+  - jolt # battery / energy monitor TUI
   - lazydocker
   - lazygit
   - lazyjj
