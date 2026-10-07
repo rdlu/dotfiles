@@ -1,0 +1,21 @@
+# XPS 9320 (xps) internal camera, OmniVision ov01a10 on the IPU6, libcamera
+# simple pipeline. No calibrated profile ships for this sensor, so libcamera
+# falls back to uncalibrated.yaml and the image is washed out.
+# Install: pkexec install -Dm644 setup/libcamera/ov01a10.yaml /etc/libcamera/ipa/simple/ov01a10.yaml
+%YAML 1.1
+---
+version: 1
+algorithms:
+  - BlackLevel:
+  - Awb:
+  # Not a calibrated CCM: identity plus a 1.6x saturation boost
+  # (Rec.601 luma weights, rows sum to 1 so greys stay grey).
+  - Ccm:
+      ccms:
+        - ct: 6500
+          ccm: [ 1.4206, -0.3522, -0.0684,
+                  -0.1794, 1.2478, -0.0684,
+                  -0.1794, -0.3522, 1.5316 ]
+  - Adjust:
+  - Agc:
+...
