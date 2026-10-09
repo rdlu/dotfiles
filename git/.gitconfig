@@ -38,9 +38,9 @@
 	lowSpeedTime = 60
 	postBuffer = 524288000
 
-# Push over SSH even when the remote is an HTTPS URL; HTTPS fetches stay
-# anonymous so pulls don't need a hardware-key tap.
+# Never talk HTTPS to github/gitlab: every fetch, pull and push goes over SSH,
+# even for an https:// URL. Costs a hardware-key tap per op; that's intended.
 [url "git@github.com:"]
-	pushInsteadOf = https://github.com/
+	insteadOf = https://github.com/
 [url "git@gitlab.com:"]
-	pushInsteadOf = https://gitlab.com/
+	insteadOf = https://gitlab.com/
