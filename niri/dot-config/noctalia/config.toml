@@ -24,6 +24,7 @@ sunrise = "05:45"
 sunset = "18:00"
 
 [shell]
+launch_apps_as_systemd_services = true # own unit per app, so restarting noctalia.service no longer kills them
 font_family = "iMWritingDuo Nerd Font Propo"
 polkit_agent = true # replaces plasma-polkit-agent.service; only one agent per session
 
@@ -84,6 +85,7 @@ start = [ "launcher", "wallpaper", "workspaces", "taskbar" ] # Noctalia's defaul
 center = [ "media" ] # the focused window's title is in the taskbar
 end = [
     "tray",
+    "recorder", # screen_recorder plugin: left click records
     "notifications",
     "clipboard",
     "network",
@@ -111,6 +113,11 @@ inactive_opacity = 0.5 # dims unfocused windows
 label_source = "name"
 max_label_chars = 6
 
+# Bar button of the screen_recorder plugin (gpu-screen-recorder). Its codec,
+# folder etc. are plugin settings, kept in the state dir, not here.
+[widget.recorder]
+type = "noctalia/screen_recorder:recorder"
+
 [battery]
 warning_threshold = 20
 
@@ -134,3 +141,8 @@ show_week_numbers = true
 
 [notification]
 follow_focused_output = true
+
+# Plugins come from the official/community git catalogs. The GUI writes its own
+# toggles to ~/.local/state/noctalia/settings.toml; this list is merged with it.
+[plugins]
+enabled = [ "noctalia/translator", "noctalia/screen_recorder", "noctalia/bitwarden" ]

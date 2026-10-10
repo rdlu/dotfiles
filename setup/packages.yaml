@@ -273,6 +273,7 @@ keybase: # keybase-ssh recipe installs this (keybase-bin provides keybase + kbfs
 
 security:
   - age-plugin-yubikey
+  - bitwarden-cli-bin # `bw` for the Noctalia bitwarden plugin; the repo bitwarden-cli pulls nodejs-lts and conflicts with nodejs
   - libfido2
   - pam-fprint-grosshack
   - rage-encryption
@@ -353,6 +354,7 @@ audio-production:
 
 obs-streaming:
   - cef-minimal-obs-bin
+  - gpu-screen-recorder # backend of the Noctalia screen_recorder plugin
   - obs-cmd
   - obs-gstreamer
   - obs-plugin-input-overlay-bin
