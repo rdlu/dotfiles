@@ -4,7 +4,7 @@
 [wallpaper]
 enabled = true
 directory = "~/Pictures/Wallpapers"
-fill_mode = "center"
+fill_mode = "crop"
 transition_on_startup = false
 
 [wallpaper.automation]
