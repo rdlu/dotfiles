@@ -101,6 +101,12 @@ end = [
 [widget.spacer_2]
 type = "spacer"
 
+# Workspace pills show niri's workspace names (base, brain, comms, games;
+# unnamed ones fall back to their number).
+[widget.workspaces]
+label_source = "name"
+max_label_chars = 6
+
 [battery]
 warning_threshold = 20
 
