@@ -26,3 +26,7 @@ sunset = "18:00"
 [shell.animation]
 enabled = true
 speed = 3.0 # speed multiplier for all animations, notifications included
+
+[theme.templates]
+enable_community_templates = true
+community_ids = ["fuzzel"]
