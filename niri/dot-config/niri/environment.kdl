@@ -1,8 +1,5 @@
-spawn-at-startup "swayosd-server"
-// spawn-at-startup "pkexec swayosd-libinput-backend"
 spawn-at-startup "xwayland-satellite"
 spawn-at-startup "udiskie"
-spawn-at-startup "walker --gapplication-service"
 
 environment {
     // DISPLAY ":0"
@@ -18,7 +15,6 @@ environment {
     CHROMIUM_FLAGS "--enable-features=UseOzonePlatform --ozone-platform=wayland --gtk-version=4"
     XDG_DATA_DIRS "~/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/share:/usr/local/share:~/.local/share"
     TERMINAL "kitty"
-    BEMOJI_PICKER_CMD "fuzzel -d \"emojis\""
     EDITOR "nvim"
     // Follow the mimeapps default (zen) instead of naming a browser here.
     // Absolute: niri neither expands ~ nor has ~/.local/bin on its PATH.

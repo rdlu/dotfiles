@@ -84,7 +84,6 @@ page "Power" {
     }
 
     item "System Monitor" icon="\u{f0127}" run="ghostty --class=btop --title=btop -e btop" keywords="top processes"
-    /- item "Waybar restart" icon="\u{f0709}" run="systemctl --user restart waybar.service"
     link "More tools" icon="\u{f035c}" page="Tools" hint="Mod+Esc again"
 }
 

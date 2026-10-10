@@ -13,7 +13,7 @@
 #
 # Lists every API token in the account and classifies it as EXPIRED, EXPIRING
 # (inside the warning window), INACTIVE (disabled) or OK. Anything worth
-# knowing about becomes a mako notification; all-clear is silent, so the monthly
+# knowing about becomes a desktop notification; all-clear is silent, so the monthly
 # run is invisible until it matters.
 #
 # Driven by cf-token-monitor.timer (first Saturday of the month). Run manually anytime; `--list`

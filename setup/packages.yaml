@@ -101,7 +101,6 @@ niri-wm: # niri-window-manager (nerd-fonts is a group: pulls all nerd fonts)
   - filelight # theme-tui preview window (KDE app)
   - inter-font
   - jq
-  - mako
   - nerd-fonts
   - niri
   - noto-fonts
@@ -109,17 +108,13 @@ niri-wm: # niri-window-manager (nerd-fonts is a group: pulls all nerd fonts)
   - noto-fonts-emoji
   - noto-fonts-extra
   - oo7
-  - polkit-kde-agent
+  - playerctl # media keys in binds.kdl
   - swayidle
-  - swaylock-effects-git
   - ttf-jetbrains-mono
   - udiskie
-  - waybar
   - wl-clipboard
   - wl-kbptr
-  - wlsunset
   - woff2-font-awesome
-  - wpaperd
   - xdg-desktop-portal-gnome
   - xwayland-satellite
 
@@ -322,7 +317,6 @@ system:
 
 desktop:
   - alacarte
-  - bemoji
   - ddcutil # external-monitor brightness/contrast over DDC/CI
   - dex
   - dgop
@@ -333,7 +327,6 @@ desktop:
   - noctalia # desktop shell: bar, notifications, wallpaper, night light
   - selectdefaultapplication-fork-git
   - swaybg
-  - swayosd
   - syncthing-appmenu
   - wev
   - wtype

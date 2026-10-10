@@ -17,7 +17,7 @@ Tasks are defined in the repo-root `mise.toml` — every recipe is equally runna
 | `just full-auto` | Full auto installation | `packages`, `dev-setup`, `cli-tools`, `fish-shell`, `helix-editor`, `yazi-file-manager`, `fastfetch` |
 | `just full-auto-gui` | Fuller auto (graphical) installation | `full-auto`, `kitty-terminal`, `niri-window-manager` |
 | `just packages` | (Run first unless running full-auto) Setup Flatpak, pacman mirrors, Chaotic AUR, and paru AUR helper |  |
-| `just systemd-niri-config` | Enables the systemd services for some essential niri helpers | `systemd-niri-config-install`, `wpaper-reload`, `mako-reload`, `waybar-reload`, `swayidle-reload`, `polkit-agent-reload` |
+| `just systemd-niri-config` | Enables the systemd services for some essential niri helpers | `systemd-niri-config-install`, `noctalia-reload`, `swayidle-reload` |
 | `just systemd-niri-config-install` |  |  |
 
 ### Install: essentials
@@ -70,11 +70,8 @@ Tasks are defined in the repo-root `mise.toml` — every recipe is equally runna
 | `just caffeine` | Keep the screen awake (pause auto-lock + blanking). Also on the power menu. |  |
 | `just ext-brightness` | External monitor brightness over DDC/CI: up \| down \| 0-100 (bare shows current) |  |
 | `just ext-display` | Interactive TUI for the external monitor over DDC/CI (brightness, contrast, input, presets) |  |
-| `just mako-reload` |  |  |
-| `just polkit-agent-reload` |  |  |
+| `just noctalia-reload` |  |  |
 | `just swayidle-reload` |  |  |
-| `just waybar-reload` |  |  |
-| `just wpaper-reload` |  |  |
 
 ### Maintenance
 

@@ -13,8 +13,8 @@
 # suspend (lid close / `systemctl suspend`) will NOT lock the screen. Use it
 # while you're at the machine, not before walking away.
 #
-# Independent of the waybar idle_inhibitor toggle (that one holds a Wayland
-# idle-inhibitor on the bar surface); either alone keeps the screen awake.
+# Independent of Noctalia's caffeine toggle (`noctalia msg caffeine-toggle`,
+# an idle inhibitor of its own); either alone keeps the screen awake.
 #
 # Usage: caffeine [on | off | toggle | status]   (default: toggle)
 

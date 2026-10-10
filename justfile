@@ -153,24 +153,12 @@ systemd-niri-config-install:
   @mise run systemd-niri-config-install
 
 [group("niri-reload")]
-wpaper-reload:
-  @mise run wpaper-reload
-
-[group("niri-reload")]
-mako-reload:
-  @mise run mako-reload
-
-[group("niri-reload")]
-waybar-reload:
-  @mise run waybar-reload
+noctalia-reload:
+  @mise run noctalia-reload
 
 [group("niri-reload")]
 swayidle-reload:
   @mise run swayidle-reload
-
-[group("niri-reload")]
-polkit-agent-reload:
-  @mise run polkit-agent-reload
 
 # Keep the screen awake (pause auto-lock + blanking). Also on the power menu.
 [group("niri-reload")]
