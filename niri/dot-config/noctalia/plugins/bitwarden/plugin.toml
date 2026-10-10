@@ -1,0 +1,191 @@
+# Bitwarden via bw serve; unlock panel, rest in launcher /bw
+#
+# Local fork of noctalia/bitwarden 1.2.0: /bw fuzzy-matches what you type
+# against the actions and the vault items, like the app launcher does.
+
+id = "rdlu/bitwarden"
+name = "Bitwarden"
+version = "1.2.0"
+plugin_api = 17
+author = "rdlu"
+license = "MIT"
+dependencies = ["bitwarden-cli"] # bitwarden-cli-bin provides it
+tags = ["launcher", "privacy", "productivity", "utility"]
+icon = "lock"
+description = "Search your Bitwarden vault from the launcher and copy passwords via the local bw serve API."
+
+[[setting]]
+key = "serve_port"
+type = "int"
+label_key = "settings.serve_port.label"
+description_key = "settings.serve_port.description"
+default = 8087
+min = 1024
+max = 65535
+
+[[setting]]
+key = "auto_serve"
+type = "bool"
+label_key = "settings.auto_serve.label"
+description_key = "settings.auto_serve.description"
+default = true
+
+[[setting]]
+key = "vault_timeout"
+type = "select"
+label_key = "settings.vault_timeout.label"
+description_key = "settings.vault_timeout.description"
+default = "on_restart"
+options = [
+  { value = "30", label_key = "settings.vault_timeout.options.30" },
+  { value = "60", label_key = "settings.vault_timeout.options.60" },
+  { value = "240", label_key = "settings.vault_timeout.options.240" },
+  { value = "on_restart", label_key = "settings.vault_timeout.options.on_restart" },
+  { value = "never", label_key = "settings.vault_timeout.options.never" },
+  { value = "custom", label_key = "settings.vault_timeout.options.custom" },
+]
+
+[[setting]]
+key = "vault_timeout_custom_minutes"
+type = "int"
+label_key = "settings.vault_timeout_custom_minutes.label"
+description_key = "settings.vault_timeout_custom_minutes.description"
+default = 15
+min = 1
+max = 10080
+visible_when = { key = "vault_timeout", values = ["custom"] }
+
+[[setting]]
+key = "copy_field"
+type = "select"
+label_key = "settings.copy_field.label"
+description_key = "settings.copy_field.description"
+default = "password"
+options = [
+  { value = "password", label_key = "settings.copy_field.options.password" },
+  { value = "username", label_key = "settings.copy_field.options.username" },
+  { value = "totp", label_key = "settings.copy_field.options.totp" },
+  { value = "uri", label_key = "settings.copy_field.options.uri" },
+]
+
+[[setting]]
+key = "notify_on_copy"
+type = "bool"
+label_key = "settings.notify_on_copy.label"
+description_key = "settings.notify_on_copy.description"
+default = true
+
+[[setting]]
+key = "clear_clipboard_seconds"
+type = "int"
+label_key = "settings.clear_clipboard_seconds.label"
+description_key = "settings.clear_clipboard_seconds.description"
+default = 0
+min = 0
+max = 300
+
+[[setting]]
+key = "gen_length"
+type = "int"
+label_key = "settings.gen_length.label"
+description_key = "settings.gen_length.description"
+default = 20
+min = 5
+max = 128
+
+[[setting]]
+key = "gen_uppercase"
+type = "bool"
+label_key = "settings.gen_uppercase.label"
+description_key = "settings.gen_uppercase.description"
+default = true
+
+[[setting]]
+key = "gen_lowercase"
+type = "bool"
+label_key = "settings.gen_lowercase.label"
+description_key = "settings.gen_lowercase.description"
+default = true
+
+[[setting]]
+key = "gen_number"
+type = "bool"
+label_key = "settings.gen_number.label"
+description_key = "settings.gen_number.description"
+default = true
+
+[[setting]]
+key = "gen_special"
+type = "bool"
+label_key = "settings.gen_special.label"
+description_key = "settings.gen_special.description"
+default = false
+
+[[setting]]
+key = "gen_passphrase_words"
+type = "int"
+label_key = "settings.gen_passphrase_words.label"
+description_key = "settings.gen_passphrase_words.description"
+default = 4
+min = 3
+max = 20
+
+[[setting]]
+key = "gen_passphrase_separator"
+type = "string"
+label_key = "settings.gen_passphrase_separator.label"
+description_key = "settings.gen_passphrase_separator.description"
+default = "-"
+
+[[setting]]
+key = "gen_passphrase_capitalize"
+type = "bool"
+label_key = "settings.gen_passphrase_capitalize.label"
+description_key = "settings.gen_passphrase_capitalize.description"
+default = false
+
+[[setting]]
+key = "gen_passphrase_include_number"
+type = "bool"
+label_key = "settings.gen_passphrase_include_number.label"
+description_key = "settings.gen_passphrase_include_number.description"
+default = false
+
+[[setting]]
+key = "server_url"
+type = "string"
+label_key = "settings.server_url.label"
+description_key = "settings.server_url.description"
+default = ""
+
+[[service]]
+id = "service"
+entry = "service.luau"
+
+[[launcher_provider]]
+id = "finder"
+entry = "launcher.luau"
+prefix = "bw"
+glyph = "lock"
+include_in_global_search = false
+debounce_ms = 200
+
+[[panel]]
+id = "unlock"
+entry = "panel.luau"
+# tight fixed size around the form
+width = 300
+height = 148
+placement = "floating"
+position = "center"
+keyboard_focus = "exclusive"
+dismiss_on_outside_click = false
+
+[[panel]]
+id = "login"
+entry = "login.luau"
+width = 360
+height = 320
+placement = "floating"
+position = "center"
+dismiss_on_outside_click = false
