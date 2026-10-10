@@ -266,9 +266,7 @@ binds {
     // Move the focused window between the floating and the tiling layout.
     Mod+F      { toggle-window-floating; }
     Mod+Shift+F { switch-focus-between-floating-and-tiling; }
-    Mod+V hotkey-overlay-title="Manage clipboard" {
-        spawn "sh" "-c" "cliphist list | fuzzel --dmenu --placeholder clipboard --with-nth 2 | cliphist decode | wl-copy"
-    }
+    Mod+V hotkey-overlay-title="Manage clipboard" { spawn "noctalia" "msg" "panel-toggle" "clipboard"; }
     Mod+B hotkey-overlay-title="Toggle Bar" { spawn "sh" "-c" "noctalia msg bar-toggle || pkill -SIGUSR1 waybar"; }
 
     // Toggle tabbed column display mode.
