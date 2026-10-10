@@ -30,6 +30,14 @@ polkit_agent = true # replaces plasma-polkit-agent.service; only one agent per s
 enabled = true
 speed = 3.0 # speed multiplier for all animations, notifications included
 
+# Same folder and filenames as niri's own screenshot-path (Alt+Print).
+[shell.screenshot]
+directory = "~/Pictures/Screenshots"
+filename_pattern = "Screenshot from %Y-%m-%d %H-%M-%S"
+save_to_file = true
+copy_to_clipboard = true
+freeze_screen = true
+
 [theme.templates]
 enable_community_templates = true
 community_ids = ["fuzzel"]

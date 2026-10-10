@@ -278,8 +278,11 @@ binds {
     // EnumerateBackwardKeys): it owns layout switching (usbr, br, mozc), so
     // niri must not bind them or the two switchers drift apart.
 
-    Print hotkey-overlay-title=null { screenshot; }
-    Ctrl+Print { screenshot-screen; }
+    // Noctalia screenshots (settings in noctalia/config.toml); it has no
+    // window mode, so Alt+Print stays on niri's.
+    Print hotkey-overlay-title="Screenshot region" { spawn "noctalia" "msg" "screenshot-region"; }
+    Ctrl+Print hotkey-overlay-title="Screenshot monitor" { spawn "noctalia" "msg" "screenshot-fullscreen"; }
+    Shift+Print hotkey-overlay-title="Screenshot and annotate" { spawn "noctalia" "msg" "screenshot-annotate"; }
     Alt+Print { screenshot-window; }
     Mod+P {
         set-dynamic-cast-window
