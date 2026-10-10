@@ -7,15 +7,16 @@ and **clear it the instant the command returns** (so it isn't a sticky toast).
 
 These pieces are **machine-local** (they live in `~/.claude/`, not stow), so on a
 new machine ask a Claude Code agent to recreate them from this file and adapt the
-two machine-specific bits (notification daemon, touch-timeout). The only part
-that syncs via the dotfiles is the mako style rule in
-`niri/dot-config/mako/config` (`[app-name=YubiKey]`).
+two machine-specific bits (notification daemon, touch-timeout). Nothing here
+syncs via the dotfiles: the notification daemon is Noctalia, which has no
+per-app style rules, so the toast uses its default look.
 
 ## Components
 
 1. Three scripts in `~/.claude/hooks/` (full contents below), all `chmod +x`.
 2. Hook wiring in `~/.claude/settings.json` (merge — don't clobber existing hooks).
-3. A notification-daemon style rule (mako here; adapt if the daemon differs).
+3. Nothing daemon-specific: dismissal uses the freedesktop `CloseNotification`
+   D-Bus call, which every daemon implements.
 
 ### `~/.claude/hooks/yubikey-touch-notify.sh`  — PreToolUse / Bash
 
@@ -54,7 +55,7 @@ for left in $(seq $((total - 1)) -1 0); do
     notify-send -r "$id" -u normal -a "YubiKey" -i dialog-password \
         -h int:value:$(( left * 100 / total )) "$title" "$cmd" 2>/dev/null
 done
-makoctl dismiss -n "$id" 2>/dev/null       # <-- daemon-specific dismiss
+gdbus call -e -d org.freedesktop.Notifications -o /org/freedesktop/Notifications -m org.freedesktop.Notifications.CloseNotification "$id" >/dev/null 2>&1
 [ "$(cat "$idfile" 2>/dev/null)" = "$id" ] && rm -f "$idfile"
 ```
 
@@ -68,7 +69,7 @@ idfile="${XDG_RUNTIME_DIR:-/tmp}/claude-yubikey.id"
 [ -f "$idfile" ] || exit 0
 id=$(cat "$idfile" 2>/dev/null)
 rm -f "$idfile"
-[ -n "$id" ] && makoctl dismiss -n "$id" 2>/dev/null   # <-- daemon-specific dismiss
+[ -n "$id" ] && gdbus call -e -d org.freedesktop.Notifications -o /org/freedesktop/Notifications -m org.freedesktop.Notifications.CloseNotification "$id" >/dev/null 2>&1
 exit 0
 ```
 
@@ -90,36 +91,18 @@ Validate after editing:
 disables ALL settings). If hooks don't fire this session, open `/hooks` once or
 restart (the settings watcher only tracks dirs that had a settings file at start).
 
-### mako style rule (already in `niri/dot-config/mako/config`)
-
-```ini
-[app-name=YubiKey]
-border-color=#ffcc00            ; vivid gold
-progress-color=over #3a3320     ; subtle fill
-default-timeout=30000           ; fallback (= touch window); the hooks clear it sooner
-[mode=do-not-disturb app-name=YubiKey]
-invisible=false                 ; touch prompts pierce DnD
-```
-
-This stows to `~/.config/mako/config`, so it's already present on a machine that
-stows the `niri` package — no action needed **if the daemon is mako**.
-
 ## Machine-specific things to ADAPT on a new host
 
-1. **Notification daemon.** This host uses **mako**. If the new host runs
-   something else, port the style rule and the dismiss/replace mechanics:
-   - **dunst**: progress bar via the same `value` hint; replace via
-     `-h string:x-dunst-stack-tag:yubikey` instead of `-r $id`; dismiss via
-     `dunstctl` (e.g. close by stack tag) — `makoctl dismiss -n` won't exist.
-   - **swaync / fnott / others**: check their progress-bar + close-by-id support;
-     swap `makoctl dismiss -n "$id"` for the equivalent, and the `[app-name=…]`
-     rule for that daemon's config syntax.
-   Confirm the daemon: `pgrep -a -f 'mako|dunst|swaync|fnott'`.
-2. **Touch-window length.** `total=30` (and `default-timeout`) match THIS key's
+1. **Notification daemon.** This setup uses **Noctalia** (mako before
+   2026-10). Dismissal is daemon-agnostic (`CloseNotification` over D-Bus).
+   Replace-in-place (`notify-send -r`) and the progress `value` hint depend on
+   the daemon; if the countdown stacks or shows no bar, check its support.
+   Confirm the daemon: `busctl --user status org.freedesktop.Notifications | grep Comm=`.
+2. **Touch-window length.** `total=30` matches THIS key's
    FIDO2 user-presence timeout. Measure it on the new host — run this and **do
    not touch** the key; the `real` time ≈ the window:
    `time timeout 40 ssh -o ControlMaster=no -o ControlPath=none -T git@gitlab.com < /dev/null`
-   Then set `total` in `countdown.sh` and `default-timeout` in the daemon rule.
+   Then set `total` in `countdown.sh`.
 3. **Match pattern.** Covers git/jj/ssh/scp/sftp. Add any other ssh-signing tool
    the host uses. (Local `rsync`, `ssh-add`, `ssh-keygen` are intentionally NOT
    matched.)

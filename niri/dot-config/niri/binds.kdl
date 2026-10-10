@@ -52,13 +52,15 @@ binds {
     // XF86AudioLowerVolume allow-when-locked=true { spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "0.1-"; }
     // XF86AudioMute        allow-when-locked=true { spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SINK@" "toggle"; }
     // XF86AudioMicMute     allow-when-locked=true { spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SOURCE@" "toggle"; }
-    XF86AudioRaiseVolume allow-when-locked=true { spawn "swayosd-client" "--output-volume" "raise"; }
-    XF86AudioLowerVolume allow-when-locked=true { spawn "swayosd-client" "--output-volume" "lower"; }
-    XF86AudioMute        allow-when-locked=true { spawn "swayosd-client" "--output-volume" "mute-toggle"; }
-    XF86AudioMicMute     allow-when-locked=true { spawn "swayosd-client" "--input-volume" "mute-toggle"; }
-    XF86MonBrightnessUp  allow-when-locked=true { spawn "swayosd-client" "--brightness" "+10"; }
-    XF86MonBrightnessDown allow-when-locked=true { spawn "swayosd-client" "--brightness" "-10"; }
-    // External monitor (DDC/CI) brightness — physical keys stay on the internal panel.
+    XF86AudioRaiseVolume allow-when-locked=true { spawn "noctalia" "msg" "volume-up"; }
+    XF86AudioLowerVolume allow-when-locked=true { spawn "noctalia" "msg" "volume-down"; }
+    XF86AudioMute        allow-when-locked=true { spawn "noctalia" "msg" "volume-mute"; }
+    XF86AudioMicMute     allow-when-locked=true { spawn "noctalia" "msg" "mic-mute"; }
+    XF86MonBrightnessUp  allow-when-locked=true { spawn "noctalia" "msg" "brightness-up"; }
+    XF86MonBrightnessDown allow-when-locked=true { spawn "noctalia" "msg" "brightness-down"; }
+    // Brightness keys follow the focused monitor (internal backlight, or the
+    // external one over DDC/CI); 5% steps, since a custom step needs a fixed
+    // target. Mod+ variants always drive the external monitor.
     Mod+XF86MonBrightnessUp   allow-when-locked=true hotkey-overlay-title="External monitor brightness up" { spawn "~/.local/bin/ext-brightness" "+10"; }
     Mod+XF86MonBrightnessDown allow-when-locked=true hotkey-overlay-title="External monitor brightness down" { spawn "~/.local/bin/ext-brightness" "-10"; }
     XF86AudioNext allow-when-locked=true { spawn-sh "playerctl next"; }
@@ -265,7 +267,7 @@ binds {
     Mod+F      { toggle-window-floating; }
     Mod+Shift+F { switch-focus-between-floating-and-tiling; }
     Mod+V hotkey-overlay-title="Manage clipboard" { spawn "noctalia" "msg" "panel-toggle" "clipboard"; }
-    Mod+B hotkey-overlay-title="Toggle Bar" { spawn "sh" "-c" "noctalia msg bar-toggle || pkill -SIGUSR1 waybar"; }
+    Mod+B hotkey-overlay-title="Toggle Bar" { spawn "noctalia" "msg" "bar-toggle"; }
 
     // Toggle tabbed column display mode.
     // Windows in this column will appear as vertical tabs,

@@ -11,7 +11,7 @@ git clone git@github.com:rdlu/dotfiles.git ~/.dotfiles
 cd ~/.dotfiles
 
 just full-auto       # base packages, languages, CLI tools, fish, yazi, fastfetch
-just full-auto-gui   # the above + kitty + the niri/waybar graphical stack
+just full-auto-gui   # the above + kitty + the niri/Noctalia graphical stack
 ```
 
 `full-auto` chains: `packages` → `dev-setup` → `cli-tools` → `fish-shell` →
@@ -61,7 +61,7 @@ just services-enable
 ```
 
 Enables the expected systemd **user** services (mpd, syncthing if installed,
-solaar) and wires the niri session helpers (waybar, wpaperd, mako, swayidle)
+solaar) and wires the niri session helpers (Noctalia, swayidle)
 to start with `niri.service` via `add-wants`. The swayosd backend is a
 **system** unit and gets `sudo systemctl enable` instead.
 

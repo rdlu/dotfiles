@@ -5,7 +5,7 @@ My personal dotfiles, managed with **GNU Stow** + a **`justfile`**. Two machines
 - **daisy** — AMD Ryzen notebook
 - **xps** — Intel i7 notebook (Dell XPS)
 
-Both run [CachyOS](https://cachyos.org/) (Arch) with niri · waybar · fish · tmux.
+Both run [CachyOS](https://cachyos.org/) (Arch) with niri · Noctalia · fish · tmux.
 
 Shared config lives in the top-level stow packages; per-host differences (display
 layout, thermal sensor, machine-specific tools/apps) live under
@@ -19,7 +19,7 @@ Everything is driven by [`just`](https://github.com/casey/just) — run `just` t
 
 ```sh
 just full-auto       # base packages, languages, CLI tools, fish, yazi, fastfetch
-just full-auto-gui   # the above + kitty + the niri/waybar graphical stack
+just full-auto-gui   # the above + kitty + the niri/Noctalia graphical stack
 ```
 
 **Day to day:**

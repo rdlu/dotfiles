@@ -1,6 +1,6 @@
 #!/usr/bin/fish
 
-# checkrebuild-notify — surface broken AUR/foreign packages as a mako
+# checkrebuild-notify — surface broken AUR/foreign packages as a desktop
 # notification instead of a line buried in pacman upgrade output.
 #
 # rebuild-detector's pacman hook prints "packages need to be rebuilt" during

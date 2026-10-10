@@ -10,7 +10,7 @@ As a hint it shows the process currently holding the YubiKey's FIDO hidraw.
 
 Reads the detector socket ($XDG_RUNTIME_DIR/yubikey-touch-detector.socket), which
 emits fixed 5-byte events U2F_1/U2F_0, GPG_1/GPG_0, MAC_1/MAC_0. Sends with
-app-name "YubiKey" (mako gold rule) and dismisses via the freedesktop
+app-name "YubiKey" and dismisses via the freedesktop
 CloseNotification D-Bus call (daemon-agnostic). Runs as a systemd --user service.
 """
 import glob

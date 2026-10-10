@@ -4,7 +4,7 @@
 
 [project]
 site_name = "rdlu's dotfiles"
-site_description = "Dotfiles for two CachyOS notebooks — stow + justfile, niri/waybar/fish/tmux. Generated shortcut references and setup guides."
+site_description = "Dotfiles for two CachyOS notebooks — stow + justfile, niri/Noctalia/fish/tmux. Generated shortcut references and setup guides."
 site_author = "Rodrigo Dlugokenski"
 site_url = "https://rdlu.github.io/dotfiles/"
 repo_url = "https://github.com/rdlu/dotfiles"

@@ -16,7 +16,7 @@ binds see also the [wl-kbptr guide](../wl-kbptr.md).
 | --- | --- |
 | `Mod+Shift+Slash` | Dotfiles Docs (local) |
 | `Mod+T` | Open a Terminal: ghostty |
-| `Mod+D` | Run an Application: fuzzel |
+| `Mod+D` | Run an Application: Noctalia |
 | `Mod+Slash` | Run an Application: fuzzel |
 | `Super+Alt+L` | Lock the Screen |
 | `Mod+Escape` | Menu Power (press again: Tools) |
@@ -29,7 +29,10 @@ binds see also the [wl-kbptr guide](../wl-kbptr.md).
 | `Mod+Shift+Ctrl+S` | Swap Workspaces Between Monitors |
 | `Mod+Period` | Emoji Finder |
 | `Mod+V` | Manage clipboard |
-| `Mod+B` | Hide Waybar |
+| `Mod+B` | Toggle Bar |
+| `Print` | Screenshot region |
+| `Ctrl+Print` | Screenshot monitor |
+| `Shift+Print` | Screenshot and annotate |
 
 ### Mouse warp (wl-kbptr)
 
@@ -54,12 +57,12 @@ binds see also the [wl-kbptr guide](../wl-kbptr.md).
 
 | Keys | Action |
 | --- | --- |
-| `XF86AudioRaiseVolume` | Run `swayosd-client --output-volume raise` *(works on lock screen)* |
-| `XF86AudioLowerVolume` | Run `swayosd-client --output-volume lower` *(works on lock screen)* |
-| `XF86AudioMute` | Run `swayosd-client --output-volume mute-toggle` *(works on lock screen)* |
-| `XF86AudioMicMute` | Run `swayosd-client --input-volume mute-toggle` *(works on lock screen)* |
-| `XF86MonBrightnessUp` | Run `swayosd-client --brightness +10` *(works on lock screen)* |
-| `XF86MonBrightnessDown` | Run `swayosd-client --brightness -10` *(works on lock screen)* |
+| `XF86AudioRaiseVolume` | Run `noctalia msg volume-up` *(works on lock screen)* |
+| `XF86AudioLowerVolume` | Run `noctalia msg volume-down` *(works on lock screen)* |
+| `XF86AudioMute` | Run `noctalia msg volume-mute` *(works on lock screen)* |
+| `XF86AudioMicMute` | Run `noctalia msg mic-mute` *(works on lock screen)* |
+| `XF86MonBrightnessUp` | Run `noctalia msg brightness-up` *(works on lock screen)* |
+| `XF86MonBrightnessDown` | Run `noctalia msg brightness-down` *(works on lock screen)* |
 | `XF86AudioNext` | Run `playerctl next` *(works on lock screen)* |
 | `XF86AudioPause` | Run `playerctl play-pause` *(works on lock screen)* |
 | `XF86AudioPlay` | Run `playerctl play-pause` *(works on lock screen)* |
@@ -193,8 +196,6 @@ binds see also the [wl-kbptr guide](../wl-kbptr.md).
 
 | Keys | Action |
 | --- | --- |
-| `Print` | Screenshot |
-| `Ctrl+Print` | Screenshot screen |
 | `Alt+Print` | Screenshot window |
 | `Mod+P` | Set dynamic cast window |
 | `Mod+Ctrl+P` | Set dynamic cast monitor |

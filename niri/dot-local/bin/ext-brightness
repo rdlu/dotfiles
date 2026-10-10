@@ -54,7 +54,7 @@ for attempt in 1 2 3
 end
 
 if test -z "$cur"
-    # Synchronous hint => mako replaces the previous one in place instead of
+    # Synchronous hint => a daemon that honours it replaces the previous one instead of
     # stacking a wall of identical errors.
     notify-send -a ext-brightness \
         -h string:x-canonical-private-synchronous:ext-brightness \

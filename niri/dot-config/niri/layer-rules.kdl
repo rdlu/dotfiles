@@ -1,6 +1,6 @@
-// Block out notifications (mako, Noctalia) from screencasts.
+// Block out Noctalia notifications from screencasts.
 layer-rule {
-    match namespace="^(notifications|noctalia-notification)$"
+    match namespace="^noctalia-notification$"
     opacity 0.8
     block-out-from "screencast"
 }
@@ -12,20 +12,15 @@ layer-rule {
     opacity 0.95
 }
 
+// Keep the bar out of screencasts, as the old waybar rule did. Its look
+// (opacity, corners) is Noctalia's own setting now.
 layer-rule {
-    match namespace="waybar"
-    match at-startup=true
-
-    // Properties that apply continuously.
-    opacity 0.8
+    match namespace="^noctalia-bar-"
     block-out-from "screencast"
-    // block-out-from "screen-capture"
-
-    geometry-corner-radius 12
-    place-within-backdrop true
 }
 
+// Wallpaper behind the overview, as wpaperd's was.
 layer-rule {
-    match namespace="^wpaperd-"
+    match namespace="^noctalia-wallpaper$"
     place-within-backdrop true
 }
