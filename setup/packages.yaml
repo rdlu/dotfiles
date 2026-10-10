@@ -331,7 +331,7 @@ desktop:
   - hyprpicker
   - matugen
   - nirius
-  - quickshell
+  - noctalia # desktop shell: bar, notifications, wallpaper, night light
   - selectdefaultapplication-fork-git
   - swaybg
   - swayosd

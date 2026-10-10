@@ -269,7 +269,7 @@ binds {
     Mod+V hotkey-overlay-title="Manage clipboard" {
         spawn "sh" "-c" "cliphist list | fuzzel --dmenu --placeholder clipboard --with-nth 2 | cliphist decode | wl-copy"
     }
-    Mod+B hotkey-overlay-title="Hide Waybar" { spawn "pkill" "-SIGUSR1" "waybar"; }
+    Mod+B hotkey-overlay-title="Toggle Bar" { spawn "sh" "-c" "noctalia msg bar-toggle || pkill -SIGUSR1 waybar"; }
 
     // Toggle tabbed column display mode.
     // Windows in this column will appear as vertical tabs,

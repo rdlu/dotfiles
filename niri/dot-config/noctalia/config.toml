@@ -1,0 +1,24 @@
+# Noctalia v5 (bar, notifications, wallpaper, night light). Validate with
+# `noctalia config validate`; it warns on unknown keys and values.
+
+[wallpaper]
+enabled = true
+directory = "~/Pictures/Wallpapers"
+fill_mode = "center"
+transition_on_startup = false
+
+[wallpaper.automation]
+enabled = true
+interval_seconds = 3600
+order = "random"
+recursive = true
+
+[nightlight]
+enabled = true
+temperature_day = 6500
+temperature_night = 4000
+
+[location]
+custom_schedule = true
+sunrise = "05:45"
+sunset = "18:00"

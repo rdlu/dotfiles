@@ -1,6 +1,6 @@
-// Block out mako notifications from screencasts.
+// Block out notifications (mako, Noctalia) from screencasts.
 layer-rule {
-    match namespace="^notifications$"
+    match namespace="^(notifications|noctalia-notification)$"
     opacity 0.8
     block-out-from "screencast"
 }
