@@ -268,7 +268,7 @@ function onQuery(query)
 
   if vaultStatus ~= "unlocked" then
     local rows = rankRows(text, nil)
-    if #rows == 0 then
+    if #rows == 0 and vaultStatus ~= "unauthenticated" then
       table.insert(rows, hint("action:unlock", noctalia.tr("launcher.vault-locked"), noctalia.tr("launcher.unlock-hint"), "lock"))
     end
     launcher.setResults(query, rows)
