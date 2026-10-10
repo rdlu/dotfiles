@@ -125,9 +125,7 @@ desktop-themes: # niri-window-manager; the themes desktop-theme / theme-tui choo
   - breeze-icons # kde_icon_theme breeze / breeze-dark (mode defaults)
   - capitaine-cursors
   - cosmic-icon-theme
-  - kvantum # kde_scheme KvGnome / KvGnomeDark (mode defaults)
-  - kvantum-theme-materia
-  - materia-gtk-theme
+  - kvantum # KvGnome / KvGnomeDark KDE schemes (theme-tui alternatives to noctalia)
   - orchis-theme
   - papirus-icon-theme
   - pop-gtk-theme
