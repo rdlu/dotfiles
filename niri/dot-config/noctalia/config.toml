@@ -56,6 +56,20 @@ community_ids = ["fuzzel"]
 enable_builtin_templates = true
 builtin_ids = ["gtk3", "gtk4", "kcolorscheme", "qt"]
 
+# Idle (replaces swayidle). Idle inhibitors hold it off: Noctalia's caffeine
+# (`caffeine` / `noctalia msg caffeine-toggle`) and apps playing video.
+[idle]
+behavior_order = ["lock", "screen-off"]
+pre_action_fade_seconds = 5 # dim first; any input cancels
+
+[idle.behavior.lock]
+action = "lock"
+timeout = 300
+
+[idle.behavior.screen-off]
+action = "screen_off" # monitors back on with the first input
+timeout = 600
+
 [lockscreen]
 fingerprint = true # fprintd alongside the password
 transition = ["fade"] # one entry = fixed style; else picked at random
@@ -76,6 +90,7 @@ end = [
     "volume",
     "brightness",
     "battery",
+    "caffeine", # idle inhibitor; where waybar's idle_inhibitor sat
     "control-center",
     "session",
     "clock",

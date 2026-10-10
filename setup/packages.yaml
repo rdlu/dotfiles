@@ -110,7 +110,6 @@ niri-wm: # niri-window-manager (nerd-fonts is a group: pulls all nerd fonts)
   - oo7
   - playerctl # media keys in binds.kdl
   - qt6ct # Qt-widget palette from Noctalia's qt template
-  - swayidle
   - ttf-jetbrains-mono
   - udiskie
   - wl-clipboard

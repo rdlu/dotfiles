@@ -127,10 +127,6 @@ page "Tools" {
         item "SSH/rsync close" icon="\u{f0319}" run="ssh-here off"
     }
 
-    // Caffeine is ON when swayidle is NOT active (caffeine stopped it).
-    item "Caffeine" icon="\u{f0176}" keywords="awake idle" {
-        state "systemctl --user is-active -q swayidle.service && echo off || echo on"
-        when "on" label="Caffeine: ON (keeping awake) → turn OFF" run="caffeine off"
-        when "off" icon="\u{f0faa}" label="Caffeine: OFF → keep awake (turn ON)" run="caffeine on"
-    }
+    // Noctalia's caffeine has no state query; its OSD shows the new state.
+    item "Caffeine (toggle)" icon="\u{f0176}" keywords="awake idle" run="caffeine toggle"
 }

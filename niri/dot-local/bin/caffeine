@@ -1,62 +1,26 @@
 #!/usr/bin/fish
 
-# caffeine — temporarily keep the screen awake (no auto-lock, no blanking).
+# caffeine — temporarily keep the screen awake (no idle lock, no blanking).
 #
-# Works by pausing swayidle.service, the daemon that drives every idle action:
-# idle-lock (5 min), monitor blank (10 min) and the before-sleep lock. While
-# caffeine is ON, none of them fire.
+# Thin wrapper over Noctalia's caffeine, an idle inhibitor that its idle
+# behaviors ([idle] in noctalia/config.toml) respect. Noctalia's OSD shows the
+# new state; it has no state query, so there is no `status`. Runtime only:
+# restarting Noctalia or logging out turns it off. Suspend still locks first
+# (Noctalia's lock_before_suspend), caffeine or not.
 #
-# NOT persistent: a reboot restarts swayidle, so you can never accidentally
-# leave the machine permanently un-locking.
-#
-# CAVEAT: because swayidle is what locks before suspend, caffeine ON means a
-# suspend (lid close / `systemctl suspend`) will NOT lock the screen. Use it
-# while you're at the machine, not before walking away.
-#
-# Independent of Noctalia's caffeine toggle (`noctalia msg caffeine-toggle`,
-# an idle inhibitor of its own); either alone keeps the screen awake.
-#
-# Usage: caffeine [on | off | toggle | status]   (default: toggle)
-
-set -l unit swayidle.service
-
-# Caffeine is ON when swayidle is NOT active (we stopped it).
-function _caffeinated -a unit
-    not systemctl --user is-active -q $unit
-end
-
-function _notify -a state
-    command -q notify-send; or return
-    if test "$state" = on
-        notify-send -a caffeine -i preferences-desktop-screensaver \
-            "☕ Caffeine ON" "Auto-lock and screen blanking paused."
-    else
-        notify-send -a caffeine -i preferences-desktop-screensaver \
-            "💤 Caffeine OFF" "Auto-lock and screen blanking restored."
-    end
-end
+# Usage: caffeine [on | off | toggle]   (default: toggle)
 
 set -l cmd $argv[1]
 test -n "$cmd"; or set cmd toggle
 
 switch $cmd
     case on
-        systemctl --user stop $unit
-        _notify on
+        noctalia msg caffeine-enable
     case off
-        systemctl --user start $unit
-        _notify off
+        noctalia msg caffeine-disable
     case toggle
-        if _caffeinated $unit
-            systemctl --user start $unit
-            _notify off
-        else
-            systemctl --user stop $unit
-            _notify on
-        end
-    case status
-        _caffeinated $unit; and echo on; or echo off
+        noctalia msg caffeine-toggle
     case '*'
-        echo "usage: caffeine [on|off|toggle|status]" >&2
+        echo "usage: caffeine [on|off|toggle]" >&2
         exit 2
 end
