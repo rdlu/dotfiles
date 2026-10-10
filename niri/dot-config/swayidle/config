@@ -1,19 +1,14 @@
 # Driven by the systemd user unit swayidle.service (`swayidle -w`).
 #
-# Every lock trigger funnels through logind's session-lock signal
-# (`loginctl lock-session`), so there is ONE lock code path. swayidle's `lock`
-# handler is the only place the locker is launched. `pidof swaylock || swaylock`
-# guards against stacking a second instance if a lock is requested while already
-# locked. swaylock daemonizes (-f / `daemonize` in its config), so it returns
-# promptly and — unlike hyprlock — renders statically enough that niri's idle
-# monitor power-off actually holds while locked.
-lock 'pidof swaylock || swaylock -f'
+# Noctalia is the locker. Every lock trigger funnels through logind's
+# session-lock signal (`loginctl lock-session`), which Noctalia's lock screen
+# listens to, so there is ONE lock code path. It also holds its own logind
+# sleep inhibitor and locks before suspend ([lockscreen] lock_before_suspend,
+# on by default), so there is no `lock` or `before-sleep` handler here: a
+# second locker would only race it, and niri refuses whichever loses.
+# swaylock-effects is still installed; to go back, restore the handlers from
+# git history.
 
 # Idle: at 5 min request a lock, at ~10 min blank the monitors.
 timeout 301 'loginctl lock-session'
 timeout 601 'niri msg action power-off-monitors'
-
-# Lock before suspend. `loginctl lock-session` returns immediately (it just emits
-# the Lock signal), so it never blocks the suspend; the `lock` handler above does
-# the actual work.
-before-sleep 'loginctl lock-session'

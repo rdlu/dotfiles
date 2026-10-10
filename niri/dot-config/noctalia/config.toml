@@ -41,3 +41,8 @@ freeze_screen = true
 [theme.templates]
 enable_community_templates = true
 community_ids = ["fuzzel"]
+
+[lockscreen]
+fingerprint = true # fprintd alongside the password
+transition = ["fade"] # one entry = fixed style; else picked at random
+transition_duration = 250 # ms
