@@ -156,11 +156,7 @@ systemd-niri-config-install:
 noctalia-reload:
   @mise run noctalia-reload
 
-[group("niri-reload")]
-swayidle-reload:
-  @mise run swayidle-reload
-
-# Keep the screen awake (pause auto-lock + blanking). Also on the power menu.
+# Keep the screen awake (Noctalia's caffeine: no idle lock or blanking). Also on the power menu.
 [group("niri-reload")]
 caffeine action="toggle":
   @mise run caffeine "{{ action }}"

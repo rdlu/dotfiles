@@ -60,10 +60,9 @@ tree-folding conflicts.
 just services-enable
 ```
 
-Enables the expected systemd **user** services (mpd, syncthing if installed,
-solaar) and wires the niri session helpers (Noctalia, swayidle)
-to start with `niri.service` via `add-wants`. The swayosd backend is a
-**system** unit and gets `sudo systemctl enable` instead.
+Enables the expected systemd **user** services (mpd, mpd-mpris, syncthing if
+installed, solaar) and Noctalia, the niri session shell (bar, notifications,
+lock, idle), which starts with the graphical session.
 
 ## Tool versions: pacman + mise
 

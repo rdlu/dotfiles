@@ -27,6 +27,7 @@ binds see also the [wl-kbptr guide](../wl-kbptr.md).
 | `Mod+XF86MonBrightnessUp` | External monitor brightness up *(works on lock screen)* |
 | `Mod+XF86MonBrightnessDown` | External monitor brightness down *(works on lock screen)* |
 | `Mod+Shift+Ctrl+S` | Swap Workspaces Between Monitors |
+| `Alt+Tab` | Run `noctalia msg window-switcher hold` |
 | `Mod+Period` | Emoji Finder |
 | `Mod+V` | Manage clipboard |
 | `Mod+B` | Toggle Bar |
