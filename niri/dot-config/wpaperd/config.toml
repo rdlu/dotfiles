@@ -1,8 +1,0 @@
-[default]
-duration = "1h"
-mode = "center"
-# mode = "fit-border-color"
-initial-transition = false
-
-[any]
-path = "~/Pictures/Wallpapers"
