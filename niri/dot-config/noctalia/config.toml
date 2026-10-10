@@ -108,31 +108,38 @@ end = [
 
 # Capsule groups: widgets sharing one pill. Accordion groups collapse to their
 # first widget and unfold on hover. Built in Settings → Bar → Bar Widgets.
+# opacity is per group: bar-level capsule_opacity does not reach grouped pills.
 [[bar.default.capsule_group]]
 id = "tray"
+opacity = 0.4
 members = [ "tray" ]
 
 [[bar.default.capsule_group]]
 id = "tools"
+opacity = 0.4
 members = [ "clipboard", "recorder", "claude_sessions" ]
 accordion = true
 
 [[bar.default.capsule_group]]
 id = "connectivity"
+opacity = 0.4
 members = [ "network", "bluetooth" ]
 
 [[bar.default.capsule_group]]
 id = "controls"
+opacity = 0.4
 members = [ "volume", "brightness" ]
 
 [[bar.default.capsule_group]]
 id = "power"
+opacity = 0.4
 members = [ "battery", "power_profile", "caffeine" ] # caffeine = idle inhibitor
 accordion = true
 
 # Pomodoro and world clock (plugins) share the clock's pill.
 [[bar.default.capsule_group]]
 id = "time"
+opacity = 0.4
 members = [ "pomodoro", "world_clock", "clock" ]
 
 # Tray icons live in a drawer behind one button.
