@@ -1,7 +1,7 @@
 #!/usr/bin/fish
 
-# Adjust the external monitor's brightness over DDC/CI (ddcutil) and show a
-# swayosd popup identical to the internal-panel brightness OSD.
+# Adjust the external monitor's brightness over DDC/CI (ddcutil) and show
+# Noctalia's brightness OSD, the same popup the internal-panel keys show.
 #
 # Usage:  ext-brightness up      # step up   (+10)
 #         ext-brightness down    # step down (-10)
@@ -15,10 +15,11 @@
 # avoid the leading '-' that just/mise would read as a flag), and usable from a
 # shell since ~/.local/bin is on PATH.
 #
-# Why a script and not swayosd's own --brightness: swayosd drives the sysfs
-# backlight, which only the internal laptop panel has. External monitors expose
-# brightness as VCP feature 0x10 over DDC/CI, so we set that with ddcutil and
-# feed the resulting value into swayosd's --custom-progress to match the OSD.
+# Why a script when Noctalia drives DDC too (`noctalia msg brightness-up DP-2`):
+# this one finds the monitor itself (the connector differs per host), takes
+# absolute levels and custom steps, and serializes key-repeat on the slow
+# DDC/CI bus. It sets VCP feature 0x10 with ddcutil and only borrows
+# Noctalia's OSD (`noctalia msg brightness-osd <percent>`).
 
 # Serialize instances. DDC/CI is a slow, single-owner i2c bus: holding a
 # brightness key makes key-repeat spawn many overlapping ddcutil calls that
@@ -95,10 +96,7 @@ test $target -lt 0; and set target 0
 # --noverify skips the post-set readback so key-repeat stays snappy over DDC.
 ddcutil setvcp --noverify $vcp $target --display $disp 2>/dev/null
 
-# Mirror the internal OSD: progress bar + brightness icon + a percent label.
-if type -q swayosd-client
-    swayosd-client \
-        --custom-progress (math "$target / $max") \
-        --custom-progress-text "$target%" \
-        --custom-icon display-brightness-symbolic
+# Mirror the internal OSD.
+if type -q noctalia
+    noctalia msg brightness-osd (math "round($target * 100 / $max)") >/dev/null 2>&1
 end
