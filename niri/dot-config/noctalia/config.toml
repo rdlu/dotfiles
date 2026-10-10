@@ -80,7 +80,8 @@ position = "bottom"
 background_opacity = 0.7
 margin_ends = 16
 font_scale = 1.1 # iMWritingDuo has no medium weight and bar font_weight had no visible effect
-center = [ "active_window", "spacer_2", "media" ]
+start = [ "launcher", "wallpaper", "workspaces", "taskbar" ] # Noctalia's default + taskbar
+center = [ "media" ] # the focused window's title is in the taskbar
 end = [
     "tray",
     "notifications",
@@ -97,9 +98,12 @@ end = [
     "clock",
 ]
 
-# Instances referenced by name in the bar lists above.
-[widget.spacer_2]
-type = "spacer"
+# Icons for the windows on the current workspace, so columns scrolled off
+# screen stay one click away. Click focuses, middle-click closes.
+[widget.taskbar]
+only_active_workspace = true
+show_window_title = true
+inactive_opacity = 0.5 # dims unfocused windows
 
 # Workspace pills show niri's workspace names (base, brain, comms, games;
 # unnamed ones fall back to their number).
