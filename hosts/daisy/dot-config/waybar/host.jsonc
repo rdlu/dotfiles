@@ -1,7 +1,0 @@
-{
-  // daisy (AMD Ryzen) — default sensor, no explicit thermal-zone needed
-  "temperature": {
-    "critical-threshold": 80,
-    "format": "󰔏 {temperatureC}°C"
-  }
-}
