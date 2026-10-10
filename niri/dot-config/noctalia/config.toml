@@ -92,6 +92,7 @@ margin_edge = 4
 margin_ends = 2
 margin_opposite_edge = 2
 concave_edge_corners = false
+capsule_thickness = 0.86
 font_scale = 1.1 # iMWritingDuo has no medium weight and bar font_weight had no visible effect
 start = [ "control-center", "launcher", "wallpaper", "workspaces", "taskbar", "media" ]
 center = []
@@ -102,8 +103,7 @@ end = [
     "group:connectivity",
     "group:controls",
     "group:power",
-    "world_clock", # plugin: click for the zones panel
-    "clock",
+    "group:time",
 ]
 
 # Capsule groups: widgets sharing one pill. Accordion groups collapse to their
@@ -129,6 +129,11 @@ members = [ "volume", "brightness" ]
 id = "power"
 members = [ "battery", "power_profile", "caffeine" ] # caffeine = idle inhibitor
 accordion = true
+
+# Pomodoro and world clock (plugins) share the clock's pill.
+[[bar.default.capsule_group]]
+id = "time"
+members = [ "pomodoro", "world_clock", "clock" ]
 
 # Tray icons live in a drawer behind one button.
 [widget.tray]
@@ -167,6 +172,10 @@ type = "noctalia/world_clock:bar"
 [widget.claude_sessions]
 type = "lfdominguez/claude-sessions:bar"
 
+# Pomodoro plugin (25/5/15, long break every 4). No session history of its own.
+[widget.pomodoro]
+type = "thepunkoff/pomodoro:widget"
+
 [battery]
 warning_threshold = 20
 
@@ -194,7 +203,7 @@ follow_focused_output = true
 # Plugins come from the official/community git catalogs. The GUI writes its own
 # toggles to ~/.local/state/noctalia/settings.toml; this list is merged with it.
 [plugins]
-enabled = [ "noctalia/translator", "noctalia/screen_recorder", "noctalia/world_clock", "rdlu/bitwarden", "kenn/keybind-cheatsheet", "lfdominguez/claude-sessions" ]
+enabled = [ "noctalia/translator", "noctalia/screen_recorder", "noctalia/world_clock", "rdlu/bitwarden", "kenn/keybind-cheatsheet", "lfdominguez/claude-sessions", "thepunkoff/pomodoro" ]
 
 # Declaring any source replaces the built-in list, so official and community
 # are spelled out too. "local" = forks stowed from this repo.
@@ -218,3 +227,7 @@ kind = "path"
 location = "~/.config/noctalia/plugins"
 enabled = true
 
+# Shell sounds are off, so the pomodoro alarm plays its bundled file via ffplay.
+[plugin_settings."thepunkoff/pomodoro"]
+use-bundled-alarm-sound = true
+bypass-noctalia-sound-globals = true
