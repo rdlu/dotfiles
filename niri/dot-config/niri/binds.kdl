@@ -12,6 +12,7 @@ binds {
     // Mod-Shift-/, which is usually the same as Mod-?,
     // shows a list of important hotkeys.
     Mod+Shift+Slash hotkey-overlay-title="Dotfiles Docs (local)" { spawn "~/.local/bin/docs-app"; }
+    Mod+F1 hotkey-overlay-title="Keybinding Cheatsheet: Noctalia" { spawn "noctalia" "msg" "panel-toggle" "kenn/keybind-cheatsheet:cheatsheet"; }
 
     // Suggested binds for running programs: terminal, app launcher, screen locker.
     Mod+T hotkey-overlay-title="Open a Terminal: ghostty" { spawn "ghostty"; }
