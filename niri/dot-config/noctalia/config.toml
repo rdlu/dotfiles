@@ -49,4 +49,25 @@ transition = ["fade"] # one entry = fixed style; else picked at random
 transition_duration = 250 # ms
 
 [bar.default]
+position = "bottom"
+background_opacity = 0.7
+margin_ends = 16
 font_scale = 1.1 # iMWritingDuo has no medium weight and bar font_weight had no visible effect
+center = [ "active_window", "spacer_2", "media" ]
+end = [
+    "tray",
+    "notifications",
+    "clipboard",
+    "network",
+    "bluetooth",
+    "volume",
+    "brightness",
+    "battery",
+    "control-center",
+    "session",
+    "clock",
+]
+
+# Instances referenced by name in the bar lists above.
+[widget.spacer_2]
+type = "spacer"
