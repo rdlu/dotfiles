@@ -90,6 +90,7 @@ end = [
     "volume",
     "brightness",
     "battery",
+    "power_profile",
     "caffeine", # idle inhibitor; where waybar's idle_inhibitor sat
     "control-center",
     "session",
@@ -108,6 +109,15 @@ enable_ddcutil = true # external monitors over DDC/CI (ddcutil is in packages.ya
 
 [calendar]
 enabled = true
+
+# Events from the Google calendars vdirsyncer already syncs for khal/chroncal
+# (vdirsyncer.timer, every 15 min), so no second Google login. Names come
+# from each calendar's displayname file.
+[calendar.account.google]
+type = "vdir"
+name = "Google"
+path = "~/.local/share/calendars/google"
+calendars = [] # all
 
 [control_center.calendar]
 show_week_numbers = true
