@@ -7,6 +7,12 @@ Requisite=graphical-session.target
 
 [Service]
 ExecStart=/usr/bin/noctalia
+# Plugin catalogs are fetched over https://github.com/noctalia-dev/; the global
+# gitconfig rewrites github HTTPS to SSH (a key tap per op, BatchMode fails).
+# A longer insteadOf match maps these repos back to HTTPS, for this unit only.
+Environment=GIT_CONFIG_COUNT=1
+Environment=GIT_CONFIG_KEY_0=url.https://github.com/noctalia-dev/.insteadOf
+Environment=GIT_CONFIG_VALUE_0=https://github.com/noctalia-dev/
 Restart=on-failure
 
 [Install]
