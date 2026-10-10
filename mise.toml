@@ -459,6 +459,9 @@ run = [
   # mpd.service is already running, starting the socket fails ("already active").
   'systemctl --user enable --now mpd.service || true',
   'systemctl --user enable mpd.socket || true',
+  # MPRIS bridge: Noctalia's media widget and the playerctl media keys only see
+  # MPD (rmpc) through it.
+  'systemctl --user enable --now mpd-mpris.service || true',
   # syncthing is install-optional (see syncthing-file-sync); `|| true` skips if absent.
   'systemctl --user enable --now syncthing.service || true',
   'systemctl --user enable solaar.service || true',
@@ -583,7 +586,7 @@ done
   '''host="$(hostname)"; [ -d "hosts/$host" ] && echo "  ok    hosts/$host present" || echo "  warn  no hosts/$host overlay"''',
   '''echo -e "\033[1;33mUser services enabled\033[0m"''',
   '''
-for s in mpd.service noctalia.service swayidle.service; do
+for s in mpd.service mpd-mpris.service noctalia.service swayidle.service; do
   echo "  $(systemctl --user is-enabled "$s" 2>/dev/null || echo missing)  $s"
 done
 ''',
