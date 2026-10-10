@@ -24,6 +24,7 @@ binds see also the [wl-kbptr guide](../wl-kbptr.md).
 | `Mod+E` | File Manager: superfile |
 | `Mod+Y` | File Manager: yazi |
 | `Mod+Shift+C` | Color Picker: hyprpicker |
+| `Mod+Ctrl+N` | Notifications: toggle Do Not Disturb |
 | `Mod+XF86MonBrightnessUp` | External monitor brightness up *(works on lock screen)* |
 | `Mod+XF86MonBrightnessDown` | External monitor brightness down *(works on lock screen)* |
 | `Mod+Shift+Ctrl+S` | Swap Workspaces Between Monitors |
