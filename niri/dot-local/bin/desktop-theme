@@ -60,7 +60,8 @@ CONF = HOME / ".config/desktop-theme.conf"
 GTK_INIS = [HOME / ".config/gtk-3.0/settings.ini", HOME / ".config/gtk-4.0/settings.ini"]
 KDEGLOBALS = HOME / ".config/kdeglobals"
 NIRI_INPUTS = HOME / ".config/niri/inputs.kdl"
-SCHEME_DIR = Path("/usr/share/color-schemes")
+# user dir first: Noctalia's kde template renders noctalia.colors there
+SCHEME_DIRS = [HOME / ".local/share/color-schemes", Path("/usr/share/color-schemes")]
 THEME_DIRS = [HOME / ".local/share/themes", HOME / ".themes", Path("/usr/share/themes")]
 ICON_DIRS = [HOME / ".local/share/icons", HOME / ".icons", Path("/usr/share/icons")]
 IFACE = "org.gnome.desktop.interface"
@@ -70,13 +71,14 @@ FLATHUB_CACHE = Path(os.environ.get("XDG_RUNTIME_DIR") or "/tmp") / "desktop-the
 FLATHUB_CACHE_TTL = 600  # seconds
 
 MODE_DEFAULTS = {
-    "dark": {"gtk_theme": "adw-gtk3-dark", "kde_scheme": "KvGnomeDark", "kde_icon_theme": "breeze-dark"},
-    "light": {"gtk_theme": "adw-gtk3", "kde_scheme": "KvGnome", "kde_icon_theme": "breeze"},
+    # noctalia follows Noctalia's own dark/light palette, so both modes use it
+    "dark": {"gtk_theme": "adw-gtk3-dark", "kde_scheme": "noctalia", "kde_icon_theme": "breeze-dark"},
+    "light": {"gtk_theme": "adw-gtk3", "kde_scheme": "noctalia", "kde_icon_theme": "breeze"},
 }
 # fixed choices offered for the non-theme keys (`list --plain`)
 CURSOR_SIZES = ["16", "24", "32", "48", "64"]
 # every conf key, in file order, with its default
-DEFAULTS = {"mode": "dark", "gtk_theme": "adw-gtk3-dark", "kde_scheme": "KvGnomeDark",
+DEFAULTS = {"mode": "dark", "gtk_theme": "adw-gtk3-dark", "kde_scheme": "noctalia",
             "icon_theme": "Adwaita", "kde_icon_theme": "breeze-dark",
             "cursor_theme": "Adwaita", "cursor_size": "24"}
 
@@ -327,6 +329,10 @@ def find_dir(bases, name, marker):
     return next((b / name for b in bases if (b / name / marker).exists()), None)
 
 
+def scheme_file(name):
+    return next((p for b in SCHEME_DIRS if (p := b / f"{name}.colors").is_file()), None)
+
+
 def gtk_theme_installed(name):
     return any((b / name).is_dir() for b in THEME_DIRS)
 
@@ -339,7 +345,7 @@ def installed(kind):
                 names |= {d.name for d in b.iterdir()
                           if (d / "gtk-3.0").is_dir() or (d / "gtk-4.0").is_dir()}
     elif kind == "kde":
-        names = {f.stem for f in SCHEME_DIR.glob("*.colors")}
+        names = {f.stem for b in SCHEME_DIRS if b.is_dir() for f in b.glob("*.colors")}
     else:
         for b in ICON_DIRS:
             if not b.is_dir():
@@ -488,13 +494,12 @@ def apply(conf, install_flatpak=True):
     for path in GTK_INIS:
         set_ini_keys(path, "Settings", ini)
 
-    scheme_file = SCHEME_DIR / f"{kde_scheme}.colors"
-    if not scheme_file.is_file():
-        warn(f"KDE color scheme {scheme_file} not installed (pacman pkg kvantum for "
-             "KvGnome*); skipped kdeglobals colors")
-        scheme_file = None
-    if scheme_file or kde_icon_ok:
-        write_kdeglobals(kde_scheme, scheme_file, kde_icon if kde_icon_ok else None)
+    scheme = scheme_file(kde_scheme)
+    if scheme is None:
+        warn(f"KDE color scheme {kde_scheme}.colors not installed (noctalia: Noctalia's kde "
+             "template; KvGnome*: pacman pkg kvantum); skipped kdeglobals colors")
+    if scheme or kde_icon_ok:
+        write_kdeglobals(kde_scheme, scheme, kde_icon if kde_icon_ok else None)
 
     if cursor_ok:
         set_niri_cursor(cursor, size)
