@@ -37,13 +37,19 @@ screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
 include "layer-rules.kdl"
 
 // workspaces
-workspace "base"
+// base and comms live on the laptop panel. eDP-1 is the internal connector on
+// both hosts and never moves, so it's safe to name it here.
+workspace "base" {
+  open-on-output "eDP-1"
+}
 // Follow the external screen by EDID name, the way outputs.kdl addresses it,
 // so brain lands there whichever connector the dock hands it (DP-1/DP-2/...).
 workspace "brain" {
   open-on-output "Invalid Vendor Codename - RTK HG540T40 0x01010101"
 }
-workspace "comms"
+workspace "comms" {
+  open-on-output "eDP-1"
+}
 // Same screen as brain, same reason: the connector varies, the EDID doesn't.
 workspace "games" {
   open-on-output "Invalid Vendor Codename - RTK HG540T40 0x01010101"
