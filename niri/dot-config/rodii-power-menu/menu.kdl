@@ -64,12 +64,12 @@ page "Power" {
         // Live state: the action that WOULD happen, plus the default device.
         // pactl answers ~2x faster than wpctl; the device name (detail) is
         // only descriptive, so it refreshes in the background.
-        item "Mute speakers" icon="\u{f057e}" run="swayosd-client --output-volume mute-toggle" keywords="mute unmute" {
+        item "Mute speakers" icon="\u{f057e}" run="noctalia msg volume-mute" keywords="mute unmute" {
             state "pactl get-sink-mute @DEFAULT_SINK@"
             when "Mute: yes" icon="\u{f0581}" label="Unmute speakers"
             detail #"wpctl inspect @DEFAULT_AUDIO_SINK@ | awk -F'"' '/node.nick/ {n=$2} /node.description/ {d=$2} END {print n ? n : d}'"#
         }
-        item "Mute mic" icon="\u{f036c}" run="swayosd-client --input-volume mute-toggle" keywords="mute unmute" {
+        item "Mute mic" icon="\u{f036c}" run="noctalia msg mic-mute" keywords="mute unmute" {
             state "pactl get-source-mute @DEFAULT_SOURCE@"
             when "Mute: yes" icon="\u{f036d}" label="Unmute mic"
             detail #"wpctl inspect @DEFAULT_AUDIO_SOURCE@ | awk -F'"' '/node.nick/ {n=$2} /node.description/ {d=$2} END {print n ? n : d}'"#

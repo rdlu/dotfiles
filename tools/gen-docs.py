@@ -339,7 +339,7 @@ def gen_herdr() -> str:
 NIRI_CATEGORIES = [
     # (title, predicate on (keys, action))
     ("Media, volume & brightness",
-     lambda k, a: k.startswith("XF86") or "swayosd" in a or "playerctl" in a),
+     lambda k, a: k.startswith("XF86") or "playerctl" in a),
     ("Mouse warp (wl-kbptr)",
      lambda k, a: "wl-kbptr" in a),
     ("Apps & launchers",

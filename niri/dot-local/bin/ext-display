@@ -10,7 +10,7 @@
 # q (or Esc) quits.
 #
 # Exposed as `mise run ext-display` / `just ext-display`; also on PATH. For a
-# one-shot brightness step (and the swayosd OSD) use `ext-brightness` instead;
+# one-shot brightness step (and Noctalia's OSD) use `ext-brightness` instead;
 # this is the interactive panel.
 #
 # CAVEAT on input switching: this HG540T40 ignores DDC input-source *writes*
@@ -64,9 +64,8 @@ function _pick_level --argument-names code label
     test "$key" = 0; and set pick $max
     ddcutil setvcp --noverify $code $pick --display $DISP 2>/dev/null
     # Mirror the OSD for brightness, matching the keybind behaviour.
-    if test "$code" = 10; and type -q swayosd-client
-        swayosd-client --custom-progress (math "$pick / $max") \
-            --custom-progress-text "$pick%" --custom-icon display-brightness-symbolic
+    if test "$code" = 10; and type -q noctalia
+        noctalia msg brightness-osd (math "round($pick * 100 / $max)") >/dev/null 2>&1
     end
     _toast "$label -> $pick"
 end
