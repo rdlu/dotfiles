@@ -145,4 +145,27 @@ follow_focused_output = true
 # Plugins come from the official/community git catalogs. The GUI writes its own
 # toggles to ~/.local/state/noctalia/settings.toml; this list is merged with it.
 [plugins]
-enabled = [ "noctalia/translator", "noctalia/screen_recorder", "noctalia/bitwarden" ]
+enabled = [ "noctalia/translator", "noctalia/screen_recorder", "rdlu/bitwarden" ]
+
+# Declaring any source replaces the built-in list, so official and community
+# are spelled out too. "local" = forks stowed from this repo.
+[[plugins.source]]
+name = "official"
+kind = "git"
+location = "https://github.com/noctalia-dev/official-plugins"
+enabled = true
+
+[[plugins.source]]
+name = "community"
+kind = "git"
+location = "https://github.com/noctalia-dev/community-plugins"
+enabled = true
+
+# rdlu/bitwarden = noctalia/bitwarden with fuzzy matching in /bw (actions and
+# vault items ranked by what you type).
+[[plugins.source]]
+name = "local"
+kind = "path"
+location = "~/.config/noctalia/plugins"
+enabled = true
+

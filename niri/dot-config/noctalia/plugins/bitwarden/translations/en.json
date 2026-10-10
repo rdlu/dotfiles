@@ -1,0 +1,149 @@
+{
+  "copied": "Copied to clipboard",
+  "errors": {
+    "api-key-required": "Enter both client id and client secret",
+    "encode-failed": "Could not encode unlock request",
+    "field-empty": "That field is empty for this item",
+    "generate-failed": "Could not generate a password",
+    "invalid-response": "Invalid response from bw serve",
+    "lock-failed": "Could not lock the vault",
+    "login-failed": "Could not log in to Bitwarden CLI",
+    "logout-failed": "Could not log out of Bitwarden CLI",
+    "password-required": "Enter your master password",
+    "request-failed": "Request failed",
+    "sync-failed": "Could not sync the vault",
+    "vault-locked": "Vault is locked"
+  },
+  "generated": "Generated password copied",
+  "generated-passphrase": "Generated passphrase copied",
+  "launcher": {
+    "generate": "Generate Password",
+    "generate-hint": "Copy a new password (settings control length/charset)",
+    "generate-passphrase": "Generate Passphrase",
+    "generate-passphrase-hint": "Copy a new passphrase",
+    "lock": "Lock Vault",
+    "lock-hint": "Lock the local bw serve session",
+    "login": "Log In",
+    "login-hint": "Log in with your personal API key",
+    "logout": "Log Out",
+    "logout-hint": "Stop serve and log out of the Bitwarden CLI",
+    "no-matches": "No Matches",
+    "not-logged-in": "Not logged in to Bitwarden CLI",
+    "press-enter": "Press Enter to copy",
+    "serve-down": "bw serve Not Reachable",
+    "serve-down-hint": "Start the local API, then unlock",
+    "start-serve": "Start bw serve",
+    "sync": "Sync Vault",
+    "sync-hint": "Pull latest vault data from the server",
+    "try-different": "Try a different search",
+    "unlock": "Unlock Vault",
+    "unlock-hint": "Open the password prompt",
+    "vault-locked": "Vault locked"
+  },
+  "locked": "Vault locked",
+  "logged-in": "Logged in, unlock with your master password",
+  "logged-out": "Logged out of Bitwarden CLI",
+  "panel": {
+    "client-id-label": "Client ID",
+    "client-id-placeholder": "user.…",
+    "client-secret-label": "Client Secret",
+    "client-secret-placeholder": "Client secret",
+    "close": "Cancel",
+    "login": "Log In",
+    "login-blurb": "From the web vault: Settings → Security → Keys → View API key. You can also run bw login once in a terminal instead.",
+    "password-label": "Master password",
+    "password-placeholder": "Master password",
+    "unlock": "Unlock"
+  },
+  "settings": {
+    "auto_serve": {
+      "description": "Start bw serve on 127.0.0.1 when it is not already reachable",
+      "label": "Auto-Start Serve"
+    },
+    "clear_clipboard_seconds": {
+      "description": "Clear the clipboard after this many seconds if it still holds the copied value (0 disables clearing)",
+      "label": "Clear Clipboard (Seconds)"
+    },
+    "copy_field": {
+      "description": "Which field to copy when activating a launcher result",
+      "label": "Copy Field",
+      "options": {
+        "password": "Password",
+        "totp": "TOTP",
+        "uri": "URI",
+        "username": "Username"
+      }
+    },
+    "gen_length": {
+      "description": "Length of generated passwords",
+      "label": "Password Length"
+    },
+    "gen_lowercase": {
+      "description": "Include lowercase letters in generated passwords",
+      "label": "Include Lowercase"
+    },
+    "gen_number": {
+      "description": "Include digits in generated passwords",
+      "label": "Include Numbers"
+    },
+    "gen_passphrase_capitalize": {
+      "description": "Capitalize each word in generated passphrases",
+      "label": "Capitalize Passphrase Words"
+    },
+    "gen_passphrase_include_number": {
+      "description": "Append a number to generated passphrases",
+      "label": "Include Number in Passphrase"
+    },
+    "gen_passphrase_separator": {
+      "description": "Separator between passphrase words (e.g. - or space)",
+      "label": "Passphrase Separator"
+    },
+    "gen_passphrase_words": {
+      "description": "Number of words in generated passphrases",
+      "label": "Passphrase Words"
+    },
+    "gen_special": {
+      "description": "Include special characters in generated passwords",
+      "label": "Include Special Characters"
+    },
+    "gen_uppercase": {
+      "description": "Include uppercase letters in generated passwords",
+      "label": "Include Uppercase"
+    },
+    "hide_actions_when_searching": {
+      "description": "Hide the pinned actions (generate, lock, sync, etc.) once you start typing, so matching vault items appear first",
+      "label": "Hide Actions While Searching"
+    },
+    "notify_on_copy": {
+      "description": "Show a notification after copying a vault field or generated secret",
+      "label": "Notify on Copy"
+    },
+    "serve_port": {
+      "description": "Local port for bw serve (bound to 127.0.0.1 only)",
+      "label": "Serve Port"
+    },
+    "server_url": {
+      "description": "Bitwarden server URL for login (empty = default US cloud). Example: https://vault.bitwarden.eu",
+      "label": "Server URL"
+    },
+    "vault_timeout": {
+      "description": "Auto-lock the local bw serve vault after inactivity, when Noctalia restarts, or never (stays unlocked until you lock/logout or serve stops, e.g. reboot)",
+      "label": "Vault Timeout",
+      "options": {
+        "30": "30 minutes",
+        "60": "1 hour",
+        "240": "4 hours",
+        "custom": "Custom",
+        "never": "Never (Until Serve Stops)",
+        "on_restart": "On Noctalia Restart"
+      }
+    },
+    "vault_timeout_custom_minutes": {
+      "description": "Minutes of inactivity before auto-lock when Vault Timeout is Custom",
+      "label": "Custom Timeout (Minutes)"
+    }
+  },
+  "synced": "Vault synced",
+  "title": "Bitwarden",
+  "unlocked": "Vault unlocked"
+}
