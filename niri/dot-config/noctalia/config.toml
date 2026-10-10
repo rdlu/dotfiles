@@ -39,6 +39,11 @@ save_to_file = true
 copy_to_clipboard = true
 freeze_screen = true
 
+[theme]
+source = "builtin"
+builtin = "Tokyo-Night"
+pure_black_dark = true
+
 [theme.templates]
 enable_community_templates = true
 community_ids = ["fuzzel"]
@@ -71,3 +76,18 @@ end = [
 # Instances referenced by name in the bar lists above.
 [widget.spacer_2]
 type = "spacer"
+
+[battery]
+warning_threshold = 20
+
+[brightness]
+enable_ddcutil = true # external monitors over DDC/CI (ddcutil is in packages.yaml)
+
+[calendar]
+enabled = true
+
+[control_center.calendar]
+show_week_numbers = true
+
+[notification]
+follow_focused_output = true
