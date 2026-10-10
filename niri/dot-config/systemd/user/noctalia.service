@@ -1,0 +1,13 @@
+[Unit]
+Description=Noctalia desktop shell (bar, notifications, wallpaper, night light)
+Documentation=https://docs.noctalia.dev/
+PartOf=graphical-session.target
+After=graphical-session.target
+Requisite=graphical-session.target
+
+[Service]
+ExecStart=/usr/bin/noctalia
+Restart=on-failure
+
+[Install]
+WantedBy=graphical-session.target
