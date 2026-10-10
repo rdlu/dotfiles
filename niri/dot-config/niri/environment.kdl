@@ -5,6 +5,10 @@ environment {
     // DISPLAY ":0"
     GDK_BACKEND "wayland,x11,*"
     QT_QPA_PLATFORM "wayland;xcb"
+    // Qt-widget apps (Okular...) take their palette from qt6ct, which reads
+    // Noctalia's qt template (qt6ct/colors/noctalia.conf). KDE colour-scheme
+    // users (Filelight...) read kdeglobals instead; both carry the same palette.
+    QT_QPA_PLATFORMTHEME "qt6ct"
     // QT_STYLE_OVERRIDE "kvantum"
     // SDL_VIDEODRIVER "wayland"
     // LD_PRELOAD "/usr/lib/libSDL2-2.0.so.0"

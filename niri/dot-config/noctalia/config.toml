@@ -47,6 +47,14 @@ pure_black_dark = true
 [theme.templates]
 enable_community_templates = true
 community_ids = ["fuzzel"]
+# Colours only: desktop-theme still picks the themes (desktop-theme.conf).
+# gtk3/gtk4 import noctalia.css on top of adw-gtk3; kcolorscheme renders
+# ~/.local/share/color-schemes/noctalia.colors for kde_scheme=noctalia; qt
+# renders qt6ct/colors/noctalia.conf (qt6ct.conf, QT_QPA_PLATFORMTHEME).
+# KDE apps with their own colour-scheme menu (Okular, Krita) ignore all of
+# this off Plasma and fall back to light Breeze: pick "noctalia" in that menu.
+enable_builtin_templates = true
+builtin_ids = ["gtk3", "gtk4", "kcolorscheme", "qt"]
 
 [lockscreen]
 fingerprint = true # fprintd alongside the password
