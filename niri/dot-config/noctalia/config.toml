@@ -28,6 +28,14 @@ launch_apps_as_systemd_services = true # own unit per app, so restarting noctali
 font_family = "iMWritingDuo Nerd Font Propo"
 polkit_agent = true # replaces plasma-polkit-agent.service; only one agent per session
 
+# Bar panels open next to the icon you clicked, not at the bar's centre.
+# Launcher and clipboard stay floating at screen centre (Mod+D, Mod+V); the
+# open_near_click_* switch is ignored for floating panels pinned to "center".
+[shell.panel]
+open_near_click_control_center = true
+open_near_click_wallpaper = true
+open_near_click_session = true
+
 [shell.animation]
 enabled = true
 speed = 3.0 # speed multiplier for all animations, notifications included
@@ -79,26 +87,52 @@ transition_duration = 250 # ms
 [bar.default]
 position = "bottom"
 background_opacity = 0.7
-margin_ends = 16
+padding = 16
+margin_edge = 4
+margin_ends = 2
+margin_opposite_edge = 2
+concave_edge_corners = false
 font_scale = 1.1 # iMWritingDuo has no medium weight and bar font_weight had no visible effect
-start = [ "launcher", "wallpaper", "workspaces", "taskbar" ] # Noctalia's default + taskbar
-center = [ "media" ] # the focused window's title is in the taskbar
+start = [ "control-center", "launcher", "wallpaper", "workspaces", "taskbar", "media" ]
+center = []
 end = [
-    "tray",
-    "recorder", # screen_recorder plugin: left click records
+    "group:tray",
+    "group:tools",
     "notifications",
-    "clipboard",
-    "network",
-    "bluetooth",
-    "volume",
-    "brightness",
-    "battery",
-    "power_profile",
-    "caffeine", # idle inhibitor; where waybar's idle_inhibitor sat
-    "control-center",
-    "session",
+    "group:connectivity",
+    "group:controls",
+    "group:power",
+    "world_clock", # plugin: click for the zones panel
     "clock",
 ]
+
+# Capsule groups: widgets sharing one pill. Accordion groups collapse to their
+# first widget and unfold on hover. Built in Settings → Bar → Bar Widgets.
+[[bar.default.capsule_group]]
+id = "tray"
+members = [ "tray" ]
+
+[[bar.default.capsule_group]]
+id = "tools"
+members = [ "clipboard", "recorder", "claude_sessions" ]
+accordion = true
+
+[[bar.default.capsule_group]]
+id = "connectivity"
+members = [ "network", "bluetooth" ]
+
+[[bar.default.capsule_group]]
+id = "controls"
+members = [ "volume", "brightness" ]
+
+[[bar.default.capsule_group]]
+id = "power"
+members = [ "battery", "power_profile", "caffeine" ] # caffeine = idle inhibitor
+accordion = true
+
+# Tray icons live in a drawer behind one button.
+[widget.tray]
+drawer = true
 
 # Icons for the windows on the current workspace, so columns scrolled off
 # screen stay one click away. Click focuses, middle-click closes.
@@ -117,6 +151,16 @@ max_label_chars = 6
 # folder etc. are plugin settings, kept in the state dir, not here.
 [widget.recorder]
 type = "noctalia/screen_recorder:recorder"
+
+# World clock plugin. Its zones are runtime state, not config:
+# ~/.local/state/noctalia/plugins/data/noctalia/world_clock/zones.json,
+# seeded from ztl's zones (terminal/dot-config/zonetimeline-tui/config.toml).
+[widget.world_clock]
+type = "noctalia/world_clock:bar"
+
+# claude-sessions plugin: live Claude Code sessions, plan limits; /cs searches.
+[widget.claude_sessions]
+type = "lfdominguez/claude-sessions:bar"
 
 [battery]
 warning_threshold = 20
@@ -145,7 +189,7 @@ follow_focused_output = true
 # Plugins come from the official/community git catalogs. The GUI writes its own
 # toggles to ~/.local/state/noctalia/settings.toml; this list is merged with it.
 [plugins]
-enabled = [ "noctalia/translator", "noctalia/screen_recorder", "rdlu/bitwarden" ]
+enabled = [ "noctalia/translator", "noctalia/screen_recorder", "noctalia/world_clock", "rdlu/bitwarden", "kenn/keybind-cheatsheet", "lfdominguez/claude-sessions" ]
 
 # Declaring any source replaces the built-in list, so official and community
 # are spelled out too. "local" = forks stowed from this repo.
