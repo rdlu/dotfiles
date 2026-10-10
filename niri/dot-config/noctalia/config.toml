@@ -23,6 +23,9 @@ custom_schedule = true
 sunrise = "05:45"
 sunset = "18:00"
 
+[shell]
+polkit_agent = true # replaces plasma-polkit-agent.service; only one agent per session
+
 [shell.animation]
 enabled = true
 speed = 3.0 # speed multiplier for all animations, notifications included
