@@ -18,7 +18,7 @@ bun = true
 erlang = "29.1.1"
 elixir = "1.20.4-otp-29"
 ruby = "4.0"
-zig = "0.16.0"
+zig = "0.17.0"
 gleam = "1.18.1"
 
 # CLI/dev tools that are NOT in the pacman repos (AUR-only or fetched direct),
