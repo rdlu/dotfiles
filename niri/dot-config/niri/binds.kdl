@@ -229,9 +229,7 @@ binds {
     Mod+Comma  { consume-window-into-column; }
     // Expel the bottom window from the focused column to the right.
     Mod+Shift+Comma { expel-window-from-column; }
-    Mod+Period hotkey-overlay-title="Emoji Finder" {
-      spawn "bemoji" "-t"
-    }
+    Mod+Period hotkey-overlay-title="Emoji Finder" { spawn "noctalia" "msg" "panel-toggle" "launcher" "/emo"; }
 
     Mod+R { switch-preset-column-width; }
     Mod+Shift+R { switch-preset-window-height; }
