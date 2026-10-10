@@ -151,6 +151,11 @@ max_label_chars = 6
 # folder etc. are plugin settings, kept in the state dir, not here.
 [widget.recorder]
 type = "noctalia/screen_recorder:recorder"
+# Middle click: start/stop the replay buffer. The plugin's own middle-click
+# (save replay) never fires, Noctalia's default middle=settings wins; right
+# click still starts the buffer and saves a replay while it runs.
+[widget.recorder.actions]
+middle = "plugin noctalia/screen_recorder:service all replay-toggle"
 
 # World clock plugin. Its zones are runtime state, not config:
 # ~/.local/state/noctalia/plugins/data/noctalia/world_clock/zones.json,
