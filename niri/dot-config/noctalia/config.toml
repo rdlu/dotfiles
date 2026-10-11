@@ -90,6 +90,7 @@ timeout = 600
 fingerprint = true # fprintd alongside the password
 transition = ["fade"] # one entry = fixed style; else picked at random
 transition_duration = 250 # ms
+tint_intensity = 0.2
 
 # Desktop and lock-screen widgets (laid out in the GUI editor). Placement is
 # per output name: DP-2 = daisy's external monitor, eDP-1 = the laptop panel.
@@ -258,18 +259,18 @@ show_when_idle = false
 enabled = true
 schema_version = 2
 widget_order = [
+  "lockscreen-widget-0000000000000011",
+  "lockscreen-widget-0000000000000003",
   "lockscreen-login-box@eDP-1",
   "lockscreen-login-box@DP-2",
   "lockscreen-widget-0000000000000001",
   "lockscreen-widget-0000000000000002",
-  "lockscreen-widget-0000000000000003",
   "lockscreen-widget-0000000000000004",
   "lockscreen-widget-0000000000000006",
   "lockscreen-widget-0000000000000007",
   "lockscreen-widget-0000000000000008",
   "lockscreen-widget-0000000000000009",
   "lockscreen-widget-0000000000000010",
-  "lockscreen-widget-0000000000000011",
   "lockscreen-widget-0000000000000012",
   "lockscreen-widget-0000000000000013",
   "lockscreen-widget-0000000000000014",
@@ -277,7 +278,7 @@ widget_order = [
 ]
 
 [lockscreen_widgets.grid]
-cell_size = 32
+cell_size = 24
 major_interval = 4
 visible = true
 
@@ -336,10 +337,10 @@ show_unlock_hint = true
 show_weather = true
 
 [lockscreen_widgets.widget.lockscreen-widget-0000000000000001]
-box_height = 176.0
-box_width = 368.0
+box_height = 171.0
+box_width = 541.0
 cx = 853.5
-cy = 501.5
+cy = 533.5
 output = "DP-2"
 placement_height = 1067.0
 placement_width = 1707.0
@@ -349,13 +350,15 @@ type = "clock"
 [lockscreen_widgets.widget.lockscreen-widget-0000000000000001.settings]
 background_opacity = 0.0
 clock_style = "digital"
-font_family = "iMWritingDuo Nerd Font Propo"
+color = "tertiary"
+font_family = "0xProto Nerd Font Propo"
+format = "{:%H:%M:%S}"
 
 [lockscreen_widgets.widget.lockscreen-widget-0000000000000002]
-box_height = 96.0
-box_width = 384.0
-cx = 1493.5
-cy = 335.5
+box_height = 107.0
+box_width = 448.0
+cx = 853.5
+cy = 672.0
 output = "DP-2"
 placement_height = 1067.0
 placement_width = 1707.0
@@ -363,15 +366,16 @@ rotation = 0.0
 type = "audio_visualizer"
 
 [lockscreen_widgets.widget.lockscreen-widget-0000000000000002.settings]
+background = false
 background_opacity = 0.5
 bands = 32
 show_when_idle = true
 
 [lockscreen_widgets.widget.lockscreen-widget-0000000000000003]
-box_height = 0.0
-box_width = 0.0
-cx = 171.5
-cy = 171.5
+box_height = 541.0
+box_width = 569.0
+cx = 853.5
+cy = 332.0
 output = "DP-2"
 placement_height = 1067.0
 placement_width = 1707.0
@@ -382,10 +386,10 @@ type = "fancy_audio_visualizer"
 background = false
 
 [lockscreen_widgets.widget.lockscreen-widget-0000000000000004]
-box_height = 144.0
-box_width = 384.0
-cx = 1493.5
-cy = 477.5
+box_height = 213.0
+box_width = 448.0
+cx = 1461.5
+cy = 864.5
 output = "DP-2"
 placement_height = 1067.0
 placement_width = 1707.0
@@ -398,9 +402,9 @@ font_family = "iMWritingDuo Nerd Font Propo"
 
 [lockscreen_widgets.widget.lockscreen-widget-0000000000000006]
 box_height = 256.0
-box_width = 336.0
+box_width = 341.0
 cx = 853.5
-cy = 293.5
+cy = 334.5
 output = "DP-2"
 placement_height = 1067.0
 placement_width = 1707.0
@@ -409,13 +413,15 @@ type = "clock"
 
 [lockscreen_widgets.widget.lockscreen-widget-0000000000000006.settings]
 background_opacity = 0.0
+circle = false
 clock_style = "analog"
+color = "on_surface"
 
 [lockscreen_widgets.widget.lockscreen-widget-0000000000000007]
-box_height = 0.0
-box_width = 0.0
-cx = 1491.5
-cy = 778.0
+box_height = 384.0
+box_width = 427.0
+cx = 249.0
+cy = 526.5
 output = "DP-2"
 placement_height = 1067.0
 placement_width = 1707.0
@@ -429,10 +435,10 @@ show_events = false
 show_week_numbers = true
 
 [lockscreen_widgets.widget.lockscreen-widget-0000000000000008]
-box_height = 176.0
-box_width = 384.0
-cx = 1493.5
-cy = 189.5
+box_height = 213.0
+box_width = 448.0
+cx = 252.5
+cy = 860.5
 output = "DP-2"
 placement_height = 1067.0
 placement_width = 1707.0
@@ -446,8 +452,8 @@ stat = "cpu_usage"
 stat2 = "cpu_temp"
 
 [lockscreen_widgets.widget.lockscreen-widget-0000000000000009]
-box_height = 224.0
-box_width = 432.0
+box_height = 192.0
+box_width = 608.0
 cx = 960.0
 cy = 600.0
 output = "eDP-1"
@@ -459,13 +465,15 @@ type = "clock"
 [lockscreen_widgets.widget.lockscreen-widget-0000000000000009.settings]
 background_opacity = 0.0
 clock_style = "digital"
-font_family = "iMWritingDuo Nerd Font Propo"
+color = "tertiary"
+font_family = "0xProto Nerd Font Propo"
+format = "{:%H:%M:%S}"
 
 [lockscreen_widgets.widget.lockscreen-widget-0000000000000010]
-box_height = 112.0
-box_width = 416.0
-cx = 1696.0
-cy = 398.9
+box_height = 120.0
+box_width = 504.0
+cx = 960.0
+cy = 756.0
 output = "eDP-1"
 placement_height = 1200.0
 placement_width = 1920.0
@@ -473,15 +481,16 @@ rotation = 0.0
 type = "audio_visualizer"
 
 [lockscreen_widgets.widget.lockscreen-widget-0000000000000010.settings]
+background = false
 background_opacity = 0.5
 bands = 32
 show_when_idle = true
 
 [lockscreen_widgets.widget.lockscreen-widget-0000000000000011]
-box_height = 0.0
-box_width = 0.0
-cx = 192.9
-cy = 192.9
+box_height = 608.0
+box_width = 640.0
+cx = 960.0
+cy = 373.3
 output = "eDP-1"
 placement_height = 1200.0
 placement_width = 1920.0
@@ -492,10 +501,10 @@ type = "fancy_audio_visualizer"
 background = false
 
 [lockscreen_widgets.widget.lockscreen-widget-0000000000000012]
-box_height = 160.0
-box_width = 416.0
-cx = 1696.0
-cy = 568.0
+box_height = 240.0
+box_width = 504.0
+cx = 1644.0
+cy = 972.0
 output = "eDP-1"
 placement_height = 1200.0
 placement_width = 1920.0
@@ -519,13 +528,15 @@ type = "clock"
 
 [lockscreen_widgets.widget.lockscreen-widget-0000000000000013.settings]
 background_opacity = 0.0
+circle = false
 clock_style = "analog"
+color = "on_surface"
 
 [lockscreen_widgets.widget.lockscreen-widget-0000000000000014]
-box_height = 416.0
-box_width = 416.0
-cx = 1696.0
-cy = 885.3
+box_height = 432.0
+box_width = 480.0
+cx = 280.0
+cy = 592.0
 output = "eDP-1"
 placement_height = 1200.0
 placement_width = 1920.0
@@ -539,10 +550,10 @@ show_events = false
 show_week_numbers = true
 
 [lockscreen_widgets.widget.lockscreen-widget-0000000000000015]
-box_height = 192.0
-box_width = 416.0
-cx = 1696.0
-cy = 216.0
+box_height = 240.0
+box_width = 504.0
+cx = 284.0
+cy = 968.0
 output = "eDP-1"
 placement_height = 1200.0
 placement_width = 1920.0
