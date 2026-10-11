@@ -4,6 +4,8 @@
 [wallpaper]
 enabled = true
 directory = "~/Pictures/Wallpapers"
+per_monitor_directories = true # each output keeps its own wallpaper
+transition = ["fade", "wipe"]
 fill_mode = "crop"
 transition_on_startup = false
 
@@ -19,6 +21,7 @@ temperature_day = 6500
 temperature_night = 4000
 
 [location]
+auto_locate = true
 custom_schedule = true
 sunrise = "05:45"
 sunset = "18:00"
@@ -50,7 +53,8 @@ freeze_screen = true
 
 [theme]
 source = "builtin"
-builtin = "Tokyo-Night"
+builtin = "Dracula"
+mode = "auto"
 pure_black_dark = true
 
 [theme.templates]
@@ -83,6 +87,470 @@ timeout = 600
 fingerprint = true # fprintd alongside the password
 transition = ["fade"] # one entry = fixed style; else picked at random
 transition_duration = 250 # ms
+
+# Desktop and lock-screen widgets (laid out in the GUI editor). Placement is
+# per output name: DP-2 = daisy's external monitor, eDP-1 = the laptop panel.
+
+[desktop_widgets]
+schema_version = 2
+widget_order = [
+  "desktop-widget-0000000000000001",
+  "desktop-widget-0000000000000002",
+  "desktop-widget-0000000000000004",
+  "desktop-widget-0000000000000005",
+  "desktop-widget-0000000000000006",
+  "desktop-widget-0000000000000007",
+  "desktop-widget-0000000000000008",
+  "desktop-widget-0000000000000009",
+]
+
+[desktop_widgets.grid]
+cell_size = 16
+major_interval = 4
+visible = true
+
+[desktop_widgets.widget.desktop-widget-0000000000000001]
+box_height = 160.0
+box_width = 160.0
+cx = 1613.5
+cy = 933.5
+output = "DP-2"
+placement_height = 1067.0
+placement_width = 1707.0
+rotation = 0.0
+type = "clock"
+
+[desktop_widgets.widget.desktop-widget-0000000000000001.settings]
+background = false
+background_color = "surface"
+background_opacity = 0.0
+circle = false
+clock_style = "analog"
+color = "#BFAAD5"
+
+[desktop_widgets.widget.desktop-widget-0000000000000002]
+box_height = 432.0
+box_width = 400.0
+cx = 1485.5
+cy = 797.5
+output = "DP-2"
+placement_height = 1067.0
+placement_width = 1707.0
+rotation = 0.0
+type = "fancy_audio_visualizer"
+
+[desktop_widgets.widget.desktop-widget-0000000000000002.settings]
+background = false
+ring_opacity = 0.4
+visualization_mode = "wave_rings"
+
+[desktop_widgets.widget.desktop-widget-0000000000000004]
+box_height = 176.0
+box_width = 416.0
+cx = 1485.5
+cy = 477.5
+output = "DP-2"
+placement_height = 1067.0
+placement_width = 1707.0
+rotation = 0.0
+type = "media_player"
+
+[desktop_widgets.widget.desktop-widget-0000000000000004.settings]
+background = false
+background_opacity = 0.05
+hide_when_no_media = true
+layout = "horizontal"
+
+[desktop_widgets.widget.desktop-widget-0000000000000005]
+box_height = 112.0
+box_width = 416.0
+cx = 1485.5
+cy = 317.5
+output = "DP-2"
+placement_height = 1067.0
+placement_width = 1707.0
+rotation = 0.0
+type = "audio_visualizer"
+
+[desktop_widgets.widget.desktop-widget-0000000000000005.settings]
+background = false
+background_opacity = 0.2
+bands = 64
+color_2 = "tertiary"
+reversed = false
+show_when_idle = false
+
+[desktop_widgets.widget.desktop-widget-0000000000000006]
+box_height = 160.0
+box_width = 160.0
+cx = 1826.5
+cy = 1066.5
+output = "eDP-1"
+placement_height = 1200.0
+placement_width = 1920.0
+rotation = 0.0
+type = "clock"
+
+[desktop_widgets.widget.desktop-widget-0000000000000006.settings]
+background = false
+background_color = "surface"
+background_opacity = 0.0
+circle = false
+clock_style = "analog"
+color = "#BFAAD5"
+
+[desktop_widgets.widget.desktop-widget-0000000000000007]
+box_height = 432.0
+box_width = 400.0
+cx = 1698.5
+cy = 930.5
+output = "eDP-1"
+placement_height = 1200.0
+placement_width = 1920.0
+rotation = 0.0
+type = "fancy_audio_visualizer"
+
+[desktop_widgets.widget.desktop-widget-0000000000000007.settings]
+background = false
+ring_opacity = 0.4
+visualization_mode = "wave_rings"
+
+[desktop_widgets.widget.desktop-widget-0000000000000008]
+box_height = 176.0
+box_width = 416.0
+cx = 1698.5
+cy = 610.5
+output = "eDP-1"
+placement_height = 1200.0
+placement_width = 1920.0
+rotation = 0.0
+type = "media_player"
+
+[desktop_widgets.widget.desktop-widget-0000000000000008.settings]
+background = false
+background_opacity = 0.05
+hide_when_no_media = true
+layout = "horizontal"
+
+[desktop_widgets.widget.desktop-widget-0000000000000009]
+box_height = 112.0
+box_width = 416.0
+cx = 1698.5
+cy = 450.5
+output = "eDP-1"
+placement_height = 1200.0
+placement_width = 1920.0
+rotation = 0.0
+type = "audio_visualizer"
+
+[desktop_widgets.widget.desktop-widget-0000000000000009.settings]
+background = false
+background_opacity = 0.2
+bands = 64
+color_2 = "tertiary"
+reversed = false
+show_when_idle = false
+
+[lockscreen_widgets]
+enabled = true
+schema_version = 2
+widget_order = [
+  "lockscreen-login-box@eDP-1",
+  "lockscreen-login-box@DP-2",
+  "lockscreen-widget-0000000000000001",
+  "lockscreen-widget-0000000000000002",
+  "lockscreen-widget-0000000000000003",
+  "lockscreen-widget-0000000000000004",
+  "lockscreen-widget-0000000000000006",
+  "lockscreen-widget-0000000000000007",
+  "lockscreen-widget-0000000000000008",
+  "lockscreen-widget-0000000000000009",
+  "lockscreen-widget-0000000000000010",
+  "lockscreen-widget-0000000000000011",
+  "lockscreen-widget-0000000000000012",
+  "lockscreen-widget-0000000000000013",
+  "lockscreen-widget-0000000000000014",
+  "lockscreen-widget-0000000000000015",
+]
+
+[lockscreen_widgets.grid]
+cell_size = 32
+major_interval = 4
+visible = true
+
+[lockscreen_widgets.widget."lockscreen-login-box@DP-2"]
+box_height = 196.0
+box_width = 810.0
+cx = 854.0
+cy = 885.0
+output = "DP-2"
+placement_height = 1067.0
+placement_width = 1707.0
+rotation = 0.0
+type = "login_box"
+
+[lockscreen_widgets.widget."lockscreen-login-box@DP-2".settings]
+background_color = "surface_variant"
+background_opacity = 0.7
+background_radius = 12.0
+center_password_text = false
+input_opacity = 1.0
+input_radius = 6.0
+layout = "regular"
+show_caps_lock = true
+show_keyboard_layout = true
+show_login_button = true
+show_media = true
+show_session_buttons = true
+show_unlock_hint = true
+show_weather = true
+
+[lockscreen_widgets.widget."lockscreen-login-box@eDP-1"]
+box_height = 196.0
+box_width = 810.0
+cx = 960.6
+cy = 995.3
+output = "eDP-1"
+placement_height = 1200.0
+placement_width = 1920.0
+rotation = 0.0
+type = "login_box"
+
+[lockscreen_widgets.widget."lockscreen-login-box@eDP-1".settings]
+background_color = "surface_variant"
+background_opacity = 0.7
+background_radius = 12.0
+center_password_text = false
+input_opacity = 1.0
+input_radius = 6.0
+layout = "regular"
+show_caps_lock = true
+show_keyboard_layout = true
+show_login_button = true
+show_media = true
+show_session_buttons = true
+show_unlock_hint = true
+show_weather = true
+
+[lockscreen_widgets.widget.lockscreen-widget-0000000000000001]
+box_height = 176.0
+box_width = 368.0
+cx = 853.5
+cy = 501.5
+output = "DP-2"
+placement_height = 1067.0
+placement_width = 1707.0
+rotation = 0.0
+type = "clock"
+
+[lockscreen_widgets.widget.lockscreen-widget-0000000000000001.settings]
+background_opacity = 0.0
+clock_style = "digital"
+font_family = "iMWritingDuo Nerd Font Propo"
+
+[lockscreen_widgets.widget.lockscreen-widget-0000000000000002]
+box_height = 96.0
+box_width = 384.0
+cx = 1493.5
+cy = 335.5
+output = "DP-2"
+placement_height = 1067.0
+placement_width = 1707.0
+rotation = 0.0
+type = "audio_visualizer"
+
+[lockscreen_widgets.widget.lockscreen-widget-0000000000000002.settings]
+background_opacity = 0.5
+bands = 32
+show_when_idle = true
+
+[lockscreen_widgets.widget.lockscreen-widget-0000000000000003]
+box_height = 0.0
+box_width = 0.0
+cx = 171.5
+cy = 171.5
+output = "DP-2"
+placement_height = 1067.0
+placement_width = 1707.0
+rotation = 0.0
+type = "fancy_audio_visualizer"
+
+[lockscreen_widgets.widget.lockscreen-widget-0000000000000003.settings]
+background = false
+
+[lockscreen_widgets.widget.lockscreen-widget-0000000000000004]
+box_height = 144.0
+box_width = 384.0
+cx = 1493.5
+cy = 477.5
+output = "DP-2"
+placement_height = 1067.0
+placement_width = 1707.0
+rotation = 0.0
+type = "media_player"
+
+[lockscreen_widgets.widget.lockscreen-widget-0000000000000004.settings]
+background_opacity = 0.5
+font_family = "iMWritingDuo Nerd Font Propo"
+
+[lockscreen_widgets.widget.lockscreen-widget-0000000000000006]
+box_height = 256.0
+box_width = 336.0
+cx = 853.5
+cy = 293.5
+output = "DP-2"
+placement_height = 1067.0
+placement_width = 1707.0
+rotation = 0.0
+type = "clock"
+
+[lockscreen_widgets.widget.lockscreen-widget-0000000000000006.settings]
+background_opacity = 0.0
+clock_style = "analog"
+
+[lockscreen_widgets.widget.lockscreen-widget-0000000000000007]
+box_height = 0.0
+box_width = 0.0
+cx = 1491.5
+cy = 778.0
+output = "DP-2"
+placement_height = 1067.0
+placement_width = 1707.0
+rotation = 0.0
+type = "calendar"
+
+[lockscreen_widgets.widget.lockscreen-widget-0000000000000007.settings]
+background_opacity = 0.5
+font_family = "iMWritingDuo Nerd Font Propo"
+show_events = false
+show_week_numbers = true
+
+[lockscreen_widgets.widget.lockscreen-widget-0000000000000008]
+box_height = 176.0
+box_width = 384.0
+cx = 1493.5
+cy = 189.5
+output = "DP-2"
+placement_height = 1067.0
+placement_width = 1707.0
+rotation = 0.0
+type = "sysmon"
+
+[lockscreen_widgets.widget.lockscreen-widget-0000000000000008.settings]
+background_opacity = 0.53
+font_family = "iMWritingDuo Nerd Font Propo"
+stat = "cpu_usage"
+stat2 = "cpu_temp"
+
+[lockscreen_widgets.widget.lockscreen-widget-0000000000000009]
+box_height = 224.0
+box_width = 432.0
+cx = 960.0
+cy = 600.0
+output = "eDP-1"
+placement_height = 1200.0
+placement_width = 1920.0
+rotation = 0.0
+type = "clock"
+
+[lockscreen_widgets.widget.lockscreen-widget-0000000000000009.settings]
+background_opacity = 0.0
+clock_style = "digital"
+font_family = "iMWritingDuo Nerd Font Propo"
+
+[lockscreen_widgets.widget.lockscreen-widget-0000000000000010]
+box_height = 112.0
+box_width = 416.0
+cx = 1696.0
+cy = 398.9
+output = "eDP-1"
+placement_height = 1200.0
+placement_width = 1920.0
+rotation = 0.0
+type = "audio_visualizer"
+
+[lockscreen_widgets.widget.lockscreen-widget-0000000000000010.settings]
+background_opacity = 0.5
+bands = 32
+show_when_idle = true
+
+[lockscreen_widgets.widget.lockscreen-widget-0000000000000011]
+box_height = 0.0
+box_width = 0.0
+cx = 192.9
+cy = 192.9
+output = "eDP-1"
+placement_height = 1200.0
+placement_width = 1920.0
+rotation = 0.0
+type = "fancy_audio_visualizer"
+
+[lockscreen_widgets.widget.lockscreen-widget-0000000000000011.settings]
+background = false
+
+[lockscreen_widgets.widget.lockscreen-widget-0000000000000012]
+box_height = 160.0
+box_width = 416.0
+cx = 1696.0
+cy = 568.0
+output = "eDP-1"
+placement_height = 1200.0
+placement_width = 1920.0
+rotation = 0.0
+type = "media_player"
+
+[lockscreen_widgets.widget.lockscreen-widget-0000000000000012.settings]
+background_opacity = 0.5
+font_family = "iMWritingDuo Nerd Font Propo"
+
+[lockscreen_widgets.widget.lockscreen-widget-0000000000000013]
+box_height = 288.0
+box_width = 384.0
+cx = 960.0
+cy = 376.0
+output = "eDP-1"
+placement_height = 1200.0
+placement_width = 1920.0
+rotation = 0.0
+type = "clock"
+
+[lockscreen_widgets.widget.lockscreen-widget-0000000000000013.settings]
+background_opacity = 0.0
+clock_style = "analog"
+
+[lockscreen_widgets.widget.lockscreen-widget-0000000000000014]
+box_height = 416.0
+box_width = 416.0
+cx = 1696.0
+cy = 885.3
+output = "eDP-1"
+placement_height = 1200.0
+placement_width = 1920.0
+rotation = 0.0
+type = "calendar"
+
+[lockscreen_widgets.widget.lockscreen-widget-0000000000000014.settings]
+background_opacity = 0.5
+font_family = "iMWritingDuo Nerd Font Propo"
+show_events = false
+show_week_numbers = true
+
+[lockscreen_widgets.widget.lockscreen-widget-0000000000000015]
+box_height = 192.0
+box_width = 416.0
+cx = 1696.0
+cy = 216.0
+output = "eDP-1"
+placement_height = 1200.0
+placement_width = 1920.0
+rotation = 0.0
+type = "sysmon"
+
+[lockscreen_widgets.widget.lockscreen-widget-0000000000000015.settings]
+background_opacity = 0.53
+font_family = "iMWritingDuo Nerd Font Propo"
+stat = "cpu_usage"
+stat2 = "cpu_temp"
 
 [bar.default]
 position = "bottom"
