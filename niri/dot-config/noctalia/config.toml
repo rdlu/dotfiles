@@ -115,8 +115,8 @@ visible = true
 [desktop_widgets.widget.desktop-widget-0000000000000001]
 box_height = 160.0
 box_width = 160.0
-cx = 1613.5
-cy = 933.5
+cx = 1507.0
+cy = 216.0
 output = "DP-2"
 placement_height = 1067.0
 placement_width = 1707.0
@@ -129,7 +129,7 @@ background_color = "surface"
 background_opacity = 0.0
 circle = false
 clock_style = "analog"
-color = "#BFAAD5"
+color = "error"
 
 [desktop_widgets.widget.desktop-widget-0000000000000002]
 box_height = 432.0
@@ -150,8 +150,8 @@ visualization_mode = "wave_rings"
 [desktop_widgets.widget.desktop-widget-0000000000000004]
 box_height = 144.0
 box_width = 368.0
-cx = 1491.0
-cy = 939.0
+cx = 1507.0
+cy = 947.0
 output = "DP-2"
 placement_height = 1067.0
 placement_width = 1707.0
@@ -186,8 +186,8 @@ show_when_idle = false
 [desktop_widgets.widget.desktop-widget-0000000000000006]
 box_height = 160.0
 box_width = 160.0
-cx = 1826.5
-cy = 1066.5
+cx = 1720.0
+cy = 216.0
 output = "eDP-1"
 placement_height = 1200.0
 placement_width = 1920.0
@@ -200,7 +200,7 @@ background_color = "surface"
 background_opacity = 0.0
 circle = false
 clock_style = "analog"
-color = "#BFAAD5"
+color = "error"
 
 [desktop_widgets.widget.desktop-widget-0000000000000007]
 box_height = 432.0
@@ -221,8 +221,8 @@ visualization_mode = "wave_rings"
 [desktop_widgets.widget.desktop-widget-0000000000000008]
 box_height = 144.0
 box_width = 368.0
-cx = 1704.0
-cy = 1072.0
+cx = 1720.0
+cy = 1080.0
 output = "eDP-1"
 placement_height = 1200.0
 placement_width = 1920.0
