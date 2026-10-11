@@ -32,12 +32,14 @@ font_family = "iMWritingDuo Nerd Font Propo"
 polkit_agent = true # replaces plasma-polkit-agent.service; only one agent per session
 
 # Bar panels open next to the icon you clicked, not at the bar's centre.
-# Launcher and clipboard stay floating at screen centre (Mod+D, Mod+V); the
+# Launcher, clipboard and wallpaper stay floating at screen centre; the
 # open_near_click_* switch is ignored for floating panels pinned to "center".
 [shell.panel]
 open_near_click_control_center = true
 open_near_click_wallpaper = true
 open_near_click_session = true
+wallpaper_placement = "floating"
+wallpaper_position = "center"
 
 [shell.animation]
 enabled = true
@@ -52,8 +54,9 @@ copy_to_clipboard = true
 freeze_screen = true
 
 [theme]
-source = "builtin"
-builtin = "Dracula"
+source = "wallpaper" # palette generated from the current wallpaper
+wallpaper_scheme = "m3-rainbow"
+builtin = "Dracula" # used when source = "builtin"
 mode = "auto"
 pure_black_dark = true
 
@@ -131,8 +134,8 @@ color = "#BFAAD5"
 [desktop_widgets.widget.desktop-widget-0000000000000002]
 box_height = 432.0
 box_width = 400.0
-cx = 1485.5
-cy = 797.5
+cx = 1507.0
+cy = 216.0
 output = "DP-2"
 placement_height = 1067.0
 placement_width = 1707.0
@@ -145,10 +148,10 @@ ring_opacity = 0.4
 visualization_mode = "wave_rings"
 
 [desktop_widgets.widget.desktop-widget-0000000000000004]
-box_height = 176.0
-box_width = 416.0
-cx = 1485.5
-cy = 477.5
+box_height = 144.0
+box_width = 368.0
+cx = 1491.0
+cy = 939.0
 output = "DP-2"
 placement_height = 1067.0
 placement_width = 1707.0
@@ -163,9 +166,9 @@ layout = "horizontal"
 
 [desktop_widgets.widget.desktop-widget-0000000000000005]
 box_height = 112.0
-box_width = 416.0
-cx = 1485.5
-cy = 317.5
+box_width = 384.0
+cx = 1501.5
+cy = 787.0
 output = "DP-2"
 placement_height = 1067.0
 placement_width = 1707.0
@@ -202,8 +205,8 @@ color = "#BFAAD5"
 [desktop_widgets.widget.desktop-widget-0000000000000007]
 box_height = 432.0
 box_width = 400.0
-cx = 1698.5
-cy = 930.5
+cx = 1720.0
+cy = 216.0
 output = "eDP-1"
 placement_height = 1200.0
 placement_width = 1920.0
@@ -216,10 +219,10 @@ ring_opacity = 0.4
 visualization_mode = "wave_rings"
 
 [desktop_widgets.widget.desktop-widget-0000000000000008]
-box_height = 176.0
-box_width = 416.0
-cx = 1698.5
-cy = 610.5
+box_height = 144.0
+box_width = 368.0
+cx = 1704.0
+cy = 1072.0
 output = "eDP-1"
 placement_height = 1200.0
 placement_width = 1920.0
@@ -234,9 +237,9 @@ layout = "horizontal"
 
 [desktop_widgets.widget.desktop-widget-0000000000000009]
 box_height = 112.0
-box_width = 416.0
-cx = 1698.5
-cy = 450.5
+box_width = 384.0
+cx = 1714.5
+cy = 920.0
 output = "eDP-1"
 placement_height = 1200.0
 placement_width = 1920.0
@@ -562,9 +565,10 @@ margin_opposite_edge = 2
 concave_edge_corners = false
 capsule_thickness = 0.86
 font_scale = 1.1 # iMWritingDuo has no medium weight and bar font_weight had no visible effect
-start = [ "control-center", "launcher", "wallpaper", "workspaces", "taskbar", "media" ]
+start = [ "control-center", "launcher", "wallpaper", "workspaces", "taskbar" ]
 center = []
 end = [
+    "media",
     "group:tray",
     "group:tools",
     "notifications",
@@ -611,6 +615,20 @@ opacity = 0.4
 members = [ "pomodoro", "world_clock", "clock" ]
 
 # Tray icons live in a drawer behind one button.
+[widget.media]
+art_size = 33
+artist_first = true
+capsule = true
+capsule_fill = "shadow"
+color = "surface"
+font_family = "IosevkaTerm Nerd Font Propo"
+font_weight = 300
+hide_when_no_media = true
+max_length = 304
+rotate_album_art = true
+show_progress = true
+title_scroll = "always"
+
 [widget.tray]
 drawer = true
 
