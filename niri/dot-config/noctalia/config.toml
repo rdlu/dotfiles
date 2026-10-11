@@ -570,16 +570,17 @@ stat2 = "cpu_temp"
 position = "bottom"
 background_opacity = 0.7
 padding = 16
-margin_edge = 4
+margin_edge = 0 # flush against the screen edge
 margin_ends = 2
 margin_opposite_edge = 2
-concave_edge_corners = false
+concave_edge_corners = true
 capsule_thickness = 0.86
 font_scale = 1.1 # iMWritingDuo has no medium weight and bar font_weight had no visible effect
 start = [ "control-center", "launcher", "wallpaper", "workspaces", "taskbar" ]
 center = []
 end = [
     "media",
+    "group:system",
     "group:tray",
     "group:tools",
     "notifications",
@@ -625,7 +626,13 @@ id = "time"
 opacity = 0.4
 members = [ "pomodoro", "world_clock", "clock" ]
 
-# Tray icons live in a drawer behind one button.
+# System stats, collapsed to the temperature until hovered.
+[[bar.default.capsule_group]]
+id = "system"
+opacity = 0.4
+members = [ "temp", "cpu", "ram", "network_tx", "network_rx" ]
+accordion = true
+
 [widget.media]
 art_size = 33
 artist_first = true
@@ -640,6 +647,7 @@ rotate_album_art = true
 show_progress = true
 title_scroll = "always"
 
+# Tray icons live in a drawer behind one button.
 [widget.tray]
 drawer = true
 
@@ -689,6 +697,9 @@ enable_ddcutil = true # external monitors over DDC/CI (ddcutil is in packages.ya
 [calendar]
 enabled = true
 
+[calendar.reminders]
+all_day_digest_time = "07:30" # one morning notification listing all-day events
+
 # Events from the Google calendars vdirsyncer already syncs for khal/chroncal
 # (vdirsyncer.timer, every 15 min), so no second Google login. Names come
 # from each calendar's displayname file.
@@ -700,6 +711,11 @@ calendars = [] # all
 
 [control_center.calendar]
 show_week_numbers = true
+
+# Volume/brightness OSD only on the laptop panel.
+[osd]
+monitors = ["eDP-1"]
+scale = 1.25
 
 [notification]
 follow_focused_output = true
