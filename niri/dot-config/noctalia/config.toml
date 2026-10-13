@@ -724,9 +724,10 @@ follow_focused_output = true
 filter_order = ["loud_yubikey", "loud_slack", "loud_calendar", "loud_battery", "quiet_rest"]
 
 # yubikey-touch-notifier (scripts/) sends as "YubiKey-detector", urgency low.
+# The Claude git-push countdown hook sends as plain "YubiKey" and stays quiet.
 [notification.filter.loud_yubikey]
 enabled    = true
-match      = "yubikey"
+match      = "yubikey-detector"
 play_sound = true
 
 [notification.filter.loud_slack]
