@@ -755,10 +755,12 @@ play_sound    = false
 # Plugins come from the official/community git catalogs. The GUI writes its own
 # toggles to ~/.local/state/noctalia/settings.toml; this list is merged with it.
 [plugins]
-enabled = [ "noctalia/translator", "noctalia/screen_recorder", "noctalia/world_clock", "rdlu/bitwarden", "kenn/keybind-cheatsheet", "lfdominguez/claude-sessions", "thepunkoff/pomodoro" ]
+enabled = [ "noctalia/translator", "noctalia/screen_recorder", "noctalia/world_clock", "noctalia/bitwarden", "kenn/keybind-cheatsheet", "lfdominguez/claude-sessions", "thepunkoff/pomodoro" ]
 
 # Declaring any source replaces the built-in list, so official and community
-# are spelled out too. "local" = forks stowed from this repo.
+# are spelled out too. "local" = plugins under development: symlinks into
+# worktrees of the ~/Projects clones. It shadows any catalog plugin with the
+# same id, so only link the plugin being worked on, never a whole clone.
 [[plugins.source]]
 name = "official"
 kind = "git"
@@ -771,12 +773,12 @@ kind = "git"
 location = "https://github.com/noctalia-dev/community-plugins"
 enabled = true
 
-# rdlu/bitwarden = noctalia/bitwarden with fuzzy matching in /bw (actions and
-# vault items ranked by what you type).
+# noctalia/bitwarden here = PR #112 (fuzzy /bw), from a worktree of
+# ~/Projects/noctalia-official-plugins; back to the catalog copy once it merges.
 [[plugins.source]]
 name = "local"
 kind = "path"
-location = "~/.config/noctalia/plugins"
+location = "~/Projects/noctalia-plugins-dev"
 enabled = true
 
 # The alarm plays its bundled file via ffplay, independent of shell sounds and
