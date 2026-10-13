@@ -719,6 +719,33 @@ scale = 1.25
 
 [notification]
 follow_focused_output = true
+# First matching enabled filter wins; unmatched notifications would beep, so
+# the list ends in a silent catch-all and only the senders above it play sound.
+filter_order = ["loud_yubikey", "loud_slack", "loud_calendar", "quiet_rest"]
+
+# yubikey-touch-notifier (scripts/) sends as "YubiKey-detector", urgency low.
+[notification.filter.loud_yubikey]
+enabled    = true
+match      = "yubikey"
+play_sound = true
+
+[notification.filter.loud_slack]
+enabled    = true
+match      = "slack"
+play_sound = true
+
+# Noctalia's own event reminders ("Starts in 10 min · 14:00"); the all-day
+# digest stays quiet.
+[notification.filter.loud_calendar]
+enabled       = true
+match_content = "^Starts (in [0-9]+ min|now) ·"
+play_sound    = true
+
+# Also silences shell/plugin toasts; the pomodoro alarm plays its own file.
+[notification.filter.quiet_rest]
+enabled       = true
+match_content = ".*"
+play_sound    = false
 
 # Plugins come from the official/community git catalogs. The GUI writes its own
 # toggles to ~/.local/state/noctalia/settings.toml; this list is merged with it.
@@ -747,7 +774,8 @@ kind = "path"
 location = "~/.config/noctalia/plugins"
 enabled = true
 
-# Shell sounds are off, so the pomodoro alarm plays its bundled file via ffplay.
+# The alarm plays its bundled file via ffplay, independent of shell sounds and
+# of the notification filters above.
 [plugin_settings."thepunkoff/pomodoro"]
 use-bundled-alarm-sound = true
 bypass-noctalia-sound-globals = true
