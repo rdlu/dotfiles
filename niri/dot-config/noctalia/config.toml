@@ -721,7 +721,7 @@ scale = 1.25
 follow_focused_output = true
 # First matching enabled filter wins; unmatched notifications would beep, so
 # the list ends in a silent catch-all and only the senders above it play sound.
-filter_order = ["loud_yubikey", "loud_slack", "loud_calendar", "quiet_rest"]
+filter_order = ["loud_yubikey", "loud_slack", "loud_calendar", "loud_battery", "quiet_rest"]
 
 # yubikey-touch-notifier (scripts/) sends as "YubiKey-detector", urgency low.
 [notification.filter.loud_yubikey]
@@ -739,6 +739,13 @@ play_sound = true
 [notification.filter.loud_calendar]
 enabled       = true
 match_content = "^Starts (in [0-9]+ min|now) ·"
+play_sound    = true
+
+# Noctalia's own "Battery low" (at [battery] warning_threshold) and
+# "Battery critically low" toasts, matched on the title.
+[notification.filter.loud_battery]
+enabled       = true
+match_content = "^Battery (low|critically low)$"
 play_sound    = true
 
 # Also silences shell/plugin toasts; the pomodoro alarm plays its own file.
