@@ -3,8 +3,9 @@
 # the USB 2 and USB 3 halves of each port side by side — so a port that has
 # silently fallen back to USB 2 (its SuperSpeed lanes dead, which on USB-C also
 # means no DisplayPort alt mode) stands out. Then the USB-C/PD state and which
-# DP/HDMI connectors are lit, power, and a health verdict built from the
-# checks that diagnosed daisy's dead USB-C port on 2026-09-27.
+# DP/HDMI connectors are lit, power (the PD contract, and what the CPU gets out
+# of it: clocks, package watts, temperature), and a health verdict built from
+# the checks that diagnosed daisy's dead USB-C port on 2026-09-27.
 #
 #   usb-ports        # full report + health; exit 1 if anything is wrong
 #   usb-ports -H     # health verdict only
@@ -521,6 +522,7 @@ sections() {
       ok "on AC power (via a port UCSI doesn't report, e.g. a hub's charging pass-through)"
     fi
   fi
+  cpu_power "$ac"
 
   echo
   echo "${B}Kernel log (this boot)$N"
@@ -569,6 +571,75 @@ sections() {
     ((n_reset >= 5)) &&
       warn "$n_reset USB link resets this boot on $k" \
         "— flaky cable/dock or a marginal SuperSpeed link; reseat or swap the cable"
+  fi
+  return 0
+}
+
+# What the power source lets the CPU do, over a half-second sample: how busy
+# it is, clocks, package power (RAPL), package temperature, battery flow. A
+# busy CPU held at its minimum clock while on AC is the EC asserting BD
+# PROCHOT, which the XPS does when it doesn't trust the power source: on
+# 2026-10-16 the ThinkPad charger through the dock pinned it at 400 MHz / 8 W
+# under full load, while the same charger plugged in directly ran it at
+# ~1.7 GHz / 20 W (the heat-limited norm). A dock also keeps ~7 W of the
+# contract for itself, and the monitor's pass-through port ~18 W.
+cpu_power() {
+  local ac=$1 rapl=/sys/class/powercap/intel-rapl:0/energy_uj e1 e2 f min n=0 sum=0 top=0
+  local busy idle util pkg='' h t temp='' bv bc bw='' st line
+  local -a a b
+  e1=$(rd "$rapl")
+  read -ra a < <(grep '^cpu ' /proc/stat)
+  sleep 0.5
+  e2=$(rd "$rapl")
+  read -ra b < <(grep '^cpu ' /proc/stat)
+  # user nice system idle iowait irq softirq steal; idle + iowait is not busy.
+  busy=$(( (b[1] + b[2] + b[3] + b[6] + b[7] + b[8]) - (a[1] + a[2] + a[3] + a[6] + a[7] + a[8]) ))
+  idle=$(( (b[4] + b[5]) - (a[4] + a[5]) ))
+  util=$(( (busy + idle) ? 100 * busy / (busy + idle) : 0 ))
+  # energy_uj is root-only on some kernels, and wraps.
+  [[ $e1 =~ ^[0-9]+$ && $e2 =~ ^[0-9]+$ ]] && ((e2 >= e1)) &&
+    pkg=$(awk -v e="$((e2 - e1))" 'BEGIN { printf "%.0f", e / 5e5 }')
+  for f in /sys/devices/system/cpu/cpu[0-9]*/cpufreq/scaling_cur_freq; do
+    f=$(rd "$f"); [[ $f =~ ^[0-9]+$ ]] || continue
+    n=$((n + 1)) sum=$((sum + f)); ((f > top)) && top=$f
+  done
+  min=$(rd /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq)
+  for h in /sys/class/hwmon/hwmon*; do
+    case $(rd "$h/name") in coretemp|k10temp) ;; *) continue ;; esac
+    for t in "$h"/temp*_label; do
+      case $(rd "$t") in "Package id 0"|Tctl) temp=$(( $(rd "${t%_label}_input") / 1000 )) ;; esac
+    done
+  done
+  # Battery flow: power_now where the driver has it, else current × voltage.
+  bv=$(rd /sys/class/power_supply/BAT0/voltage_now)
+  bc=$(rd /sys/class/power_supply/BAT0/power_now)
+  [[ -z $bc ]] && bc=$(rd /sys/class/power_supply/BAT0/current_now) &&
+    [[ $bc =~ ^-?[0-9]+$ && $bv =~ ^[0-9]+$ ]] && bc=$(( ${bc#-} * bv / 1000000 ))
+  st=$(rd /sys/class/power_supply/BAT0/status)
+  if [[ ${bc#-} =~ ^[0-9]+$ ]]; then
+    case $st in
+      Charging) bw="+$(awk -v w="${bc#-}" 'BEGIN { printf "%.1f", w / 1e6 }') W" ;;
+      Discharging) bw="−$(awk -v w="${bc#-}" 'BEGIN { printf "%.1f", w / 1e6 }') W" ;;
+    esac
+  fi
+  ((n)) || return 0
+  line=$(awk -v s="$sum" -v n="$n" -v t="$top" -v m="${min:-0}" \
+    'BEGIN { printf "%.1f GHz avg (max %.1f, floor %.1f)", s / n / 1e6, t / 1e6, m / 1e6 }')
+  echo "  CPU: $util% busy  $line${pkg:+  package $pkg W}${temp:+  $temp °C}${bw:+  battery $bw}"
+  if ((util < 50)); then
+    echo "  ${D}CPU mostly idle — load it (e.g. a build) to test whether this power source throttles$N"
+  elif [[ $min =~ ^[0-9]+$ ]] && ((sum / n <= min * 115 / 100)); then
+    if [[ $ac == 1 ]]; then
+      fail "CPU pinned at its minimum clock while $util% busy on AC${pkg:+ ($pkg W package)} —" \
+        "the EC is throttling (BD PROCHOT), usually a charger, cable or dock it doesn't" \
+        "trust. Plug the charger straight into the laptop, or try another charger"
+    else
+      fail "CPU pinned at its minimum clock while $util% busy on battery — BD PROCHOT or" \
+        "a low-battery limit; check the power profile and the battery"
+    fi
+  else
+    ok "CPU not power-throttled ($util% busy at $(awk -v s="$sum" -v n="$n" \
+      'BEGIN { printf "%.1f", s / n / 1e6 }') GHz${pkg:+, $pkg W package})"
   fi
   return 0
 }
