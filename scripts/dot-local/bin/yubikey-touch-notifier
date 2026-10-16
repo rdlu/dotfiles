@@ -1,27 +1,39 @@
 #!/usr/bin/env python3
-"""Desktop notifier for yubikey-touch-detector — fires a LOW-urgency toast
-whenever any app OTHER than the Claude Code hooks makes the YubiKey wait for a
-touch (ssh in any terminal, browser WebAuthn, pam-u2f sudo, GPG, …), and clears
-it the instant the wait ends.
-
-It can't know the originating *command* — the touch is requested by an
-agent/helper (e.g. gpg-agent for ssh keys), decoupled from whatever you typed.
-As a hint it shows the process currently holding the YubiKey's FIDO hidraw.
+"""Desktop notifier for yubikey-touch-detector — the ONLY thing that shows a
+"touch your YubiKey" toast, and only while the key is really blinking.
 
 Reads the detector socket ($XDG_RUNTIME_DIR/yubikey-touch-detector.socket), which
-emits fixed 5-byte events U2F_1/U2F_0, GPG_1/GPG_0, MAC_1/MAC_0. Sends with
-app-name "YubiKey" and dismisses via the freedesktop
-CloseNotification D-Bus call (daemon-agnostic). Runs as a systemd --user service.
+emits fixed 5-byte events U2F_1/U2F_0, GPG_1/GPG_0, MAC_1/MAC_0. A *_1 must stay
+pending for DEBOUNCE seconds before a toast appears, so brief probes (libfido2
+enumeration, browsers polling the key) never surface. *_0 clears it instantly.
+
+Two flavours:
+- A Claude Code Bash command armed $XDG_RUNTIME_DIR/claude-yubikey.cmd (its
+  PreToolUse hook writes it, PostToolUse removes it): normal-urgency toast with
+  the command as body and a progress bar draining over the TOUCH_WINDOW.
+- Anything else (ssh in a terminal, WebAuthn, pam-u2f, GPG, …): low-urgency
+  toast naming the process holding the YubiKey's FIDO hidraw as a hint.
+
+Dismisses via the freedesktop CloseNotification D-Bus call (daemon-agnostic).
+Runs as a systemd --user service.
 """
 import glob
 import os
+import select
 import socket
 import subprocess
 import time
 
 RUNTIME = os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}")
 SOCK = os.path.join(RUNTIME, "yubikey-touch-detector.socket")
-current = None
+CLAUDE_CMD = os.path.join(RUNTIME, "claude-yubikey.cmd")
+DEBOUNCE = 0.6        # seconds a request must stay pending before we toast
+TOUCH_WINDOW = 30     # the key's FIDO2 user-presence timeout (measured)
+TITLE = "🔑 Touch your YubiKey"
+
+pending = None        # (kind, monotonic time the *_1 arrived)
+current = None        # notification id on screen
+bar = None            # (cmd, monotonic start) while a Claude countdown runs
 
 
 def fido_hidraws():
@@ -62,7 +74,6 @@ def source_label(kind):
         return "GPG"
     if kind == "MAC":
         return "HMAC challenge-response"
-    who = None
     try:
         who = holder_process(fido_hidraws())
     except Exception:
@@ -70,18 +81,46 @@ def source_label(kind):
     return f"FIDO2 · {who}" if who else "FIDO2 · another app"
 
 
+def claude_cmd():
+    try:
+        with open(CLAUDE_CMD) as f:
+            return f.read().strip() or None
+    except OSError:
+        return None
+
+
+def notify(*args):
+    r = subprocess.run(["notify-send", "-p", "-i", "dialog-password", *args],
+                       capture_output=True, text=True)
+    return (r.stdout.strip() or None) if r.returncode == 0 else None
+
+
 def show(kind):
-    global current
-    body = f"{source_label(kind)} (detector)"
-    r = subprocess.run(
-        ["notify-send", "-p", "-u", "low", "-a", "YubiKey-detector",
-         "-i", "dialog-password", "🔑 Touch your YubiKey", body],
-        capture_output=True, text=True)
-    current = (r.stdout.strip() or None) if r.returncode == 0 else None
+    global current, bar
+    cmd = claude_cmd() if kind == "U2F" else None
+    if cmd:
+        bar = (cmd, time.monotonic())
+        current = notify("-u", "normal", "-a", "YubiKey",
+                         "-h", "int:value:100", TITLE, cmd)
+    else:
+        current = notify("-u", "low", "-a", "YubiKey-detector",
+                         TITLE, f"{source_label(kind)} (detector)")
+
+
+def tick_bar():
+    global bar
+    cmd, start = bar
+    left = max(0.0, TOUCH_WINDOW - (time.monotonic() - start))
+    if not left or not current:
+        bar = None
+        return
+    notify("-r", current, "-u", "normal", "-a", "YubiKey",
+           "-h", f"int:value:{int(left * 100 / TOUCH_WINDOW)}", TITLE, cmd)
 
 
 def clear():
-    global current
+    global current, bar, pending
+    pending = bar = None
     if current:
         subprocess.run(
             ["gdbus", "call", "-e", "-d", "org.freedesktop.Notifications",
@@ -91,23 +130,39 @@ def clear():
         current = None
 
 
+def timeout():
+    """How long select() may sleep before something needs doing."""
+    if pending and not current:
+        return max(0.0, pending[1] + DEBOUNCE - time.monotonic())
+    if bar:
+        return 1.0
+    return None
+
+
 while True:
     try:
         s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         s.connect(SOCK)
         buf = b""
         while True:
-            data = s.recv(64)
-            if not data:
-                break
-            buf += data
-            while len(buf) >= 5:
-                ev = buf[:5].decode("ascii", "ignore")
-                buf = buf[5:]
-                if ev[-1] == "1":
-                    show(ev[:3])
-                elif ev[-1] == "0":
-                    clear()
+            ready, _, _ = select.select([s], [], [], timeout())
+            if ready:
+                data = s.recv(64)
+                if not data:
+                    break
+                buf += data
+                while len(buf) >= 5:
+                    ev = buf[:5].decode("ascii", "ignore")
+                    buf = buf[5:]
+                    if ev[-1] == "1" and not pending:
+                        pending = (ev[:3], time.monotonic())
+                    elif ev[-1] == "0":
+                        clear()
+            if pending and not current \
+                    and time.monotonic() >= pending[1] + DEBOUNCE:
+                show(pending[0])
+            elif bar:
+                tick_bar()
     except (FileNotFoundError, ConnectionRefusedError, OSError):
         clear()
         time.sleep(2)
