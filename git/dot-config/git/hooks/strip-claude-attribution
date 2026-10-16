@@ -1,0 +1,10 @@
+#!/bin/sh
+# Remove Claude attribution from commit messages: Claude co-author trailers
+# (real co-author lines stay), the Claude-Session trailer, and any other
+# claude.ai/code/session_… URL left in the message.
+sed -i \
+  -e '/^[Cc]o-[Aa]uthored-[Bb]y: Claude.*noreply@anthropic\.com>$/d' \
+  -e '/^[Cc]laude-[Ss]ession:/d' \
+  -e '/^[[:space:]]*[<(]\{0,1\}https\{0,1\}:\/\/claude\.ai\/code\/session_[^[:space:]]*[[:space:]]*$/d' \
+  -e 's#[<(]\{0,1\}https\{0,1\}://claude\.ai/code/session_[A-Za-z0-9_-]*[>)"]\{0,1\}##g' \
+  "$1"
