@@ -44,3 +44,6 @@
 	pushInsteadOf = https://github.com/
 [url "git@gitlab.com:"]
 	pushInsteadOf = https://gitlab.com/
+[hook "strip-claude-coauthor"]
+	event = commit-msg
+	command = ~/.config/git/hooks/strip-claude-coauthor
