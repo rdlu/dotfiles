@@ -1,9 +1,30 @@
 #!/bin/sh
-# Remove Claude attribution from commit messages: Claude co-author trailers
-# (real co-author lines stay), the Claude-Session trailer, and any other
-# claude.ai/code/session_… URL left in the message.
+# Remove Claude attribution from commit messages: the Claude-Session trailer
+# and any other claude.ai/code/session_… URL, always; Claude co-author
+# trailers only in repos that aren't mine (real co-author lines stay).
+#
+# "Mine" = every remote on a public forge belongs to one of claude.owners
+# (default rdlu); remotes elsewhere (local paths, ssh host aliases) don't
+# count, so a repo with no remotes is mine and a fork with an upstream isn't.
+# Override per repo: git config claude.coauthor keep|strip
+
+coauthor_mode() {
+  mode=$(git config --get claude.coauthor)
+  [ -n "$mode" ] && { echo "$mode"; return; }
+  owners=$(git config --get claude.owners || echo rdlu)
+  for url in $(git remote | xargs -r -n1 git remote get-url --all); do
+    owner=$(printf '%s\n' "$url" | sed -n \
+      's#^.*\(github\.com\|gitlab\.com\|codeberg\.org\|bitbucket\.org\|git\.sr\.ht\)[:/]~\{0,1\}\([^/]*\)/.*$#\2#p')
+    [ -z "$owner" ] && continue
+    case " $owners " in *" $owner "*) ;; *) echo strip; return ;; esac
+  done
+  echo keep
+}
+
+[ "$(coauthor_mode)" = keep ] ||
+  sed -i '/^[Cc]o-[Aa]uthored-[Bb]y: Claude.*noreply@anthropic\.com>$/d' "$1"
+
 sed -i \
-  -e '/^[Cc]o-[Aa]uthored-[Bb]y: Claude.*noreply@anthropic\.com>$/d' \
   -e '/^[Cc]laude-[Ss]ession:/d' \
   -e '/^[[:space:]]*[<(]\{0,1\}https\{0,1\}:\/\/claude\.ai\/code\/session_[^[:space:]]*[[:space:]]*$/d' \
   -e 's#[<(]\{0,1\}https\{0,1\}://claude\.ai/code/session_[A-Za-z0-9_-]*[>)"]\{0,1\}##g' \
