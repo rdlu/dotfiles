@@ -47,3 +47,6 @@
 [hook "strip-claude-coauthor"]
 	event = commit-msg
 	command = ~/.config/git/hooks/strip-claude-coauthor
+[hook "strip-claude-session"]
+	event = commit-msg
+	command = ~/.config/git/hooks/strip-claude-session
