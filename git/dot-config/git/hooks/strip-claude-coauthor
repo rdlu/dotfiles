@@ -1,3 +1,0 @@
-#!/bin/sh
-# Remove Claude co-author trailers. Real co-author lines stay.
-sed -i '/^[Cc]o-[Aa]uthored-[Bb]y: Claude.*noreply@anthropic\.com>$/d' "$1"
