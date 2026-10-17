@@ -1,9 +1,11 @@
 .aider*
 
-# Docs build output (just docs): zensical HTML site + pandoc/typst PDFs.
-# The generated markdown blocks in docs/*.md ARE tracked — only binary
-# artifacts are ignored.
-site/
+# Docs build output (mise run docs): the Hugo site in site/public/ + the
+# pandoc/typst PDFs. site/ itself (config, theme, skin) and the generated
+# markdown blocks in docs/*.md ARE tracked — only build artifacts are ignored.
+site/public/
+site/resources/
+site/.hugo_build.lock
 docs/pdf/
 tools/cheatsheets/data.json
 

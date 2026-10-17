@@ -1,0 +1,624 @@
+/* The dotfiles skin for Hextra: plugii's terminal skin (square corners, thin
+   pane borders, `┌ Title ─` headings, mono chrome, iA Writer Duo for text and
+   0xProto for code and navigation) on a Dracula palette, with Alucard, its
+   light variant, for the light theme. Fonts are declared in
+   layouts/_partials/custom/head-end.html. Dark is the default.
+
+   The second half styles this site's own markup: the PDF cards on the home
+   page and the shortcut tables, whose key columns assets/js/shortcuts.js
+   turns into keycaps. */
+
+/* ── Palette ──────────────────────────────────────────────────────────── */
+
+:root {
+  /* Light: Alucard. */
+  --p-bg: #fffbeb;
+  --p-panel: #f6f1dc;
+  --p-raised: #efe9d0;
+  --p-text: #1f1f1f;
+  --p-muted: #3d3d4a;
+  --p-faint: #635d97;
+  --p-outline: #cfcfde;
+  --p-accent: #644ac9; /* purple */
+  --p-on-accent: #fffbeb;
+  --p-secondary: #036a96; /* cyan: h3 */
+  --p-tertiary: #a3144d; /* pink: link hover */
+  --p-error: #cb3a2a;
+  --p-red: #cb3a2a;
+  --p-orange: #a34d14;
+  --p-yellow: #846e15;
+  --p-green: #14710a;
+  --p-cyan: #036a96;
+  --p-pink: #a3144d;
+
+  --p-sans: "iA Writer Duo", ui-sans-serif, system-ui, sans-serif;
+  --p-mono: "0xProto", ui-monospace, "DejaVu Sans Mono", "Noto Sans Mono", monospace;
+
+  /* Hextra derives its primary scale from these: #644ac9. */
+  --primary-hue: 252deg;
+  --primary-saturation: 55%;
+  --primary-lightness: 54%;
+}
+
+.dark {
+  /* Dark: Dracula. The comment colour (#6272a4) is lifted to #8b93c4 for
+     dim text, which needs 4.5:1 on the background. */
+  --p-bg: #282a36;
+  --p-panel: #21222c;
+  --p-raised: #343746;
+  --p-text: #f8f8f2;
+  --p-muted: #c5c8de;
+  --p-faint: #8b93c4;
+  --p-outline: #44475a;
+  --p-accent: #bd93f9; /* purple */
+  --p-on-accent: #282a36;
+  --p-secondary: #8be9fd; /* cyan: h3 */
+  --p-tertiary: #ff79c6; /* pink: link hover */
+  --p-error: #ff5555;
+  --p-red: #ff5555;
+  --p-orange: #ffb86c;
+  --p-yellow: #f1fa8c;
+  --p-green: #50fa7b;
+  --p-cyan: #8be9fd;
+  --p-pink: #ff79c6;
+
+  /* #bd93f9 */
+  --primary-hue: 265deg;
+  --primary-saturation: 89%;
+  --primary-lightness: 78%;
+}
+
+/* Hextra's own tokens, pointed at the palette. */
+:root {
+  --hx-font-sans: var(--p-sans);
+  --hx-font-mono: var(--p-mono);
+  --hx-radius-xs: 0;
+  --hx-radius-sm: 1px;
+  --hx-radius-md: 2px;
+  --hx-radius-lg: 2px;
+  --hx-radius-xl: 2px;
+  --hx-radius-2xl: 2px;
+  --hx-radius-3xl: 2px;
+  --hx-color-dark: #000;
+  --hx-color-white: #fff;
+  --hx-color-gray-50: var(--p-panel);
+  --hx-color-gray-100: var(--p-raised);
+  --hx-color-gray-200: var(--p-outline);
+  --hx-color-gray-500: var(--p-faint);
+  --hx-color-gray-600: var(--p-muted);
+  --hx-color-gray-700: var(--p-muted);
+  --hx-color-gray-800: var(--p-text);
+  --hx-color-gray-900: var(--p-text);
+  --hx-color-slate-900: var(--p-text);
+  --hx-color-neutral-200: var(--p-outline);
+}
+.dark {
+  --hx-color-gray-100: var(--p-text);
+  --hx-color-gray-200: var(--p-text);
+  --hx-color-gray-300: var(--p-muted);
+  --hx-color-gray-400: var(--p-muted);
+  --hx-color-gray-500: var(--p-faint);
+  --hx-color-gray-600: var(--p-outline);
+  --hx-color-gray-700: var(--p-outline);
+  --hx-color-slate-100: var(--p-text);
+  --hx-color-neutral-50: var(--p-text);
+  --hx-color-neutral-200: var(--p-text);
+  --hx-color-neutral-300: var(--p-muted);
+  --hx-color-neutral-400: var(--p-muted);
+  --hx-color-neutral-500: var(--p-faint);
+  --hx-color-neutral-600: var(--p-outline);
+  --hx-color-neutral-700: var(--p-outline);
+  --hx-color-neutral-800: var(--p-raised);
+  --hx-color-neutral-900: var(--p-panel);
+  --hx-color-gray-800: var(--p-text);
+  --hx-color-gray-900: var(--p-text);
+}
+
+html {
+  color-scheme: light;
+}
+html.dark {
+  color-scheme: dark;
+}
+body {
+  background: var(--p-bg);
+  color: var(--p-text);
+  font-family: var(--p-sans);
+}
+::selection {
+  background: var(--p-accent);
+  color: var(--p-on-accent);
+}
+
+/* ── Chrome: navbar, sidebar, TOC, footer in mono ─────────────────────── */
+
+.hextra-nav-container nav,
+.hextra-sidebar-container,
+.hextra-toc,
+.hextra-footer,
+.hextra-search-wrapper,
+.hextra-search-input,
+.hextra-search-results,
+nav[aria-label="breadcrumb"],
+.hextra-pager,
+.hextra-tabs-toggle,
+.hextra-code-filename {
+  font-family: var(--p-mono);
+}
+.hextra-nav-container-blur {
+  background: var(--p-bg) !important;
+  box-shadow: inset 0 -1px 0 var(--p-outline) !important;
+}
+.hextra-nav-container nav a {
+  color: var(--p-muted);
+}
+.hextra-nav-container nav a:hover,
+.hextra-nav-container nav a[aria-current="true"] {
+  color: var(--p-accent);
+}
+
+@media (min-width: 768px) {
+  .hextra-sidebar-container {
+    background: var(--p-panel);
+    border-inline-end: 1px solid var(--p-outline);
+  }
+}
+.hextra-sidebar-container > div:last-child {
+  background: var(--p-panel) !important;
+  box-shadow: none !important;
+  border-color: var(--p-outline) !important;
+}
+.hextra-sidebar-container a {
+  color: var(--p-muted);
+}
+.hextra-sidebar-container a:hover {
+  color: var(--p-text);
+  background: var(--p-raised);
+}
+/* The page you're on: reverse video, like a selected row in the TUI. */
+.hextra-sidebar-container a.hextra-sidebar-active-item {
+  background: var(--p-accent) !important;
+  color: var(--p-on-accent) !important;
+  font-weight: 700;
+}
+/* Group headings (the separator pages): `── Guides`. */
+.hextra-sidebar-container li > span.hx\:cursor-default,
+.hextra-sidebar-container li:not(:has(a)) > span {
+  color: var(--p-faint);
+  text-transform: lowercase;
+  letter-spacing: 0.02em;
+}
+.hextra-sidebar-container li:not(:has(a)) > span::before {
+  content: "── ";
+  color: var(--p-outline);
+}
+
+.hextra-toc a {
+  color: var(--p-muted);
+}
+.hextra-toc a.hextra-toc-active {
+  color: var(--p-accent) !important;
+}
+.hextra-toc div.hx\:sticky.hx\:bottom-0 {
+  background: var(--p-bg) !important;
+  box-shadow: none !important;
+  border-color: var(--p-outline) !important;
+}
+.hextra-toc a:hover,
+.hextra-toc a.hx\:text-primary-600 {
+  color: var(--p-accent) !important;
+}
+.hextra-footer {
+  border-top: 1px solid var(--p-outline);
+  background: var(--p-panel) !important;
+}
+.hextra-footer,
+.hextra-footer a {
+  color: var(--p-faint);
+}
+
+/* ── Content ──────────────────────────────────────────────────────────── */
+
+.content {
+  color: var(--p-text);
+  line-height: 1.7;
+}
+.content :where(p, li, td) {
+  color: var(--p-text);
+}
+.content :where(h1, h2, h3, h4) {
+  color: var(--p-text);
+  letter-spacing: -0.01em;
+}
+.content h1 {
+  font-family: var(--p-mono);
+  font-weight: 700;
+}
+
+/* h2 as a TUI pane title: `┌─ Title ─────────`. */
+.content h2:not(.not-prose) {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6ch;
+  border-bottom: 0 !important;
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+.content h2:not(.not-prose)::before {
+  content: "";
+  flex: none;
+  align-self: center;
+  width: 0.7em;
+  height: 0.55em;
+  margin-top: 0.45em;
+  border-top: 2px solid var(--p-outline);
+  border-left: 2px solid var(--p-outline);
+}
+.content h2:not(.not-prose)::after {
+  content: "";
+  flex: 1 1 2rem;
+  min-width: 2rem;
+  align-self: center;
+  border-top: 1px solid var(--p-outline);
+}
+.content h3 {
+  color: var(--p-secondary);
+}
+
+.content a:not(.not-prose a, .hextra-card, .subheading-anchor) {
+  color: var(--p-accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+.content a:not(.not-prose a, .hextra-card, .subheading-anchor):hover {
+  color: var(--p-tertiary);
+}
+
+/* Inline code. */
+.content :not(pre) > code {
+  font-family: var(--p-mono);
+  font-size: 0.86em;
+  color: var(--p-text);
+  background: var(--p-raised);
+  border: 1px solid var(--p-outline);
+  border-radius: 0;
+  padding: 0.05em 0.35em;
+}
+
+/* Code blocks: a pane with a thin border. */
+.hextra-code-block pre,
+.content pre {
+  background: var(--p-raised) !important;
+  border: 1px solid var(--p-outline);
+  border-radius: 0 !important;
+  font-family: var(--p-mono);
+  font-weight: 400;
+  line-height: 1.45;
+}
+.hextra-code-block .hextra-code-filename {
+  background: var(--p-panel);
+  border: 1px solid var(--p-outline);
+  border-bottom: 0;
+  border-radius: 0;
+  color: var(--p-muted);
+}
+.hextra-code-block .hextra-code-filename::before {
+  content: "┌ ";
+  color: var(--p-outline);
+}
+.hextra-code-copy-btn {
+  border-radius: 0 !important;
+  border-color: var(--p-outline) !important;
+  background: var(--p-panel) !important;
+}
+/* The shell prompt. Generated content isn't in innerText, so the copy
+   button copies the bare command. */
+.chroma code[data-lang="sh"] .line::before,
+.chroma code[data-lang="bash"] .line::before {
+  content: "$ ";
+  color: var(--p-accent);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Syntax colours: Dracula's mapping (Alucard in light mode). */
+.chroma {
+  color: var(--p-text);
+  background: transparent !important;
+}
+.chroma :is(.c, .c1, .cm, .ch, .cs, .cp, .cpf) {
+  color: var(--p-faint);
+  font-style: italic;
+}
+.chroma :is(.k, .kd, .kn, .kr, .kc, .ow, .nt) {
+  color: var(--p-pink);
+}
+.chroma :is(.kt, .nb, .bp, .nc) {
+  color: var(--p-cyan);
+}
+.chroma :is(.s, .s1, .s2, .sb, .sd, .se, .si, .sr, .ss, .sh, .dl) {
+  color: var(--p-yellow);
+}
+.chroma :is(.m, .mi, .mf, .mh, .mo, .il, .no) {
+  color: var(--p-accent);
+}
+.chroma :is(.nf, .fm, .na) {
+  color: var(--p-green);
+}
+.chroma :is(.nv, .vi, .vg, .nn) {
+  color: var(--p-orange);
+}
+.chroma :is(.o, .p, .nx, .n, .err, .w) {
+  color: inherit;
+  background: none;
+}
+
+/* Tables: thin outline, header in mono. */
+.content table {
+  font-size: 0.92rem;
+}
+.content :is(th, td) {
+  border-color: var(--p-outline) !important;
+}
+.content th {
+  font-family: var(--p-mono);
+  font-weight: 700;
+  background: var(--p-panel);
+}
+.content tr {
+  border-color: var(--p-outline) !important;
+  background: transparent !important;
+}
+
+/* Callouts and alerts: a panel with a coloured left rule. */
+.content .hextra-alert,
+.content div.hx\:mt-6.hx\:flex.hx\:border.hx\:py-2 {
+  border-radius: 0 !important;
+  background: var(--p-panel) !important;
+  color: var(--p-text) !important;
+  border: 1px solid var(--p-outline) !important;
+  border-left: 3px solid var(--p-accent) !important;
+}
+.content .hextra-alert :is(p, li, .hextra-alert-title) {
+  color: var(--p-text);
+}
+.content .hextra-alert .hextra-alert-title {
+  font-family: var(--p-mono);
+  color: var(--p-accent);
+}
+.content .hextra-alert:is([data-alert="caution"], [data-alert="warning"]) {
+  border-left-color: var(--p-error) !important;
+}
+.content .hextra-alert:is([data-alert="caution"], [data-alert="warning"]) .hextra-alert-title {
+  color: var(--p-error);
+}
+.content .hextra-alert[data-alert="tip"] {
+  border-left-color: var(--p-green) !important;
+}
+.content .hextra-alert[data-alert="tip"] .hextra-alert-title {
+  color: var(--p-green);
+}
+.content .hextra-alert[data-alert="warning"] {
+  border-left-color: var(--p-orange) !important;
+}
+.content .hextra-alert[data-alert="warning"] .hextra-alert-title {
+  color: var(--p-orange);
+}
+.content blockquote {
+  border-color: var(--p-outline);
+  color: var(--p-muted);
+}
+
+/* Cards and feature cards: panes. */
+.hextra-card,
+.hextra-feature-card {
+  border-radius: 0 !important;
+  border: 1px solid var(--p-outline) !important;
+  background: var(--p-panel) !important;
+  box-shadow: none !important;
+}
+.hextra-feature-card::before {
+  display: none;
+}
+.hextra-card:hover,
+.hextra-feature-card:hover {
+  border-color: var(--p-accent) !important;
+}
+.hextra-card .hextra-card-icon {
+  font-family: var(--p-mono);
+  color: var(--p-text) !important;
+}
+.hextra-card .hextra-card-subtitle {
+  color: var(--p-muted) !important;
+}
+.hextra-feature-card h3 {
+  font-family: var(--p-mono);
+  font-size: 1.05rem !important;
+  font-weight: 700 !important;
+  color: var(--p-text);
+}
+.hextra-feature-card h3 svg {
+  color: var(--p-accent);
+}
+.hextra-feature-card p {
+  color: var(--p-muted) !important;
+  font-size: 0.92rem !important;
+}
+.hextra-feature-card p code {
+  font-family: var(--p-mono);
+  font-size: 0.88em;
+  color: var(--p-text);
+}
+
+/* Tabs . */
+.hextra-tabs-toggle {
+  border-radius: 0 !important;
+}
+.hextra-tabs-toggle[aria-selected="true"] {
+  color: var(--p-accent) !important;
+  border-color: var(--p-accent) !important;
+}
+
+/* Keycaps: a key with a bottom edge. */
+.content kbd {
+  display: inline;
+  padding: 0.1em 0.45em;
+  font-family: var(--p-mono);
+  font-size: 0.85em;
+  line-height: 1;
+  color: var(--p-text);
+  background: var(--p-raised);
+  border: 1px solid var(--p-outline);
+  border-bottom-width: 3px;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+.content kbd + kbd {
+  margin-inline-start: 0.15em;
+}
+.content .alt {
+  color: var(--p-faint);
+  font-size: 0.85em;
+  padding-inline: 0.35em;
+}
+/* ── Search ───────────────────────────────────────────────────────────── */
+
+.hextra-search-wrapper input,
+.hextra-search-input {
+  border-radius: 0 !important;
+  background: var(--p-raised) !important;
+  border: 1px solid var(--p-outline) !important;
+  color: var(--p-text) !important;
+}
+.hextra-search-wrapper kbd {
+  border-radius: 0 !important;
+}
+.hextra-search-dialog {
+  border-radius: 0 !important;
+  background: var(--p-panel) !important;
+  border-color: var(--p-outline) !important;
+}
+.hextra-search-results > li > a {
+  border-radius: 0 !important;
+  color: var(--p-text) !important;
+}
+.hextra-search-crumb,
+.hextra-search-excerpt {
+  color: var(--p-muted) !important;
+}
+.hextra-search-match {
+  color: var(--p-accent) !important;
+}
+/* The selected result in reverse video, like the sidebar's active page. */
+.hextra-search-results > li > a[aria-selected="true"] {
+  background: var(--p-accent) !important;
+}
+.hextra-search-results > li > a[aria-selected="true"],
+.hextra-search-results > li > a[aria-selected="true"] * {
+  color: var(--p-on-accent) !important;
+}
+
+/* Footer: who keeps these dotfiles, as a `whoami`. */
+.dot-whoami {
+  font-family: var(--p-mono);
+  font-size: 0.8125rem;
+  line-height: 1.7;
+  padding: 2rem 0 0.5rem;
+}
+.dot-whoami-prompt { color: var(--p-accent); }
+.dot-whoami-name { color: var(--p-text); font-weight: 600; }
+.dot-whoami-dim { color: var(--p-faint); }
+.dot-whoami a { color: inherit; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+.dot-whoami a:hover { color: var(--p-accent); }
+
+/* ── Per-tool accents ─────────────────────────────────────────────────── */
+
+/* One Dracula colour per tool, shared by its PDF card on the home page and
+   its shortcut tables (body[data-page], set by shortcuts.js). */
+.pdf-card,
+body {
+  --tool: var(--p-accent);
+}
+.pdf-card.tmux, body[data-page="tmux"] { --tool: var(--p-green); }
+.pdf-card.herdr, body[data-page="herdr"] { --tool: var(--p-orange); }
+.pdf-card.zellij, body[data-page="zellij"] { --tool: var(--p-yellow); }
+.pdf-card.niri, body[data-page="niri"] { --tool: var(--p-cyan); }
+.pdf-card.shell, body[data-page="shell"] { --tool: var(--p-pink); }
+.pdf-card.neovim { --tool: var(--p-accent); }
+.pdf-card.handbook, body[data-page="justfile"] { --tool: var(--p-red); }
+.pdf-card.refs { --tool: var(--p-faint); }
+
+/* ── PDF cards (docs/index.md) ────────────────────────────────────────── */
+
+.pdf-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.8rem;
+  margin: 1.5em 0;
+}
+.pdf-card {
+  padding: 0.8rem 1rem;
+  background: var(--p-panel);
+  border: 1px solid var(--p-outline);
+  border-left: 3px solid var(--tool);
+}
+.pdf-card:hover {
+  border-color: var(--tool);
+}
+.pdf-card.wide {
+  grid-column: 1 / -1;
+}
+.pdf-card .pdf-title {
+  display: block;
+  font-family: var(--p-mono);
+  font-weight: 700;
+  color: var(--p-text);
+}
+.pdf-card .pdf-icon {
+  margin-right: 0.25rem;
+}
+.pdf-card .pdf-sub {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--p-faint);
+  margin-bottom: 0.6rem;
+}
+.pdf-card .pdf-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.content .pdf-card .pdf-links a {
+  font-family: var(--p-mono);
+  font-size: 0.8rem;
+  padding: 0.1rem 0.55rem;
+  color: var(--tool);
+  border: 1px solid var(--tool);
+  text-decoration: none;
+}
+.content .pdf-card .pdf-links a:hover {
+  color: var(--p-bg);
+  background: var(--tool);
+}
+
+/* ── Shortcut tables ──────────────────────────────────────────────────── */
+
+/* Tables whose first column is "Key"/"Keys" get the tool's colour on the
+   header row, and their key column as keycaps (shortcuts.js). */
+.content table[data-shortcuts] th {
+  color: var(--tool);
+  border-bottom: 2px solid var(--tool) !important;
+}
+.content table[data-shortcuts] tbody tr:hover {
+  background: color-mix(in srgb, var(--tool) 10%, transparent) !important;
+}
+.content table[data-shortcuts] td:first-child {
+  white-space: nowrap;
+}
+.content .keyseq {
+  white-space: nowrap;
+}
+.content .keyseq kbd {
+  border-bottom-color: color-mix(in srgb, var(--tool) 70%, var(--p-outline));
+}

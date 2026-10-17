@@ -8,11 +8,11 @@
 # `just X` == `mise run X`. List everything with `mise tasks`.
 
 [tools]
-# Docs site generator (zensical) + uv to run it. pandoc, typst, uv and fonts
-# stay on pacman locally (category `docs-toolchain` in setup/packages.yaml);
-# these two are here so CI gets them too.
-uv = "latest"
-"pipx:zensical" = "latest"
+# Docs site generator (site/): plain hugo, since Hextra ships precompiled CSS.
+# Pinned so CI builds with the version tested here; pacman's hugo (category
+# `docs-toolchain` in setup/packages.yaml, with pandoc, typst and the fonts)
+# is the same one locally.
+hugo = "0.168.0"
 
 [settings]
 # Run task scripts under bash with `set -u`, matching the old justfile's
@@ -20,11 +20,6 @@ uv = "latest"
 # script and the task stops on the first failing entry — same per-line
 # semantics as just. Self-contained here (CI has no user-level mise config).
 unix_default_inline_shell_args = "bash -uc"
-
-[settings.pipx]
-# Run pipx: tools through uvx (uv). Also set in the user-level config, but CI
-# only sees this file.
-uvx = true
 
 [vars]
 # Base stow packages deployed on every machine.
@@ -467,12 +462,14 @@ run = [
 ]
 
 # Docs pipeline: gen-docs.py rewrites the generated markdown blocks from the
-# live configs; zensical (from [tools] above, via uvx) builds the HTML site
-# into site/; pandoc+typst render PDFs into docs/pdf/ (linked by the site,
-# so build PDFs before HTML — enforced by docs-html's wait_for below).
+# live configs; Hugo + Hextra (site/, which mounts docs/ as its content) builds
+# the HTML site into site/public/; pandoc+typst render PDFs into docs/pdf/
+# (linked by the site, so build PDFs before HTML — enforced by docs-html's
+# wait_for below). tools/pandoc-docs.lua drops the Hugo front matter and turns
+# `> [!NOTE]` alerts into bold lead-ins for the PDFs.
 
 [tasks.docs-setup]
-description = "One-time install of the docs toolchain (pandoc + typst; uv ships with CachyOS)"
+description = "One-time install of the docs toolchain (hugo, pandoc, typst, fonts)"
 run = 'paru -S --needed $(mise run _pkgs docs-toolchain)'
 
 [tasks.docs-update]
@@ -488,7 +485,7 @@ run = [
 for page in setup file-transfer calendar neovim-plugins justfile shortcuts/tmux shortcuts/herdr shortcuts/zellij shortcuts/niri shortcuts/shell wl-kbptr; do
   out="$(basename "$page")"
   case "$out" in tmux|herdr|zellij|niri|shell) out="$out-shortcuts";; esac
-  pandoc "docs/$page.md" -o "docs/pdf/$out.pdf" \
+  pandoc "docs/$page.md" -o "docs/pdf/$out.pdf" --lua-filter=tools/pandoc-docs.lua \
     --pdf-engine=typst --toc -V papersize=a4 -V mainfont="Libertinus Serif" -M date="$(date -I)"
 done
 ''',
@@ -497,9 +494,9 @@ pandoc docs/setup.md docs/file-transfer.md docs/calendar.md docs/neovim-plugins.
   docs/shortcuts/tmux.md docs/shortcuts/herdr.md \
   docs/shortcuts/zellij.md docs/shortcuts/niri.md docs/shortcuts/shell.md \
   docs/wl-kbptr.md \
-  -o docs/pdf/dotfiles-handbook.pdf \
+  -o docs/pdf/dotfiles-handbook.pdf --lua-filter=tools/pandoc-docs.lua \
   --pdf-engine=typst --toc -V papersize=a4 -V mainfont="Libertinus Serif" \
-  -M title="rdlu's dotfiles handbook" -M date="$(date -I)"
+  -V title="rdlu's dotfiles handbook" -M date="$(date -I)"
 ''',
 ]
 
@@ -525,12 +522,13 @@ done
 ]
 
 [tasks.docs-html]
-description = "Build the HTML site into site/ (zensical from mise tools)"
+description = "Build the HTML site into site/public/ (Hugo + Hextra)"
 depends = ["docs-update"]
 # When co-scheduled (e.g. `mise run docs`), build the PDFs first — the site
 # links them. Standalone `mise run docs-html` is unaffected.
 wait_for = ["docs-pdf", "docs-cheatsheets"]
-run = 'zensical build --clean'
+dir = "site"
+run = 'hugo --minify --cleanDestinationDir'
 
 [tasks.docs]
 description = "Full docs build: regenerate markdown, then PDFs + cheatsheets, then the HTML site"
@@ -539,9 +537,10 @@ depends = ["docs-pdf", "docs-cheatsheets", "docs-html"]
 [tasks.docs-serve]
 description = "Live-preview the docs site while editing (opens the browser once it's up)"
 depends = ["docs-update"]
+dir = "site"
 run = '''
-(sleep 1 && xdg-open http://localhost:8000) &
-zensical serve
+(sleep 1 && xdg-open http://127.0.0.1:1313/) &
+hugo server --bind 127.0.0.1 --port 1313
 '''
 
 [tasks.docs-open]

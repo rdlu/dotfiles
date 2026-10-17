@@ -1,3 +1,9 @@
+---
+title: "tmux shortcuts"
+linkTitle: "tmux"
+weight: 1
+---
+
 # tmux shortcuts
 
 Aliases `mux` / `mux1` open (or re-attach to) the first and second sessions.

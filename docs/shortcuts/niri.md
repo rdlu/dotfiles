@@ -1,3 +1,9 @@
+---
+title: "niri shortcuts"
+linkTitle: "niri"
+weight: 4
+---
+
 # niri shortcuts
 
 Key bindings for the [niri](https://github.com/YaLTeR/niri) scrollable-tiling
@@ -15,6 +21,7 @@ binds see also the [wl-kbptr guide](../wl-kbptr.md).
 | Keys | Action |
 | --- | --- |
 | `Mod+Shift+Slash` | Dotfiles Docs (local) |
+| `Mod+F1` | Keybinding Cheatsheet: Noctalia |
 | `Mod+T` | Open a Terminal: ghostty |
 | `Mod+D` | Run an Application: Noctalia |
 | `Mod+Slash` | Run an Application: fuzzel |

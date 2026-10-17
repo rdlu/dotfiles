@@ -155,7 +155,8 @@ fastfetch: # fastfetch
 docs-toolchain: # docs-setup
   - pandoc-cli
   - typst
-  - uv
+  - hugo # docs site (site/); the repo mise.toml pins the same version for CI
+  - uv # runs mise's pipx: tools (uvx), no longer the docs site
   - ttf-jetbrains-mono-nerd # cheatsheet keycaps/labels (JetBrainsMono Nerd Font)
   - inter-font # cheatsheet body text (Inter)
 

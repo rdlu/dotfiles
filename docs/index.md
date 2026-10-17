@@ -1,3 +1,7 @@
+---
+title: "rdlu's dotfiles"
+---
+
 # rdlu's dotfiles
 
 Personal dotfiles for two [CachyOS](https://cachyos.org/) (Arch) notebooks —

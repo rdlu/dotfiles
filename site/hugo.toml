@@ -1,0 +1,127 @@
+# The docs site: https://dotfiles.dlu.one/, built by `mise run docs-html` and
+# deployed to GitHub Pages by .github/workflows/docs.yml, with a custom domain
+# (static/CNAME). Links go through relURL, so it also works under a subpath
+# like rdlu.github.io/dotfiles/ if the domain goes.
+# Same stack as plugii's site: Hugo + Hextra, vendored, no Go modules, no Node.
+baseURL = "https://dotfiles.dlu.one/"
+title = "rdlu's dotfiles"
+locale = "en"
+# Hextra v0.13.0, vendored (trimmed) into themes/hextra.
+theme = "hextra"
+enableRobotsTXT = true
+disableKinds = ["taxonomy", "term", "rss"]
+
+# Every page, the home page included, is a docs page with the sidebar.
+[cascade]
+  type = "docs"
+
+[outputs]
+  home = ["html"]
+  section = ["html"]
+  page = ["html"]
+
+[markup.goldmark.renderer]
+  unsafe = true # the PDF card grid on the home page is raw HTML
+[markup.highlight]
+  noClasses = false
+[markup.tableOfContents]
+  startLevel = 2
+  endLevel = 3
+
+[[menu.main]]
+  name = "Search"
+  weight = 1
+  [menu.main.params]
+    type = "search"
+[[menu.main]]
+  name = "Theme"
+  weight = 2
+  [menu.main.params]
+    type = "theme-toggle"
+[[menu.main]]
+  name = "GitHub"
+  url = "https://github.com/rdlu/dotfiles"
+  weight = 3
+  [menu.main.params]
+    icon = "github"
+
+[params]
+  description = "Dotfiles for two CachyOS notebooks: stow + mise tasks, niri/Noctalia/fish/tmux. Generated shortcut references and setup guides."
+  displayUpdatedDate = false
+
+  [params.navbar]
+    displayTitle = true
+    displayLogo = true
+    width = "wide"
+    [params.navbar.logo]
+      path = "favicon.svg"
+      dark = "favicon.svg"
+      width = 26
+      height = 26
+
+  [params.theme]
+    default = "dark"
+    displayToggle = true
+
+  # The footer's `whoami` block (layouts/_partials/custom/footer.html).
+  [params.author]
+    name = "Rodrigo Dlugokenski"
+    location = "Rio de Janeiro / Porto Alegre, Brazil"
+    since = 2019 # the LICENSE year
+    [[params.author.links]]
+      label = "r.dlu.one"
+      url = "https://r.dlu.one"
+    [[params.author.links]]
+      label = "github.com/rdlu"
+      url = "https://github.com/rdlu"
+
+  [params.footer]
+    enable = true
+    displayCopyright = false
+    displayPoweredBy = true
+
+  [params.page]
+    width = "wide" # the shortcut tables are wide
+
+  [params.search]
+    enable = true
+    type = "flexsearch"
+    [params.search.flexsearch]
+      index = "content"
+      tokenize = "forward"
+      # Vendored (assets/lib/flexsearch, Apache-2.0), so the build needs no
+      # network: without this Hextra fetches it from jsDelivr.
+      js = "lib/flexsearch/flexsearch.bundle.min.js"
+
+  [params.highlight.copy]
+    enable = true
+    display = "hover"
+
+  [params.editURL]
+    enable = false
+
+# The pages themselves live in ../docs, where tools/gen-docs.py rewrites the
+# generated blocks and pandoc reads them for the PDFs; they are mounted, not
+# copied. Declaring any mount replaces the defaults, so content/, assets/ and
+# static/ are mounted explicitly too.
+[[module.mounts]]
+  source = "content" # section pages that exist only on the site (shortcuts/_index.md)
+  target = "content"
+[[module.mounts]]
+  source = "../docs/index.md"
+  target = "content/_index.md"
+[[module.mounts]]
+  source = "../docs"
+  target = "content"
+  files = ["! index.md", "! pdf/**"]
+[[module.mounts]]
+  source = "assets"
+  target = "assets"
+[[module.mounts]]
+  source = "static"
+  target = "static"
+# PDFs and cheatsheets from `mise run docs-pdf` / `docs-cheatsheets`, linked
+# from the home page as pdf/<name>.pdf.
+[[module.mounts]]
+  source = "../docs/pdf"
+  target = "static/pdf"

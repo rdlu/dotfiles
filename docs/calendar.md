@@ -1,3 +1,8 @@
+---
+title: "Calendar"
+weight: 3
+---
+
 # Calendar
 
 Two terminal calendars run side by side on both hosts (daisy and xps), each
@@ -46,12 +51,12 @@ of yours (the Google Drive one works too):
    application type **Desktop app**, named after the host (`xps calendar`,
    `daisy calendar`). Keep the client ID and secret for `calendar-google setup`.
 
-!!! warning "Publish the app. Don't leave it in Testing"
-    While the consent screen is in **Testing**, Google expires refresh tokens
-    after **7 days**, and both calendars stop syncing every week. Published but
-    *unverified* is fine for personal use. At consent, Google shows "Google
-    hasn't verified this app": click **Advanced → Go to … (unsafe)**, and tick
-    the calendar access box if Google shows one.
+> [!WARNING] Publish the app. Don't leave it in Testing
+> While the consent screen is in **Testing**, Google expires refresh tokens
+> after **7 days**, and both calendars stop syncing every week. Published but
+> *unverified* is fine for personal use. At consent, Google shows "Google
+> hasn't verified this app": click **Advanced → Go to … (unsafe)**, and tick
+> the calendar access box if Google shows one.
 
 With one client per host, you can revoke or rotate one host without touching
 the other.

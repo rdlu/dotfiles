@@ -4,7 +4,7 @@
 # Bound to Mod+Shift+Slash in niri.
 
 set -l dotfiles ~/.dotfiles
-set -l site $dotfiles/site
+set -l site $dotfiles/site/public
 set -l port 8911
 
 # Build the site on first use.
@@ -16,7 +16,8 @@ if not test -f $site/index.html
     end
 end
 
-# Serve site/ on localhost; zensical uses directory URLs, so file:// won't do.
+# Serve site/public/ on localhost; Hugo uses directory URLs and root-relative
+# links, so file:// won't do.
 if not ss -ltn 2>/dev/null | string match -q "*:$port *"
     setsid -f python3 -m http.server $port --bind 127.0.0.1 --directory $site >/dev/null 2>&1
 end

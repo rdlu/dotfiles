@@ -1,3 +1,9 @@
+---
+title: "tmux vs herdr"
+linkTitle: "tmux → herdr"
+weight: 7
+---
+
 # tmux vs herdr
 
 **herdr** is an *agent multiplexer*: a terminal multiplexer built around AI
@@ -13,10 +19,10 @@ don't collide. That leaves `Ctrl-a` free for readline and for agents running
 inside herdr panes (and as tmux's prefix when one is nested). Everything below
 reads `prefix+X` as `Ctrl-b X`.
 
-!!! note
-    This page is the *narrative* comparison. The complete, current binding
-    list lives on the [**herdr shortcuts page**](shortcuts/herdr.md) — treat
-    that as the source of truth for keys.
+> [!NOTE]
+> This page is the *narrative* comparison. The complete, current binding
+> list lives on the [**herdr shortcuts page**](shortcuts/herdr.md) — treat
+> that as the source of truth for keys.
 
 ## Key differences at a glance
 
@@ -64,9 +70,9 @@ on what "horizontal" and "vertical" mean, so I bound by physical key + intent:
 | Side-by-side    | `=` (`split-window -h`)  | `Ctrl-b =` (`split_vertical`)     |
 | Stacked         | `-` (`split-window -v`)  | `Ctrl-b -` (`split_horizontal`)   |
 
-!!! tip
-    `split_vertical` is bound to the list `["prefix+=", "prefix+v"]` — `=` is my
-    added tmux-muscle key, and herdr's original `v` is kept as an alias.
+> [!TIP]
+> `split_vertical` is bound to the list `["prefix+=", "prefix+v"]` — `=` is my
+> added tmux-muscle key, and herdr's original `v` is kept as an alias.
 
 A handful of management keys also moved layer:
 
@@ -143,9 +149,9 @@ API (`herdr pane read` / `send-text`, `herdr workspace …`):
 | `Ctrl-b t` | `exec $SHELL`      | `C-t` display-popup | Disposable scratch shell in a temp pane                 |
 | `Ctrl-b o` | `herdr-sessionize` | sessionx (`prefix o`) | Fuzzy-pick a project/notes dir → open or switch a workspace for it; leads with the already-open workspaces |
 
-!!! note
-    herdr has **no floating popups**; these are real (disposable) panes that
-    close on exit, not `display-popup` overlays.
+> [!NOTE]
+> herdr has **no floating popups**; these are real (disposable) panes that
+> close on exit, not `display-popup` overlays.
 
 ## Native plugins
 

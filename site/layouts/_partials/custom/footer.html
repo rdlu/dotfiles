@@ -1,0 +1,14 @@
+{{- /* Who keeps these dotfiles, as a `whoami` in the terminal skin. Data: params.author. */ -}}
+{{- with site.Params.author -}}
+<div class="dot-whoami">
+  <div class="dot-whoami-prompt">$ whoami</div>
+  <div><span class="dot-whoami-name">{{ .name }}</span>{{ with .location }} <span class="dot-whoami-dim">— {{ . }}</span>{{ end }}</div>
+  <div class="dot-whoami-links">
+    {{- range $i, $l := .links -}}
+      {{- if $i }}<span class="dot-whoami-dim"> · </span>{{ end -}}
+      <a href="{{ $l.url }}" target="_blank" rel="noopener me">{{ $l.label }}</a>
+    {{- end -}}
+  </div>
+  <div class="dot-whoami-dim">© {{ .since }}{{ if gt now.Year .since }}–{{ now.Year }}{{ end }} {{ .name }} · the dotfiles are <a href="https://github.com/rdlu/dotfiles/blob/main/LICENSE" target="_blank" rel="noopener">MIT licensed</a></div>
+</div>
+{{- end -}}
