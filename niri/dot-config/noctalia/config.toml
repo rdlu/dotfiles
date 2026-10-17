@@ -52,6 +52,7 @@ filename_pattern = "Screenshot from %Y-%m-%d %H-%M-%S"
 save_to_file = true
 copy_to_clipboard = true
 freeze_screen = true
+remember_last_region = true # pre-select the last region, confirm with Enter/Space (like niri)
 
 [theme]
 source = "wallpaper" # palette generated from the current wallpaper
