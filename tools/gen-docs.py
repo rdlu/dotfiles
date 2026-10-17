@@ -412,6 +412,17 @@ NIRI_DISPLAY_ORDER = [
     "Screenshots & screencasting", "Session & misc",
 ]
 
+# The cheatsheet flows sections column by column and keeps short ones whole,
+# so a short section late in the list can spill onto a second page while an
+# earlier column still has room. Session & misc fits under Workspaces.
+CHEAT_NIRI_ORDER = [
+    "Apps & launchers", "Mouse warp (wl-kbptr)",
+    "Media, volume & brightness", "Focus", "Moving windows & columns",
+    "Workspaces", "Session & misc", "Monitors", "Layout & sizing",
+    "Screenshots & screencasting",
+]
+assert sorted(CHEAT_NIRI_ORDER) == sorted(NIRI_DISPLAY_ORDER)
+
 
 def niri_rows() -> dict[str, list]:
     """Categorized plain-data rows: {category: [(keys, desc, is_cmd, notes)]}.
@@ -1065,7 +1076,7 @@ def cheat_data() -> dict:
 
     grouped = niri_rows()
     niri_sections = []
-    for title in NIRI_DISPLAY_ORDER:
+    for title in CHEAT_NIRI_ORDER:
         rows = []
         for keys, desc, is_cmd, notes in grouped[title]:
             if keys in CHEAT_NIRI_DESC:
