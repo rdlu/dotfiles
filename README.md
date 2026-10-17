@@ -42,7 +42,7 @@ version-pinned languages and tools not in the repos).
 ## Docs
 
 Full documentation lives under [`docs/`](./docs/) and is published as an
-HTML site + PDFs ([rdlu.github.io/dotfiles](https://rdlu.github.io/dotfiles/)):
+HTML site + PDFs ([dotfiles.dlu.one](https://dotfiles.dlu.one/)):
 
 - [Setup guide](./docs/setup.md) — fresh machine, stow model, services
 - [Justfile reference](./docs/justfile.md) — generated from the live justfile
