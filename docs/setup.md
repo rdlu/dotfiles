@@ -1,3 +1,8 @@
+---
+title: "Setup guide"
+weight: 1
+---
+
 # Setup guide
 
 How a fresh CachyOS/Arch machine becomes one of mine. Everything is driven by
@@ -85,15 +90,20 @@ just doctor   # health check: tools, login shell, host overlay, services, symlin
 This site itself is part of the repo:
 
 ```sh
-just docs-setup   # one-time: install typst (pandoc + uv come from the repos)
+just docs-setup   # one-time: install hugo, pandoc, typst and the fonts
 just docs         # regenerate markdown from configs, build HTML site + PDFs
 just docs-serve   # live-preview the site while editing
 ```
 
 `tools/gen-docs.py` (Python stdlib, no deps) re-reads `tmux.conf`,
 `binds.kdl`, and the justfile and rewrites the generated blocks in the
-markdown. [Zensical](https://zensical.org) (installed by mise from the
-repo-root `mise.toml`) builds the HTML site into `site/`; pandoc + Typst
-render the PDFs into `docs/pdf/`, which the site links directly. The `just`
+markdown. [Hugo](https://gohugo.io) with the vendored
+[Hextra](https://imfing.github.io/hextra/) theme builds the HTML site from
+`site/`, which mounts `docs/` as its content, into `site/public/`; GitHub
+Pages serves it at [dotfiles.dlu.one](https://dotfiles.dlu.one/). Each page
+starts with Hugo front matter (`title`, `linkTitle` for the sidebar,
+`weight` for its order) and keeps its own `# H1`, which only the PDFs show.
+pandoc + Typst render the PDFs into `docs/pdf/`, which the site links
+directly; `tools/pandoc-docs.lua` drops the front matter there. The `just`
 recipes are thin shims over the equivalent mise tasks (`mise run docs`,
 etc.).

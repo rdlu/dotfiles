@@ -1,3 +1,8 @@
+---
+title: "wl-kbptr"
+weight: 8
+---
+
 # wl-kbptr
 
 Keyboard-driven mouse pointer for Wayland. Replaces

@@ -1,0 +1,12 @@
+{{- /* dotfiles: copy of the Hextra v0.13.0 file, one change: a Markdown `# H1`
+  renders nothing. Hextra already prints the front matter title as the page
+  heading, and the `# H1` stays in docs/*.md for the PDFs, where it is the
+  chapter title in the handbook. */ -}}
+{{- if gt .Level 1 -}}
+<h{{ .Level }} data-hextra-search-id="{{ .Anchor | safeURL }}" {{- with .Attributes.class }} class="{{ . }}" {{- end }}>
+  {{- .Text | safeHTML -}}
+  <span class="hx:absolute hx:-mt-20" id="{{ .Anchor | safeURL }}"></span>
+  <a href="#{{ .Anchor | safeURL }}" class="subheading-anchor" aria-label="{{ (T "permalinkLabel") | default "Permalink for this section" }}"></a>
+</h{{ .Level }}>
+{{- end -}}
+{{- /* Drop trailing newlines */ -}}

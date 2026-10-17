@@ -172,7 +172,7 @@ ext-display:
 services-enable:
   @mise run services-enable
 
-# One-time install of the docs toolchain (pandoc + typst; uv ships with CachyOS)
+# One-time install of the docs toolchain (hugo, pandoc, typst, fonts)
 [group("docs")]
 docs-setup:
   @mise run docs-setup
@@ -192,7 +192,7 @@ docs-pdf:
 docs-cheatsheets:
   @CHEAT_FONT_PATH="{{ cheat_font_path }}" mise run docs-cheatsheets
 
-# Build the HTML site into site/ (zensical from the repo's mise tools)
+# Build the HTML site into site/public/ (Hugo + Hextra)
 [group("docs")]
 docs-html:
   @mise run docs-html

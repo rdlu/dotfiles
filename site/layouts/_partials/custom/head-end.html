@@ -1,0 +1,30 @@
+{{- /*
+  Self-hosted fonts (static/fonts/, each with its OFL license), declared here
+  rather than in custom.css so relURL keeps them right under a subpath too:
+  the CSS is served from a different directory in `hugo server` and in the
+  build. Same files as plugii's site.
+
+  - iA Writer Duo (body, UI): the official webfonts from iaolo/iA-Fonts,
+    unmodified ("iA Writer" is a Reserved Font Name, so no subsetting).
+  - 0xProto (code, navigation): 0xType/0xProto, subset to Latin, punctuation
+    and box drawing with
+      pyftsubset 0xProto-Regular.ttf --flavor=woff2 --layout-features='*' \
+        --unicodes='U+0020-007E,U+00A0-00FF,U+0131,U+0152-0153,U+02C6,U+02DC,U+2010-2027,U+2030-203A,U+2044,U+20AC,U+2122,U+2190-21FF,U+2212,U+2248,U+2260-2265,U+2300-23FF,U+2500-259F,U+25A0-25FF,U+2600-26FF,U+2713-2718,U+2800-28FF,U+FFFD'
+    (and the same for 0xProto-Bold.ttf).
+    Glyphs it lacks (arrows, braille, blocks) fall back to the system mono.
+*/ -}}
+{{- $duo := "fonts/ia-writer-duo/" -}}
+{{- $proto := "fonts/0xproto/" -}}
+<link rel="preload" href="{{ print $duo "iAWriterDuoS-Regular.woff2" | relURL }}" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="{{ print $proto "0xProto-Regular.woff2" | relURL }}" as="font" type="font/woff2" crossorigin />
+<style>
+@font-face { font-family: "iA Writer Duo"; font-style: normal; font-weight: 400; font-display: swap; src: url("{{ print $duo "iAWriterDuoS-Regular.woff2" | relURL }}") format("woff2"); }
+@font-face { font-family: "iA Writer Duo"; font-style: normal; font-weight: 700; font-display: swap; src: url("{{ print $duo "iAWriterDuoS-Bold.woff2" | relURL }}") format("woff2"); }
+@font-face { font-family: "iA Writer Duo"; font-style: italic; font-weight: 400; font-display: swap; src: url("{{ print $duo "iAWriterDuoS-Italic.woff2" | relURL }}") format("woff2"); }
+@font-face { font-family: "0xProto"; font-style: normal; font-weight: 400; font-display: swap; src: url("{{ print $proto "0xProto-Regular.woff2" | relURL }}") format("woff2"); }
+@font-face { font-family: "0xProto"; font-style: normal; font-weight: 700; font-display: swap; src: url("{{ print $proto "0xProto-Bold.woff2" | relURL }}") format("woff2"); }
+</style>
+{{- /* Keycaps for the shortcut tables (assets/js/shortcuts.js). */ -}}
+{{- with resources.Get "js/shortcuts.js" | minify | fingerprint }}
+<script defer src="{{ .RelPermalink }}" integrity="{{ .Data.Integrity }}"></script>
+{{- end }}

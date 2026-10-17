@@ -1,3 +1,8 @@
+---
+title: "File transfer"
+weight: 2
+---
+
 # File transfer
 
 How files move on and off these machines without the cloud: **LocalSend** for
@@ -18,10 +23,10 @@ whatever firewall zone holds the active interfaces, and renders a per-host
 `~/Downloads/Transfers/README.md`. The helper scripts and the niri menu entries
 arrive with `just stow`.
 
-!!! warning "Why `file-transfer-harden` is a separate step"
-    It disables SSH **password** login (key-only). Run it only on machines that
-    will *receive* rsync, and make sure you have a key installed — or are sitting
-    at the machine — first. `sshd` is left disabled; `ssh-here` starts it on demand.
+> [!WARNING] Why `file-transfer-harden` is a separate step
+> It disables SSH **password** login (key-only). Run it only on machines that
+> will *receive* rsync, and make sure you have a key installed — or are sitting
+> at the machine — first. `sshd` is left disabled; `ssh-here` starts it on demand.
 
 ## LocalSend — phone ↔ computer
 
@@ -115,9 +120,9 @@ of yours:
 3. **Credentials** (Clients) → **Create credentials → OAuth client ID** →
    application type **Desktop app**, named after the host (`xps`, `daisy`).
 
-!!! warning "Publish the app — don't leave it in Testing"
-    after **7 days** and the mount stops working every week. Published but
-    verified this app" — click **Advanced → Go to … (unsafe)**.
+> [!WARNING] Publish the app — don't leave it in Testing
+> after **7 days** and the mount stops working every week. Published but
+> verified this app" — click **Advanced → Go to … (unsafe)**.
 
 One client per host means a host can be revoked or rotated without touching the
 other.

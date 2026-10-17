@@ -1,3 +1,8 @@
+---
+title: "Neovim plugins"
+weight: 4
+---
+
 # Neovim plugins
 
 The day-to-day plugins on the **`nvim-light`** profile, with the keymaps as they
@@ -5,14 +10,14 @@ are actually wired here. This is the LazyVim distro (`<leader>` is **Space**);
 this page only covers the plugins worth knowing on purpose — the rest stay out of
 the way.
 
-!!! note "Two profiles: `nvim-light` vs `nvim-full`"
-    `~/.config/nvim` points at **`nvim-light/`**: notes (obsidian, dotmd), prose
-    and music (pencil, strudel), plus **Rust** and **LaTeX** coding and Claude.
-    The heavier **`nvim-full`** profile adds the IDE layer — code outline
-    (aerial/navic/outline), **refactoring**, inc-rename, testing, eslint, and the
-    web/devops languages (TypeScript, Docker, SQL, YAML, TOML). So `nvim-light`
-    isn't coding-free; it just skips the IDE machinery and the web stack.
-    Neither profile currently enables a `lang.elixir` extra.
+> [!NOTE] Two profiles: `nvim-light` vs `nvim-full`
+> `~/.config/nvim` points at **`nvim-light/`**: notes (obsidian, dotmd), prose
+> and music (pencil, strudel), plus **Rust** and **LaTeX** coding and Claude.
+> The heavier **`nvim-full`** profile adds the IDE layer — code outline
+> (aerial/navic/outline), **refactoring**, inc-rename, testing, eslint, and the
+> web/devops languages (TypeScript, Docker, SQL, YAML, TOML). So `nvim-light`
+> isn't coding-free; it just skips the IDE machinery and the web stack.
+> Neither profile currently enables a `lang.elixir` extra.
 
 ## Quick reference
 
@@ -75,10 +80,10 @@ characters at your target; press a label if more than one match remains.
 Works in operator-pending mode too — `d` then `s` + 2 chars deletes up to the
 target.
 
-!!! note "`gs` is leap's; surround lives on `gz`"
-    mini.surround is mapped to `gz*` (`gza` add, `gzd` delete, `gzr` replace,
-    `gzf`/`gzF` find, `gzh` highlight) so leap owns `gs` (leap-across-windows)
-    with no `timeoutlen` delay. This matches the LazyVim leap extra's own default.
+> [!NOTE] `gs` is leap's; surround lives on `gz`
+> mini.surround is mapped to `gz*` (`gza` add, `gzd` delete, `gzr` replace,
+> `gzf`/`gzF` find, `gzh` highlight) so leap owns `gs` (leap-across-windows)
+> with no `timeoutlen` delay. This matches the LazyVim leap extra's own default.
 
 ## Editing
 
@@ -183,10 +188,10 @@ Commands use the `:Obsidian` prefix (legacy bare commands are off):
 Recent gains: native **LSP completion**, **Bases** (`.base`) support,
 end-to-end-encrypted sync, proper unicode tags, and configurable default keymaps.
 
-!!! tip "Lighter quick-capture: dotmd"
-    For throwaway notes, todos and journals outside the vault, `dotmd.nvim` lives
-    under `<leader>z` (create note `<leader>zc`, today's todo `<leader>zt`,
-    journal `<leader>zj`, inbox `<leader>zi`, search `<leader>zs…`).
+> [!TIP] Lighter quick-capture: dotmd
+> For throwaway notes, todos and journals outside the vault, `dotmd.nvim` lives
+> under `<leader>z` (create note `<leader>zc`, today's todo `<leader>zt`,
+> journal `<leader>zj`, inbox `<leader>zi`, search `<leader>zs…`).
 
 ## Tips & combos
 
@@ -251,12 +256,12 @@ The plugin people mean by "the refactoring plugin" is **`refactoring.nvim`**
 extract a block to a new file, plus debug-print helpers. In LazyVim it's the
 `editor.refactoring` extra, mapped under `<leader>r`.
 
-!!! warning "Not installed here, and it can't help Elixir"
-    `refactoring.nvim` is **not** on `nvim-light` (it's part of `nvim-full`). More
-    importantly, it supports a **fixed** language list — TypeScript, JavaScript,
-    Lua, Go, Python, C, C++, Java, PHP, Ruby. **Elixir is not supported**, so
-    extract/inline never fire in `.ex`/`.exs` buffers regardless of which profile
-    you're in.
+> [!WARNING] Not installed here, and it can't help Elixir
+> `refactoring.nvim` is **not** on `nvim-light` (it's part of `nvim-full`). More
+> importantly, it supports a **fixed** language list — TypeScript, JavaScript,
+> Lua, Go, Python, C, C++, Java, PHP, Ruby. **Elixir is not supported**, so
+> extract/inline never fire in `.ex`/`.exs` buffers regardless of which profile
+> you're in.
 
 For Elixir, refactoring comes from the language server and CLI tools instead:
 
@@ -268,8 +273,8 @@ For Elixir, refactoring comes from the language server and CLI tools instead:
 | Project-wide automated refactors | [Recode](https://github.com/hrzndhrn/recode) (CLI) | `mix recode` |
 | Refactoring suggestions + lint | [Credo](https://github.com/rrrene/credo) | `mix credo --strict` |
 
-!!! note "No Elixir LSP on this profile yet"
-    `nvim-light` has no `lang.elixir` extra, so `<leader>ca` / `<leader>cr` have
-    nothing to act on in Elixir files here. If you want Elixir support on this
-    machine, add `lazyvim.plugins.extras.lang.elixir` (ElixirLS + treesitter +
-    formatting) — ask and I'll wire it in.
+> [!NOTE] No Elixir LSP on this profile yet
+> `nvim-light` has no `lang.elixir` extra, so `<leader>ca` / `<leader>cr` have
+> nothing to act on in Elixir files here. If you want Elixir support on this
+> machine, add `lazyvim.plugins.extras.lang.elixir` (ElixirLS + treesitter +
+> formatting) — ask and I'll wire it in.

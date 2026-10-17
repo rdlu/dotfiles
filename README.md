@@ -53,14 +53,15 @@ HTML site + PDFs ([rdlu.github.io/dotfiles](https://rdlu.github.io/dotfiles/)):
 - [wl-kbptr](./docs/wl-kbptr.md) — keyboard-driven mouse pointer for niri
 
 The shortcut tables are **generated from the real configs** by
-[`tools/gen-docs.py`](./tools/gen-docs.py); [Zensical](https://zensical.org)
-(installed by mise from the repo-local [`mise.toml`](./mise.toml)) builds the
-HTML, pandoc + Typst render the PDFs:
+[`tools/gen-docs.py`](./tools/gen-docs.py); [Hugo](https://gohugo.io) with the
+[Hextra](https://imfing.github.io/hextra/) theme (vendored in [`site/`](./site),
+which mounts `docs/` as its content) builds the HTML for
+[dotfiles.dlu.one](https://dotfiles.dlu.one/), pandoc + Typst render the PDFs:
 
 ```sh
-just docs-setup   # one-time: pandoc + typst
-just docs         # regenerate markdown, build site/ + docs/pdf/
-just docs-serve   # live preview
+just docs-setup   # one-time: hugo, pandoc, typst, fonts
+just docs         # regenerate markdown, build site/public/ + docs/pdf/
+just docs-serve   # live preview on http://127.0.0.1:1313/
 ```
 
 Every `just` recipe is now a mise task (`mise run docs`, `mise tasks` to

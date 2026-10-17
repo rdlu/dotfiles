@@ -1,3 +1,9 @@
+---
+title: "Shell shortcuts (fish)"
+linkTitle: "shell (fish)"
+weight: 5
+---
+
 # Shell shortcuts (fish)
 
 Interactive-shell bindings: custom `bind` lines from this repo, plus the

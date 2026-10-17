@@ -1,3 +1,9 @@
+---
+title: "zellij shortcuts"
+linkTitle: "zellij"
+weight: 3
+---
+
 # zellij shortcuts
 
 Key bindings for [zellij](https://zellij.dev/) — configured with

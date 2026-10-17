@@ -1,3 +1,9 @@
+---
+title: "herdr shortcuts"
+linkTitle: "herdr"
+weight: 2
+---
+
 # herdr shortcuts
 
 [herdr](https://herdr.dev) is an *agent multiplexer* — a terminal multiplexer

@@ -1,5 +1,6 @@
 # Build and deploy the docs site (HTML + PDFs) to GitHub Pages.
-# Mirrors `mise run docs` locally: gen-docs.py -> pandoc/typst PDFs -> zensical.
+# Mirrors `mise run docs` locally: gen-docs.py -> pandoc/typst PDFs -> Hugo.
+# Served at https://dotfiles.dlu.one/ (custom domain: site/static/CNAME).
 name: Documentation
 on:
   push:
@@ -28,8 +29,9 @@ jobs:
       - uses: pandoc/actions/setup@v1
       - name: Install cheatsheet fonts
         run: sudo apt-get update -qq && sudo apt-get install -y -qq fonts-inter fonts-jetbrains-mono
-      # mise installs the repo-local tools from ./mise.toml (uv + zensical)
-      # and runs the docs tasks.
+      # mise installs the repo-local tools from ./mise.toml (the pinned hugo;
+      # Hextra is vendored in site/themes, so nothing else is fetched) and runs
+      # the docs tasks.
       - uses: jdx/mise-action@v2
         with:
           cache: true
@@ -50,6 +52,6 @@ jobs:
         run: mise run docs-html
       - uses: actions/upload-pages-artifact@v5
         with:
-          path: site
+          path: site/public
       - uses: actions/deploy-pages@v5
         id: deployment

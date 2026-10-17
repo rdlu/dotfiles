@@ -1,3 +1,8 @@
+---
+title: "Justfile reference"
+weight: 5
+---
+
 # Justfile reference
 
 All automation in this repo is a mise task (defined in the repo-root
@@ -88,11 +93,11 @@ Tasks are defined in the repo-root `mise.toml` — every recipe is equally runna
 | --- | --- | --- |
 | `just docs` | Full docs build: regenerate markdown, then PDFs + cheatsheets, then the HTML site | `docs-pdf`, `docs-cheatsheets`, `docs-html` |
 | `just docs-cheatsheets` | Landscape cheatsheet PDFs, Catppuccin Latte (print) + Mocha (dark) variants | `docs-update` |
-| `just docs-html` | Build the HTML site into site/ (zensical from the repo's mise tools) | `docs-update` |
+| `just docs-html` | Build the HTML site into site/public/ (Hugo + Hextra) | `docs-update` |
 | `just docs-open` | Open a PDF (default: the combined handbook; e.g. `just docs-open tmux-shortcuts`) | `docs-pdf` |
 | `just docs-pdf` | Build the PDFs (per-page references + combined handbook) into docs/pdf/ | `docs-update` |
 | `just docs-serve` | Live-preview the docs site while editing (opens the browser once it's up) | `docs-update` |
-| `just docs-setup` | One-time install of the docs toolchain (pandoc + typst; uv ships with CachyOS) |  |
+| `just docs-setup` | One-time install of the docs toolchain (hugo, pandoc, typst, fonts) |  |
 | `just docs-update` | Regenerate the generated markdown blocks from tmux.conf, binds.kdl, and the justfile |  |
 
 ### calendar
