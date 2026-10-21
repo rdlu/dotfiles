@@ -1,0 +1,995 @@
+#!/usr/bin/env fish
+
+# bt-doctor - diagnose and un-wedge Bluetooth (BlueZ), with an fzf TUI.
+#
+# Usage:
+#   bt-doctor                       TUI: adapter + paired devices, live preview
+#   bt-doctor diagnose              non-destructive report + suggested fixes
+#   bt-doctor fix                   escalate until the adapter can scan again:
+#                                   power cycle → rfkill cycle → daemon restart
+#                                   + driver reload (one polkit prompt)
+#   bt-doctor reconnect [dev]       disconnect, wait, connect
+#   bt-doctor pair [dev]            re-pair: remove, pair with a scripted agent
+#                                   (answers the yes/no prompts), trust, connect
+#   bt-doctor remove [dev]          forget a device
+#   bt-doctor reset power|rfkill|daemon|audio
+#   bt-doctor list [filter] [-q]    devices as MAC<TAB>name<TAB>state, one per line
+#                                   (no colour or header when piped)
+#         --paired (default)  --connected  --all (every device bluetoothctl knows)
+#         --history  BlueZ's store in /var/lib/bluetooth, which keeps names of
+#                    devices seen or paired before, even after `remove`
+#                    (root-only: one pkexec/sudo prompt)
+#         -q/--mac   MACs only
+#   bt-doctor pick [filter]         fzf over `list`, prints the chosen MAC(s)
+#
+# [dev] is a MAC or a case-insensitive name substring (paired + known
+# devices, then the --history store after saying it will ask for
+# privileges). Without [dev] the MAC is read from stdin, one per line:
+#   bt-doctor list --history | fzf | cut -f1 | bt-doctor pair
+#   bt-doctor list --connected -q | xargs -n1 bt-doctor reconnect
+#   bt-doctor pair (bt-doctor pick --history)
+#
+# TUI keys:
+#   enter   action menu (device + global actions)
+#   ctrl-r  reconnect          ctrl-p  re-pair          ctrl-x  remove
+#   ctrl-d  diagnose           ctrl-f  fix (escalating) ctrl-n  scan & pair new
+#   esc     quit
+#
+# After a daemon restart any running bluetui must be restarted too: its
+# pairing agent dies with the daemon ("No agent available" in the journal).
+
+set -g SELF (status filename)
+set -g TMPDIR_BT (mktemp -d /tmp/bt-doctor.XXXXXX)
+
+function _cleanup --on-event fish_exit
+    test -d "$TMPDIR_BT"; and rm -rf $TMPDIR_BT
+end
+
+function _die
+    echo "bt-doctor: $argv" >&2
+    exit 1
+end
+
+# --- output helpers ----------------------------------------------------------
+
+function _say # section heading
+    set_color --bold cyan; echo "== $argv"; set_color normal
+end
+
+function _ok
+    set_color green; echo -n '✓ '; set_color normal; echo $argv
+end
+
+function _bad
+    set_color red; echo -n '✗ '; set_color normal; echo $argv
+end
+
+function _warn
+    set_color yellow; echo -n '! '; set_color normal; echo $argv
+end
+
+function _note
+    set_color -d; echo "  $argv"; set_color normal
+end
+
+function pause
+    isatty stdin; or return 0
+    read -P (set_color -d)'-- enter to continue --'(set_color normal) >/dev/null
+end
+
+# is there a terminal to ask on, even when stdin is a pipe?
+function _tty_ok
+    sh -c ': </dev/tty' 2>/dev/null
+end
+
+function _notify -a msg
+    command -q notify-send; and notify-send -a bt-doctor 'Bluetooth' "$msg"
+end
+
+# Privileged `sh -c SCRIPT ARGS…`: root → direct; graphical session → polkit
+# prompt via pkexec; plain terminal → sudo. One call = one prompt.
+function _priv
+    if test (id -u) -eq 0
+        sh -c $argv[1] sh $argv[2..-1]
+    else if set -q WAYLAND_DISPLAY; or set -q DISPLAY
+        pkexec sh -c $argv[1] sh $argv[2..-1]
+    else
+        sudo sh -c $argv[1] sh $argv[2..-1]
+    end
+end
+
+# --- bluetoothctl wrappers ---------------------------------------------------
+
+# bluetoothctl with ANSI colours, readline markers and CRs stripped
+function bt
+    command bluetoothctl $argv 2>&1 | string replace -ra '\e\[[0-9;]*[A-Za-z]|[\r\x01\x02]' ''
+end
+
+# connect, bounded: `bluetoothctl --timeout N` would always wait the full N
+function bt_connect --argument-names mac
+    timeout 30 bluetoothctl connect $mac 2>&1 | string replace -ra '\e\[[0-9;]*[A-Za-z]|[\r\x01\x02]' ''
+end
+
+# value of "Key: value" in bluetoothctl info/show output: _kv Key lines…
+function _kv --argument-names key
+    set -l v (string match -rg -- "^\s*$key: (.*)\$" $argv[2..-1])
+    test -n "$v[1]"; and echo $v[1]
+end
+
+function is_mac
+    string match -qir '^([0-9a-f]{2}:){5}[0-9a-f]{2}$' -- $argv[1]
+end
+
+# MAC<TAB>name for: bluetoothctl devices [Paired|Connected|…]
+function devices_of --argument-names filter
+    bt devices $filter | string replace -rf '^Device ([0-9A-F:]{17}) ?(.*)$' '$1'\t'$2'
+end
+
+# paired,bonded,trusted,connected (the ones that are yes) | seen; fails when
+# bluetoothctl doesn't know the device. Pass info lines to skip the lookup.
+function device_state --argument-names mac
+    set -l info $argv[2..-1]
+    test (count $info) -gt 0; or set info (bt info $mac)
+    string match -q 'Device *' -- $info[1]; or return 1
+    string match -q '*not available*' -- $info[1]; and return 1
+    set -l st
+    for k in Paired Bonded Trusted Connected Blocked
+        test "$(_kv $k $info)" = yes; and set -a st (string lower $k)
+    end
+    test (count $st) -eq 0; and set st seen
+    string join , $st
+    return 0 # string join fails on a single item
+end
+
+function device_name --argument-names mac
+    set -l n (devices_of | string match -e -- $mac | string split -m1 \t)[2]
+    test -n "$n"; and echo $n; or echo $mac
+end
+
+function adapter_present
+    bt show | string match -q 'Controller *'
+end
+
+function adapter_powered
+    test "$(_kv Powered (bt show))" = yes
+end
+
+# Can discovery start? Leaves the result in $DISC_MSG. The scan ends with the
+# short-lived bluetoothctl client; `scan off` is belt and braces.
+function discovery_ok --argument-names secs
+    test -n "$secs"; or set secs 3
+    set -l out (bt --timeout $secs scan on)
+    bt scan off >/dev/null
+    set -g DISC_MSG (string match -r 'Failed.*|No default controller.*|Discovery started' -- $out)[1]
+    test -n "$DISC_MSG"; or set DISC_MSG "no 'Discovery started' ($(string join ' / ' -- $out[1..2]))"
+    string match -q '*InProgress*' -- $out; and return 1
+    string match -qr 'Failed to start discovery|No default controller' -- $out; and return 1
+    string match -q 'Discovery started' -- $out
+end
+
+# vendor helper modules that btusb uses (btintel, btrtl, btmtk, btbcm, …)
+function bt_helper_modules
+    lsmod | awk '$4 ~ /(^|,)btusb(,|$)/ { print $1 }'
+end
+
+function chip_vendor # from the Manufacturer id in `bluetoothctl show`
+    set -l id (_kv Manufacturer (bt show) | string match -rg '\((\d+)\)')
+    switch "$id"
+        case 2; echo 'Intel (btintel)'
+        case 93; echo 'Realtek (btrtl)'
+        case 15; echo 'Broadcom (btbcm)'
+        case 70; echo 'MediaTek (btmtk)'
+        case 29; echo 'Qualcomm (btqca)'
+        case ''; echo unknown
+        case '*'; echo "manufacturer id $id"
+    end
+end
+
+# --- history store (/var/lib/bluetooth, root-only) ---------------------------
+
+# grep -H ^Name= output → MAC<TAB>name, deduped; bond info names win
+# over cache names
+function history_parse
+    set -l seen
+    set -l rows
+    while read -l line
+        set -l m (string match -rg '^/var/lib/bluetooth/[^/]+/(?:cache/)?([0-9A-Fa-f:]{17})(/info)?:Name=(.*)$' -- $line)
+        test (count $m) -ge 2; or continue
+        # groups: MAC, [/info], name (fish drops an unmatched optional group)
+        set -l mac (string upper $m[1])
+        set -l name $m[-1]
+        set -l bonded (string match -q '*/info:Name=*' -- $line; and echo 1)
+        if set -l i (contains -i -- $mac $seen)
+            test -n "$bonded"; and set rows[$i] "$mac"\t"$name"
+        else
+            set -a seen $mac
+            set -a rows "$mac"\t"$name"
+        end
+    end
+    printf '%s\n' $rows
+end
+
+# BT_DOCTOR_HISTORY=<file of grep -H output> stands in for the root-only read
+function history_fetch
+    if set -q BT_DOCTOR_HISTORY
+        history_parse <$BT_DOCTOR_HISTORY
+        return
+    end
+    _priv 'grep -H "^Name=" /var/lib/bluetooth/*/cache/* /var/lib/bluetooth/*/*/info 2>/dev/null' | history_parse
+end
+
+# --- list / pick -------------------------------------------------------------
+
+# MAC<TAB>name<TAB>state for: paired | connected | all | history
+function list_rows --argument-names filter
+    set -l src
+    switch $filter
+        case paired; set src (devices_of Paired)
+        case connected; set src (devices_of Connected)
+        case all; set src (devices_of)
+        case history; set src (history_fetch)
+    end
+    for l in $src
+        set -l p (string split -m1 \t -- $l)
+        set -l st (device_state $p[1]; or echo history)
+        printf '%s\t%s\t%s\n' $p[1] $p[2] $st
+    end
+end
+
+# parse list filters into $LIST_FILTER / $LIST_MACONLY
+function _list_opts
+    set -g LIST_FILTER paired
+    set -g LIST_MACONLY
+    for a in $argv
+        switch $a
+            case --paired; set LIST_FILTER paired
+            case --connected; set LIST_FILTER connected
+            case --all; set LIST_FILTER all
+            case --history; set LIST_FILTER history
+            case -q --mac; set LIST_MACONLY 1
+            case '*'; echo "bt-doctor: unknown list option: $a" >&2; return 2
+        end
+    end
+end
+
+function list_cmd
+    _list_opts $argv; or return 2
+    test $LIST_FILTER = history; and isatty stdout
+    and echo (set_color -d)'reading /var/lib/bluetooth (needs privileges)…'(set_color normal) >&2
+    set -l rows (list_rows $LIST_FILTER)
+    if test -n "$LIST_MACONLY"
+        printf '%s\n' $rows | cut -f1
+    else if isatty stdout
+        set_color -d; printf '%-17s  %-30s  %s\n' MAC NAME STATE; set_color normal
+        for r in $rows
+            set -l p (string split \t -- $r)
+            set -l c normal
+            string match -q '*connected*' -- $p[3]; and set c green
+            string match -qr '^(seen|history)$' -- $p[3]; and set c brblack
+            printf '%s  %-30s  %s%s%s\n' $p[1] $p[2] (set_color $c) $p[3] (set_color normal)
+        end
+    else
+        printf '%s\n' $rows
+    end
+end
+
+function pick_cmd
+    command -q fzf; or _die "fzf is required"
+    _list_opts $argv; or return 2
+    set -l rows (list_rows $LIST_FILTER)
+    test (count $rows) -gt 0; or _die "no $LIST_FILTER devices"
+    printf '%s\n' $rows | fzf --multi --reverse --delimiter \t --with-nth 2,3,1 \
+        --prompt "$LIST_FILTER> " --header 'TAB select | enter pick' \
+        --preview "$SELF __preview {1}" --preview-window 'right:55%:wrap' | cut -f1
+end
+
+# --- device resolution -------------------------------------------------------
+
+# MAC or name substring → MAC (stdout). Errors go to stderr, status 1.
+function resolve_device --argument-names q
+    if test -z "$q"
+        echo "bt-doctor: missing device (MAC or name)" >&2
+        return 1
+    end
+    if is_mac $q
+        string upper -- $q
+        return 0 # string upper fails when nothing changed
+    end
+    set -l re (string escape --style=regex -- $q)
+    set -l hits (devices_of | string match -ir -- "^\S+\t.*$re.*")
+    if test (count $hits) -eq 0
+        echo "bt-doctor: no known device matches '$q'; checking BlueZ history (needs privileges)…" >&2
+        set hits (history_fetch | string match -ir -- "^\S+\t.*$re.*")
+    end
+    if test (count $hits) -gt 1 # an exact (case-insensitive) name wins
+        set -l exact (string match -ir -- "^\S+\t$re\$" $hits)
+        test (count $exact) -eq 1; and set hits $exact
+    end
+    switch (count $hits)
+        case 0
+            echo "bt-doctor: no device matches '$q'" >&2
+            return 1
+        case 1
+            string split -m1 \t -- $hits[1] | head -n1
+        case '*'
+            echo "bt-doctor: '$q' is ambiguous:" >&2
+            printf '  %s\n' (string replace \t '  ' -- $hits) >&2
+            return 1
+    end
+end
+
+# MACs from the argument, else from stdin (first tab field of each line)
+function device_args
+    if test -n "$argv[1]"
+        resolve_device $argv[1]
+        return
+    end
+    if isatty stdin
+        echo "bt-doctor: missing device (MAC or name, or MACs on stdin)" >&2
+        return 1
+    end
+    # slurp stdin first: bluetoothctl must not eat the rest of it
+    set -l wanted
+    while read -l line
+        set -l f (string trim -- (string split -m1 \t -- $line)[1])
+        test -n "$f"; and set -a wanted $f
+    end
+    for f in $wanted
+        resolve_device $f </dev/null; or return 1
+    end
+    test (count $wanted) -gt 0; or begin
+        echo "bt-doctor: no device on stdin" >&2
+        return 1
+    end
+end
+
+# --- resets ------------------------------------------------------------------
+
+function wait_adapter --argument-names secs
+    for i in (seq $secs)
+        adapter_present; and return 0
+        sleep 1
+    end
+    return 1
+end
+
+function reset_power
+    _say 'power cycle'
+    set -l off (bt power off)
+    if string match -q '*succeeded*' -- $off
+        _ok 'powered off'
+    else
+        _warn "power off failed: $(string match -r 'Failed.*' -- $off)"
+        _note 'a "Failed to set mode" here means the controller is wedged'
+    end
+    sleep 1
+    set -l on (bt power on)
+    if string match -q '*succeeded*' -- $on
+        _ok 'powered on'
+    else
+        _bad "power on failed: $(string match -r 'Failed.*' -- $on)"
+        return 1
+    end
+end
+
+function reset_rfkill
+    _say 'rfkill cycle'
+    rfkill block bluetooth; or begin
+        _bad 'rfkill block failed'
+        return 1
+    end
+    _ok 'blocked'
+    sleep 2
+    rfkill unblock bluetooth
+    _ok 'unblocked'
+    wait_adapter 8; or _warn 'adapter did not come back within 8s'
+    sleep 1
+    bt power on >/dev/null
+end
+
+function reset_daemon
+    _say 'restart bluetoothd + reload driver'
+    set -l mods (bt_helper_modules)
+    if test -d /sys/module/btusb
+        _note "reloading btusb"(test -n "$mods"; and echo " + $mods")" (one privilege prompt)"
+    else
+        _note 'btusb not loaded: restarting the daemon only (one privilege prompt)'
+    end
+    # Never `set -e`: whatever fails, bluetooth must be started again.
+    _priv '
+        systemctl stop bluetooth
+        if [ -d /sys/module/btusb ]; then
+            modprobe -r btusb 2>/dev/null || echo "btusb: still in use, continuing"
+            for m in "$@"; do modprobe -r "$m" 2>/dev/null; done
+            sleep 1
+            modprobe btusb || echo "modprobe btusb failed"
+        fi
+        systemctl start bluetooth' $mods
+    or begin
+        _bad 'privileged step failed or was cancelled'
+        systemctl is-active -q bluetooth; or _bad 'bluetooth.service is NOT running'
+        return 1
+    end
+    systemctl is-active -q bluetooth; and _ok 'bluetooth.service active'; or _bad 'bluetooth.service not active'
+    wait_adapter 10; and _ok 'adapter is back'; or _bad 'no adapter after 10s'
+    sleep 1
+    bt power on >/dev/null
+    bluetui_hint
+end
+
+function bluetui_hint
+    if pgrep -x bluetui >/dev/null
+        _warn 'bluetui is running: restart it; its pairing agent died with the daemon'
+    else
+        _note 'restart bluetui (or any BT GUI) if one was open: its agent died with the daemon'
+    end
+end
+
+function reset_audio
+    _say 'restart audio stack'
+    if systemctl --user restart wireplumber pipewire pipewire-pulse
+        _ok 'wireplumber, pipewire, pipewire-pulse restarted'
+    else
+        _bad 'restart failed'
+        return 1
+    end
+end
+
+# --- verify / fix ------------------------------------------------------------
+
+function verify
+    sleep 2
+    if not adapter_powered
+        _bad 'adapter not powered'
+        return 1
+    end
+    if discovery_ok 3
+        _ok 'adapter powered and discovery starts'
+    else
+        _bad "discovery fails: $DISC_MSG"
+        return 1
+    end
+end
+
+function fix_cmd
+    _say 'current state'
+    if verify
+        _ok 'adapter looks healthy; for a misbehaving device try: bt-doctor reconnect <dev>'
+        return 0
+    end
+    set -l names 'power cycle' 'rfkill cycle' 'daemon restart + driver reload'
+    set -l funcs reset_power reset_rfkill reset_daemon
+    for i in 1 2 3
+        echo
+        $funcs[$i]
+        echo
+        _say "verify after $names[$i]"
+        if verify
+            echo
+            _ok "fixed by level $i: $names[$i]"
+            _notify "Fixed by $names[$i]"
+            return 0
+        end
+    end
+    echo
+    _bad 'still broken after every level'
+    _note 'check `journalctl -b -k | grep -i bluetooth` for firmware errors; a reboot may be needed'
+    _notify 'Still broken after every level'
+    return 1
+end
+
+# --- device actions ----------------------------------------------------------
+
+function wait_field --argument-names mac key secs
+    for i in (seq $secs)
+        test "$(_kv $key (bt info $mac))" = yes; and return 0
+        sleep 1
+    end
+    return 1
+end
+
+function reconnect_device --argument-names mac
+    set -l name (device_name $mac)
+    _say "reconnect $name ($mac)"
+    bt disconnect $mac | string match -r 'Disconnection successful|Failed.*|not available.*'
+    sleep 2
+    bt_connect $mac | string match -r 'Connection successful|Failed.*|not available.*'
+    if wait_field $mac Connected 8
+        _ok "$name connected"
+    else
+        _bad "$name did not connect"
+        _note "if this keeps failing, re-pair: bt-doctor pair $mac"
+        return 1
+    end
+end
+
+function remove_device --argument-names mac
+    set -l name (device_name $mac)
+    _tty_ok; or begin
+        _bad "removing $name needs a terminal to confirm"
+        return 1
+    end
+    read -P "forget $name ($mac)? [y/N] " -l ans </dev/tty
+    string match -qi y -- $ans; or return 0
+    bt remove $mac | string match -r 'Device has been removed|Failed.*|not available.*'
+end
+
+# Scripted bluetoothctl session (bt-doctor __feed MAC | bluetoothctl).
+# EVERYTHING written to stdout here is typed into bluetoothctl. "yes" is sent
+# every couple of seconds: it answers "Accept pairing (yes/no)" / "Authorize
+# service" prompts and is a harmless "Invalid command" otherwise.
+function feed --argument-names mac
+    echo 'agent NoInputNoOutput'; sleep 1
+    echo default-agent; sleep 1
+    echo 'scan on'
+    for i in (seq 20) # wait until the device is advertising
+        devices_of | string match -q -- "$mac*"; and break
+        sleep 1
+    end
+    sleep 1
+    echo "pair $mac"
+    for i in (seq 20)
+        sleep 2
+        echo yes
+        test "$(_kv Paired (bt info $mac))" = yes; and break
+    end
+    echo 'scan off'
+    echo "trust $mac"; sleep 1
+    echo "connect $mac"
+    for i in (seq 8)
+        sleep 2
+        echo yes
+        test "$(_kv Connected (bt info $mac))" = yes; and break
+    end
+    sleep 1
+    echo quit
+end
+
+function pair_device --argument-names mac
+    set -l name (device_name $mac)
+    _say "pair $name ($mac)"
+    _warn 'put the device in pairing mode first'
+    _note 'ZMK keyboards: BT_CLR on that profile; others: hold the BT/pair key until it blinks'
+    if _tty_ok
+        read -P (set_color -d)'-- enter when it is in pairing mode, ctrl-c to abort --'(set_color normal) >/dev/null </dev/tty
+        or return 1
+    end
+    if device_state $mac >/dev/null
+        bt remove $mac | string match -r 'Device has been removed|Failed.*'
+    end
+    _note 'scanning, pairing and answering the yes/no prompts (up to ~70s)…'
+    $SELF __feed $mac | command bluetoothctl
+    bt trust $mac >/dev/null
+    echo
+    set -l info (bt info $mac)
+    if test "$(_kv Paired $info)" = yes; and test "$(_kv Connected $info)" != yes
+        bt_connect $mac >/dev/null
+        set info (bt info $mac)
+    end
+    _say "result for $name"
+    set -l good 1
+    for k in Paired Bonded Trusted Connected
+        if test "$(_kv $k $info)" = yes
+            _ok "$k: yes"
+        else
+            _bad "$k: "(_kv $k $info; or echo '?')
+            set good 0
+        end
+    end
+    if test $good -eq 1
+        _notify "$name paired and connected"
+    else
+        _note 'not complete: was it in pairing mode? check the journal: bt-doctor diagnose'
+        return 1
+    end
+end
+
+function scan_and_pair
+    command -q fzf; or _die "fzf is required"
+    _say 'scan for new devices (15s)'
+    _warn 'put the device in pairing mode now'
+    bt --timeout 15 scan on >/dev/null
+    set -l paired (devices_of Paired | cut -f1)
+    set -l cands
+    for l in (devices_of)
+        set -l p (string split -m1 \t -- $l)
+        contains -- $p[1] $paired; and continue
+        # unnamed devices show their MAC with dashes as the name: sort last
+        if test "$p[2]" = (string replace -a : - -- $p[1])
+            set -a cands "$p[1]"\t(set_color -d)"(unnamed) $p[1]"(set_color normal)
+        else
+            set -p cands "$p[1]"\t"$p[2]  "(set_color -d)$p[1](set_color normal)
+        end
+    end
+    if test (count $cands) -eq 0
+        _bad 'nothing new found'
+        return 1
+    end
+    set -l pick (printf '%s\n' $cands | fzf --ansi --reverse --delimiter \t --with-nth 2 \
+        --prompt 'pair> ' --header 'discovered, unpaired devices | enter pair | esc cancel')
+    test -n "$pick"; or return 0
+    pair_device (string split -m1 \t -- $pick)[1]
+end
+
+# --- diagnose ----------------------------------------------------------------
+
+# pattern | short name | what it means | what to do
+set -g SIGS \
+    'org\.bluez\.Error\.InProgress|[Oo]peration already in progress|Failed to start discovery' \
+    'operation already in progress' \
+    'the controller is stuck mid-operation (often a half-finished scan); new scans and connects are refused' \
+    'bt-doctor fix (this one usually needs the daemon + driver reload level)' \
+    'Failed to set mode' \
+    'Failed to set mode' \
+    'the kernel could not power the adapter on/off: the controller is wedged' \
+    'bt-doctor fix' \
+    'No agent available|device_confirm_passkey: Operation not permitted' \
+    'no pairing agent' \
+    'a device asked to pair/confirm but no agent was registered (a GUI like bluetui loses its agent when the daemon restarts)' \
+    'restart bluetui, or bt-doctor pair <device>' \
+    'hog-lib|Read Report Reference descriptor failed|HID Information read failed|read_pnpid_cb' \
+    'BLE HID read failures' \
+    'the daemon cannot read a BLE keyboard/mouse descriptors; it can stay "connected" while input stops (e.g. a dead touchpad)' \
+    'bt-doctor reconnect <device>; re-pair if it keeps happening' \
+    '[Pp]air.*[Ff]ailed.*Timeout|Authentication (?:Failed|Timeout)|AuthenticationTimeout' \
+    'pairing failed / timed out' \
+    'the device was not in pairing mode, or still holds an old bond for this computer' \
+    'pairing mode on the device (ZMK: BT_CLR on that profile), then bt-doctor pair <device>' \
+    'hci\d+: .*(?:tx timeout|timed out|[Ff]ailed)' \
+    'controller/firmware errors (kernel)' \
+    'the USB controller or its firmware stopped answering' \
+    'bt-doctor reset daemon (reloads the driver); reboot if it recurs'
+
+function journal_bt # this boot: bluetooth unit + bluetooth kernel lines, in time order
+    begin
+        journalctl -b -u bluetooth --no-pager -o short-iso 2>/dev/null
+        journalctl -b -k --no-pager -o short-iso 2>/dev/null | string match -ri -- '.*(?:bluetooth|hci\d).*'
+    end | sort -s -k1,1
+end
+
+function diagnose
+    set -l fixes
+    _say 'Bluetooth diagnosis'
+    if systemctl is-active -q bluetooth
+        _ok 'daemon: bluetooth.service active'
+    else
+        _bad "daemon: bluetooth.service $(systemctl is-active bluetooth)"
+        set -a fixes 'bt-doctor reset daemon'
+    end
+
+    set -l show (bt show)
+    if string match -q 'Controller *' -- $show[1]
+        set -l drv (path basename (path resolve /sys/class/bluetooth/hci0/device/driver 2>/dev/null))
+        _ok "adapter: "(string match -rg 'Controller (\S+)' -- $show[1])" ($(_kv Name $show)), $(chip_vendor) via $(test -n "$drv"; and echo $drv; or echo '?')"
+        set -l pw (_kv Powered $show)
+        set -l ps (_kv PowerState $show)
+        if test "$pw" = yes
+            _ok "power: Powered yes, PowerState $ps"
+        else
+            _bad "power: Powered $pw, PowerState $ps"
+            set -a fixes 'bt-doctor reset power'
+        end
+    else
+        _bad 'adapter: no controller visible to bluetoothd'
+        set -a fixes 'bt-doctor fix'
+    end
+
+    set -l rf (rfkill -n -o SOFT,HARD list bluetooth 2>/dev/null | string split ' ')
+    if test (count $rf) -lt 2
+        _warn 'rfkill: no bluetooth rfkill device'
+    else if test "$rf[1]" = unblocked -a "$rf[2]" = unblocked
+        _ok 'rfkill: unblocked'
+    else
+        _bad "rfkill: soft $rf[1], hard $rf[2]"
+        test "$rf[2]" = blocked; and _note 'hard block = hardware switch / BIOS / airplane key'
+        set -a fixes 'rfkill unblock bluetooth'
+    end
+
+    set -l healthy 0
+    if discovery_ok 3
+        _ok 'discovery: scan starts'
+        test "$(_kv Powered $show)" = yes; and set healthy 1
+    else
+        _bad "discovery: $DISC_MSG"
+        string match -q '*InProgress*' -- $DISC_MSG
+        and _note 'InProgress while Discovering: no = wedged discovery; rfkill rarely clears it, the daemon+driver level does'
+        set -a fixes 'bt-doctor fix'
+    end
+
+    set -l mods (lsmod | awk '$1 == "bluetooth" || $1 == "btusb" || $4 ~ /(^|,)btusb(,|$)/ { print $1 }')
+    if test (count $mods) -gt 0
+        _ok "modules: $mods"
+    else
+        _bad 'modules: no bluetooth modules loaded'
+    end
+
+    set -l conn (devices_of Connected | cut -f2)
+    set -l paired (devices_of Paired | count)
+    _ok "devices: $paired paired, "(count $conn)" connected"(test (count $conn) -gt 0; and echo ": "(string join ', ' $conn))
+
+    echo
+    _say 'journal signatures (this boot)'
+    set -l lines (journal_bt)
+    set -l found 0
+    # lines from older bluetoothd processes predate the current daemon
+    set -l pid (systemctl show -p MainPID --value bluetooth 2>/dev/null)
+    for i in (seq 1 4 (count $SIGS))
+        set -l title $SIGS[(math $i + 1)]
+        set -l meaning $SIGS[(math $i + 2)]
+        set -l fix $SIGS[(math $i + 3)]
+        set -l hits (string match -r -- ".*(?:$SIGS[$i]).*" $lines)
+        test (count $hits) -gt 0; or continue
+        set found 1
+        set -l stale (string match -r -- '.* bluetoothd\[(?!'$pid'\]).*' $hits | count)
+        set -l current (math (count $hits) - $stale)
+        set -l last (string match -rg 'T(\d\d:\d\d)' -- $hits[-1])
+        set -l settled 0 # adapter-level error, but the adapter checks pass now
+        test $healthy -eq 1; and string match -q 'bt-doctor fix*' -- $fix; and set settled 1
+        if test $current -gt 0 -a $settled -eq 0
+            set_color red; echo -n '✗ '
+        else
+            set_color yellow; echo -n '! '
+        end
+        set_color --bold; echo -n $title; set_color normal; set_color -d
+        echo -n "  "(count $hits)"×, last at $last"
+        test $stale -gt 0; and echo -n ", $stale before the current daemon started"
+        echo; set_color normal
+        echo "    $meaning"
+        if test $current -gt 0 -a $settled -eq 1
+            set_color -d; echo "    (the adapter passes the checks above now; if it comes back: $fix)"; set_color normal
+        else if test $current -gt 0
+            set_color green; echo "    fix: $fix"; set_color normal
+            set -a fixes $fix
+        else
+            set_color -d; echo "    (only from an earlier daemon run; ignore unless it comes back)"; set_color normal
+        end
+    end
+    test $found -eq 1; or _ok 'no known error signatures'
+
+    echo
+    _say 'suggested'
+    if test (count $fixes) -eq 0
+        _ok 'nothing: the adapter looks healthy'
+    else
+        printf '  → %s\n' (printf '%s\n' $fixes | awk '!seen[$0]++')
+    end
+end
+
+# --- TUI line builders + preview --------------------------------------------
+
+function adapter_line
+    set -l show (bt show)
+    if not string match -q 'Controller *' -- $show[1]
+        printf 'adapter\t\e[31m⚙ no adapter\e[0m  (bluetoothd down or controller gone)\n'
+        return
+    end
+    set -l mac (string match -rg 'Controller (\S+)' -- $show[1])
+    set -l pw (_kv Powered $show)
+    set -l state '\e[32mpowered\e[0m'
+    test "$pw" = yes; or set state '\e[31mPOWERED OFF\e[0m'
+    test "$(_kv Discovering $show)" = yes; and set state "$state, scanning"
+    printf 'adapter\t\e[36m⚙\e[0m adapter %s  %b  \e[2m%s\e[0m\n' (_kv Name $show) $state $mac
+end
+
+function device_line --argument-names mac name
+    set -l info (bt info $mac)
+    set -l mark '\e[2m○\e[0m'
+    test "$(_kv Connected $info)" = yes; and set mark '\e[32m✓\e[0m'
+    set -l bat (_kv 'Battery Percentage' $info | string match -rg '\((\d+)\)')
+    set -l batstr '    '
+    if test -n "$bat"
+        set batstr (printf '%3s%%' $bat)
+        test $bat -le 20; and set batstr "\e[31m$batstr\e[0m"
+    end
+    set -l tags
+    test "$(_kv Trusted $info)" = yes; or set -a tags untrusted
+    test "$(_kv Bonded $info)" = yes; or set -a tags unbonded
+    set -l tagstr (test (count $tags) -gt 0; and echo " \e[33m["(string join ' ' $tags)"]\e[0m")
+    printf '%s\t%b %b  %-20s%b  \e[2m%s\e[0m\n' $mac $mark $batstr $name "$tagstr" $mac
+end
+
+function list_lines # adapter row, then paired devices (connected first)
+    adapter_line
+    set -l conn (devices_of Connected | cut -f1)
+    set -l rest
+    for l in (devices_of Paired)
+        set -l p (string split -m1 \t -- $l)
+        if contains -- $p[1] $conn
+            device_line $p[1] $p[2]
+        else
+            set -a rest $l
+        end
+    end
+    for l in $rest
+        set -l p (string split -m1 \t -- $l)
+        device_line $p[1] $p[2]
+    end
+end
+
+# journal lines → "HH:MM:SS message", errors red, warnings yellow
+function journal_fmt
+    for l in $argv
+        set l (string replace -r '^\S+T(\d\d:\d\d:\d\d)\S* \S+ (?:bluetoothd\[\d+\]|kernel): ' '$1 ' -- $l)
+        if string match -qir 'fail|error|timeout|not permitted|no agent' -- $l
+            set_color red
+        else if string match -qir 'warn|unable|unlikely|no matching' -- $l
+            set_color yellow
+        end
+        echo $l
+        set_color normal
+    end
+end
+
+function preview --argument-names key
+    set -l lines (journal_bt | tail -n 600)
+    if test "$key" = adapter
+        set_color --bold cyan; echo 'adapter'; set_color normal
+        bt show | string match -rv '^\s*UUID:'
+        echo
+        set_color --bold cyan; echo 'journal (latest)'; set_color normal
+        journal_fmt $lines[-15..-1]
+        return
+    end
+    set -l info (bt info $key)
+    set -l name
+    if device_state $key $info >/dev/null
+        set name (_kv Name $info)
+        set -l uuids (string match -r '^\s*UUID: .*' -- $info)
+        string match -rv '^\s*UUID:' -- $info
+        set_color -d
+        printf '%s\n' (string replace -r '^\s*UUID: +(.*?)\s+\(.*' '  service: $1' -- $uuids)
+        set_color normal
+    else
+        set_color yellow; echo "$key: not known to bluetoothctl (history only)"; set_color normal
+        echo 'pair it again: ctrl-p / bt-doctor pair'
+    end
+    echo
+    set -l path (string replace -a : _ -- $key)
+    set -l pat (string escape --style=regex -- $key)"|dev_$path"
+    test -n "$name"; and set pat "$pat|"(string escape --style=regex -- $name)
+    set -l mine (string match -ir -- ".*(?:$pat).*" $lines)
+    set_color --bold cyan
+    if test (count $mine) -gt 0
+        echo 'journal (lines naming this device)'; set_color normal
+        journal_fmt $mine[-6..-1]
+        echo
+        set_color --bold cyan; echo 'journal (latest; bluetoothd rarely names the device)'; set_color normal
+        journal_fmt $lines[-10..-1]
+    else
+        echo 'journal (latest; none name this device)'; set_color normal
+        journal_fmt $lines[-15..-1]
+    end
+end
+
+# --- TUI ---------------------------------------------------------------------
+
+function run_key --argument-names key sel
+    set -l dev (test "$sel" != adapter; and echo $sel)
+    switch $key
+        case ctrl-r
+            if test -n "$dev"
+                reconnect_device $dev
+            else
+                reset_power
+            end
+        case ctrl-p
+            if test -n "$dev"
+                pair_device $dev
+            else
+                scan_and_pair
+            end
+        case ctrl-x
+            test -n "$dev"; or return
+            remove_device $dev
+        case ctrl-d
+            diagnose
+        case ctrl-f
+            fix_cmd
+        case ctrl-n
+            scan_and_pair
+        case '*'
+            return
+    end
+    pause
+end
+
+function action_menu --argument-names sel
+    set -l menu
+    if test "$sel" != adapter
+        set menu reconnect re-pair remove
+    end
+    set -a menu diagnose 'fix (escalating)' 'power cycle' 'rfkill cycle' \
+        'restart daemon + reload driver' 'restart audio stack' 'scan & pair new device' cancel
+    set -l label (test "$sel" = adapter; and echo adapter; or device_name $sel)
+    set -l choice (printf '%s\n' $menu | fzf --reverse --height 50% --prompt "$label> ")
+    switch "$choice"
+        case reconnect; run_key ctrl-r $sel
+        case re-pair; run_key ctrl-p $sel
+        case remove; run_key ctrl-x $sel
+        case diagnose; run_key ctrl-d $sel
+        case 'fix (escalating)'; run_key ctrl-f $sel
+        case 'power cycle'; reset_power; pause
+        case 'rfkill cycle'; reset_rfkill; pause
+        case 'restart daemon + reload driver'; reset_daemon; pause
+        case 'restart audio stack'; reset_audio; pause
+        case 'scan & pair new device'; run_key ctrl-n $sel
+    end
+end
+
+function main
+    command -q fzf; or _die "fzf is required"
+    set -l hdr 'enter menu | ^r reconnect ^p re-pair ^x remove | ^d diagnose ^f fix ^n scan & pair new | esc quit'
+    while true
+        set -l out (list_lines | fzf --ansi --reverse --delimiter \t --with-nth 2.. \
+            --expect=ctrl-r,ctrl-p,ctrl-x,ctrl-d,ctrl-f,ctrl-n \
+            --header "$hdr" --prompt 'bluetooth> ' \
+            --preview "$SELF __preview {1}" --preview-window 'right:55%:wrap')
+        test (count $out) -lt 2; and break
+        set -l sel (string split -m1 \t -- $out[2])[1]
+        if test -z "$out[1]"
+            action_menu $sel
+        else
+            run_key $out[1] $sel
+        end
+    end
+end
+
+function usage
+    sed -n '3,/^$/p' $SELF | string replace -r '^# ?' ''
+end
+
+# run a device command for every MAC from the argument or stdin; prompts
+# read /dev/tty, so piping MACs in still lets them ask
+function each_device --argument-names fn
+    set -l macs (device_args $argv[2]); or exit 1
+    set -l rc 0
+    for m in $macs
+        $fn $m </dev/null; or set rc 1
+    end
+    exit $rc
+end
+
+# --- entrypoint --------------------------------------------------------------
+
+command -q bluetoothctl; or _die "bluetoothctl is required (bluez-utils)"
+
+switch "$argv[1]"
+    case -h --help help
+        usage
+    case ''
+        main
+    case diagnose
+        diagnose
+    case fix
+        fix_cmd
+    case reconnect
+        each_device reconnect_device $argv[2]
+    case pair
+        each_device pair_device $argv[2]
+    case remove
+        each_device remove_device $argv[2]
+    case reset
+        switch "$argv[2]"
+            case power; reset_power
+            case rfkill; reset_rfkill
+            case daemon; reset_daemon
+            case audio; reset_audio
+            case '*'; _die "reset what? power | rfkill | daemon | audio"
+        end
+    case list
+        list_cmd $argv[2..-1]
+    case pick
+        pick_cmd $argv[2..-1]
+    case __preview # bt-doctor __preview <MAC|adapter>
+        preview $argv[2]
+    case __lines # TUI rows, for testing
+        list_lines
+    case __feed # bt-doctor __feed <MAC> | bluetoothctl
+        feed $argv[2]
+    case __resolve # bt-doctor __resolve <MAC|name>
+        device_args $argv[2]
+    case __histparse # grep -H ^Name= output on stdin → MAC<TAB>name
+        history_parse
+    case '*'
+        _die "unknown argument: $argv[1] (see --help)"
+end

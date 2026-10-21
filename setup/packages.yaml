@@ -92,6 +92,7 @@ terminals: # kitty-terminal recipe installs this (kitty + the other emulators)
 
 niri-wm: # niri-window-manager (nerd-fonts is a group: pulls all nerd fonts)
   - bluetui
+  - bluez-utils # bluetoothctl, for bt-doctor
   - brightnessctl
   - fuzzel
   - greetd
