@@ -58,6 +58,7 @@ page "Power" {
             detail "iw dev | sed -n 's/^[[:space:]]*ssid //p' | head -n1 | grep . || echo 'not connected'" fresh=#true
         }
         item "Bluetooth" icon="\u{f00af}" run="ghostty --title=BlueTUI --class=bluetui -e bluetui" keywords="bt bluetui headphones"
+        item "Bluetooth doctor" icon="\u{f00b1}" run=#"ghostty --title="BT Doctor" --class=bt-doctor -e bt-doctor"# keywords="bt fix repair re-pair reconnect wedged"
     }
 
     group "Audio" icon="\u{f057e}" hint="mute · mixers" {
