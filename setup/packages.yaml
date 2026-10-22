@@ -41,6 +41,7 @@ languages: # dev-setup
 
 cli-essentials: # cli-tools
   - bottom
+  - dra # github-latest-release (fish/aliases.d/git.fish)
   - duckdb
   - eza
   - jaq
