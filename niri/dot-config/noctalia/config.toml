@@ -691,10 +691,11 @@ type = "thepunkoff/pomodoro:widget"
 
 # fcitx5 input-method pill. Its own left click does nothing under fcitx5, so
 # flip usbr <-> br like Mod+Space (fcitx5 EnumerateForwardKeys) does.
-# Right click opens the fcitx5 settings window.
+# Middle click opens the fcitx5 settings window; actions has no "right" key
+# (right click keeps the widget's built-in IM cycle).
 [widget.keyboard_layout.actions]
 left = 'exec [ "$(fcitx5-remote -n)" = keyboard-usbr ] && fcitx5-remote -s keyboard-br || fcitx5-remote -s keyboard-usbr'
-right = "exec fcitx5-configtool"
+middle = "exec fcitx5-configtool"
 
 [battery]
 warning_threshold = 20
