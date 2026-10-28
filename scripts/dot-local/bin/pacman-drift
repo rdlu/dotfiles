@@ -21,7 +21,9 @@ intentional=$(
 
 # Everything the dotfiles already install: the yaml manifest holds ALL names
 # (justfile recipes resolve their lists from it via `just _pkgs`)
-captured=$(awk '/^  - /{print $2}' "$dotfiles/setup/packages.yaml" | sort -u)
+private="${DOTFILES_PRIVATE:-$HOME/.dotfiles-private}"
+captured=$(awk '/^  - /{print $2}' "$dotfiles/setup/packages.yaml" \
+  $([[ -r $private/setup/packages.yaml ]] && echo "$private/setup/packages.yaml") | sort -u)
 # ...with pacman groups expanded to their member packages
 captured=$({ echo "$captured"; pacman -Sgq $captured 2>/dev/null || true; } | sort -u)
 

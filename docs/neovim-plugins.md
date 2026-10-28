@@ -169,8 +169,8 @@ Recent fix: closing one or more buffers no longer flickers the screen.
 ### obsidian.nvim
 
 Edit an Obsidian vault as plain markdown, with links, tags, templates and daily
-notes. Two workspaces are configured — **Notes** (`~/Documents/Notes`)
-and **Archive** — with new notes under `00.notes`, journals under
+notes. The vaults come from `~/.dotfiles-private` (`lua/private/notes.lua`,
+read by `lua/config/notes.lua`; one `~/Documents/Notes` vault without it), with new notes under `00.notes`, journals under
 `00.journals`, and templates in `03.resources/templates`. Completion is wired
 through **blink.cmp** (triggers at 2 chars).
 

@@ -100,11 +100,6 @@ Tasks are defined in the repo-root `mise.toml` — every recipe is equally runna
 | `just docs-setup` | One-time install of the docs toolchain (hugo, pandoc, typst, fonts) |  |
 | `just docs-update` | Regenerate the generated markdown blocks from tmux.conf, binds.kdl, and the justfile |  |
 
-### calendar
-
-| Recipe | Description | Runs |
-| --- | --- | --- |
-
 ### file-transfer
 
 | Recipe | Description | Runs |

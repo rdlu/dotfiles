@@ -20,11 +20,18 @@
 
 set -g DOTFILES (set -q DOTFILES; and echo $DOTFILES; or echo $HOME/.dotfiles)
 set -g MANIFEST $DOTFILES/setup/packages.yaml
+set -g PRIVATE (set -q DOTFILES_PRIVATE; and echo $DOTFILES_PRIVATE; or echo $HOME/.dotfiles-private)
+# ~/.dotfiles-private adds personal categories (and this host's picks of them)
+set -g MANIFESTS $MANIFEST
+test -r $PRIVATE/setup/packages.yaml; and set -a MANIFESTS $PRIVATE/setup/packages.yaml
 set -g SELF (status filename)
 set -g TMPDIR_TUI (mktemp -d /tmp/pkg-tui.XXXXXX)
 set -g INSTALLED $TMPDIR_TUI/installed
 set -g HOST (set -q PKG_HOST; and echo $PKG_HOST; or uname -n)
-set -g HOSTFILE $DOTFILES/setup/hosts/$HOST.categories
+set -g HOSTFILES
+for f in $DOTFILES/setup/hosts/$HOST.categories $PRIVATE/setup/hosts/$HOST.categories
+    test -r $f; and set -a HOSTFILES $f
+end
 
 function _cleanup --on-event fish_exit
     test -d "$TMPDIR_TUI"; and rm -rf $TMPDIR_TUI
@@ -42,13 +49,24 @@ end
 # --- manifest helpers --------------------------------------------------------
 
 function manifest_categories
-    awk '/^[a-z0-9][a-z0-9-]*:/ { sub(":.*", "", $1); print $1 }' $MANIFEST
+    awk '/^[a-z0-9][a-z0-9-]*:/ { sub(":.*", "", $1); print $1 }' $MANIFESTS
+end
+
+# the manifest file that holds a category (the public one if none does)
+function manifest_file --argument-names cat
+    for f in $MANIFESTS
+        if string match -q -- "$cat:*" <$f
+            echo $f
+            return
+        end
+    end
+    echo $MANIFEST
 end
 
 # categories this host expects (empty without a host file)
 function host_categories
-    test -r $HOSTFILE; or return
-    string replace -r '#.*' '' <$HOSTFILE | string trim | string match -rv '^(!|$)'
+    test -n "$HOSTFILES"; or return
+    cat $HOSTFILES | string replace -r '#.*' '' | string trim | string match -rv '^(!|$)'
 end
 
 # packages of one category (empty arg = whole manifest)
@@ -56,7 +74,7 @@ function manifest_pkgs
     awk -v cat="$argv[1]" '
         /^[a-z0-9][a-z0-9-]*:/ { c = $1; sub(":.*", "", c) }
         $1 == "-" { if (cat == "" || c == cat) print $2 }
-    ' $MANIFEST
+    ' $MANIFESTS
 end
 
 # categories that contain a package
@@ -64,11 +82,12 @@ function pkg_categories
     awk -v p="$argv[1]" '
         /^[a-z0-9][a-z0-9-]*:/ { c = $1; sub(":.*", "", c) }
         $1 == "-" && $2 == p { print c }
-    ' $MANIFEST
+    ' $MANIFESTS
 end
 
 # insert a package into a category, alphabetically
 function manifest_add --argument-names pkg cat
+    set -l file (manifest_file $cat)
     awk -v pkg="$pkg" -v cat="$cat" '
         /^[a-z0-9][a-z0-9-]*:/ {
             c = $1; sub(":.*", "", c)
@@ -78,16 +97,18 @@ function manifest_add --argument-names pkg cat
         incat && !done && $0 == ""              { print "  - " pkg; done = 1 }
         { print }
         END { if (incat && !done) print "  - " pkg }
-    ' $MANIFEST >$TMPDIR_TUI/manifest; and mv $TMPDIR_TUI/manifest $MANIFEST
+    ' $file >$TMPDIR_TUI/manifest; and mv $TMPDIR_TUI/manifest $file
 end
 
 # drop a package from a category (empty cat = from every category)
 function manifest_del --argument-names pkg cat
-    awk -v pkg="$pkg" -v cat="$cat" '
-        /^[a-z0-9][a-z0-9-]*:/ { c = $1; sub(":.*", "", c) }
-        $1 == "-" && $2 == pkg && (cat == "" || c == cat) { next }
-        { print }
-    ' $MANIFEST >$TMPDIR_TUI/manifest; and mv $TMPDIR_TUI/manifest $MANIFEST
+    for file in $MANIFESTS
+        awk -v pkg="$pkg" -v cat="$cat" '
+            /^[a-z0-9][a-z0-9-]*:/ { c = $1; sub(":.*", "", c) }
+            $1 == "-" && $2 == pkg && (cat == "" || c == cat) { next }
+            { print }
+        ' $file >$TMPDIR_TUI/manifest; and mv $TMPDIR_TUI/manifest $file
+    end
 end
 
 # --- view line builders ------------------------------------------------------

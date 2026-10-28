@@ -27,14 +27,16 @@ unix_default_inline_shell_args = "bash -uc"
 base_packages = "home git idea scripts terminal lazyvim vim doom systemd niri"
 
 # ALL package names live in setup/packages.yaml — tasks resolve their list
-# from a category here; never hardcode package names in a task.
+# from a category here; never hardcode package names in a task. Personal
+# categories live in ~/.dotfiles-private/setup/packages.yaml, read too when
+# present ($DOTFILES_PRIVATE overrides the path).
 
 # Print the packages of one manifest category (empty category = all)
 [tasks._pkgs]
 hide = true
 quiet = true
 usage = 'arg "[category]" default=""'
-run = '''awk -v cat="${usage_category}" '/^[a-z0-9][a-z0-9-]*:/ { c = substr($1, 1, length($1) - 1) } /^  - / { if (cat == "" || c == cat) print $2 }' setup/packages.yaml'''
+run = '''awk -v cat="${usage_category}" '/^[a-z0-9][a-z0-9-]*:/ { c = substr($1, 1, length($1) - 1) } /^  - / { if (cat == "" || c == cat) print $2 }' setup/packages.yaml $(f="${DOTFILES_PRIVATE:-$HOME/.dotfiles-private}/setup/packages.yaml"; [ -r "$f" ] && echo "$f")'''
 
 # Aggregate installs run their steps via sequential `mise run` lines (NOT
 # `depends`, which mise may parallelize) — order matters here.
@@ -240,22 +242,6 @@ run = [
 description = "Harden a receiving machine: inbound SSH key-only + LLMNR off (disables passwords!)"
 run = 'scripts/dot-local/bin/harden-file-transfer-ssh'
 
-# setup / rotate-client prompt for the OAuth client, reauth opens the browser.
-# No subcommand = the script's usage.
-quiet = true
-raw = true
-usage = 'arg "[subcommand]" default="" help="setup, status, reauth, rotate-client, rotate-password, help"'
-
-# setup / rotate-client prompt for the OAuth client, every consent opens the
-# browser. No subcommand = the script's usage; app = vdirsyncer | chroncal.
-[tasks.gcal]
-quiet = true
-raw = true
-usage = '''
-arg "[subcommand]" default="" help="setup, status, reauth, rotate-client, help"
-arg "[app]" default="" help="vdirsyncer or chroncal (default: both)"
-'''
-
 # setup/packages.yaml is the categorized manifest of everything intentionally
 # installed beyond the tasks above (built from pacman.log: explicit installs
 # after the day-0 CachyOS run). pkg-drift reports new intentional installs
@@ -282,7 +268,7 @@ esac
 [tasks.pkg-categories]
 description = "List the manifest categories with their package counts"
 quiet = true
-run = '''awk '/^[a-z][a-z0-9-]*:/ { if (c) print c, n; c = substr($1, 1, length($1) - 1); n = 0 } /^  - / { n++ } END { print c, n }' setup/packages.yaml | column -t'''
+run = '''awk '/^[a-z][a-z0-9-]*:/ { if (c) print c, n; c = substr($1, 1, length($1) - 1); n = 0 } /^  - / { n++ } END { print c, n }' setup/packages.yaml $(f="${DOTFILES_PRIVATE:-$HOME/.dotfiles-private}/setup/packages.yaml"; [ -r "$f" ] && echo "$f") | column -t'''
 
 [tasks.pkg-drift]
 description = "Explicit installs (post day-0) not yet in the manifest or any task"
@@ -348,6 +334,20 @@ else
   echo -e "\033[1;33mNo host overlay for '$host' (hosts/$host absent) -- skipping\033[0m"
 fi
 ''',
+  '''
+priv="${DOTFILES_PRIVATE:-$HOME/.dotfiles-private}"
+if [ -r "$priv/stow-packages" ]; then
+  echo -e "\033[1;33mStowing private packages: $priv\033[0m"
+  pkgs=$(grep -v '^#' "$priv/stow-packages")
+  stow -D --no-folding --dotfiles -d "$priv" -t ~ $pkgs 2>/dev/null || true
+  stow -S --no-folding --dotfiles -d "$priv" -t ~ $pkgs
+  host="$(hostname)"
+  if [ -d "$priv/hosts/$host" ]; then
+    stow -D --no-folding --dotfiles -d "$priv/hosts" -t ~ "$host" 2>/dev/null || true
+    stow -S --no-folding --dotfiles -d "$priv/hosts" -t ~ "$host"
+  fi
+fi
+''',
 ]
 
 [tasks.stow-check]
@@ -360,11 +360,29 @@ if [ -d "hosts/$host" ]; then
   stow -n -v -R --no-folding --dotfiles -d hosts -t ~ "$host"
 fi
 ''',
+  '''
+priv="${DOTFILES_PRIVATE:-$HOME/.dotfiles-private}"
+if [ -r "$priv/stow-packages" ]; then
+  stow -n -v -R --no-folding --dotfiles -d "$priv" -t ~ $(grep -v '^#' "$priv/stow-packages")
+  host="$(hostname)"
+  [ -d "$priv/hosts/$host" ] && stow -n -v -R --no-folding --dotfiles -d "$priv/hosts" -t ~ "$host"
+fi
+true
+''',
 ]
 
 [tasks.unstow]
-description = "Remove all symlinks created by `stow` (host overlay first, then base)"
+description = "Remove all symlinks created by `stow` (private, host overlay, then base)"
 run = [
+  '''
+priv="${DOTFILES_PRIVATE:-$HOME/.dotfiles-private}"
+if [ -r "$priv/stow-packages" ]; then
+  host="$(hostname)"
+  [ -d "$priv/hosts/$host" ] && stow -D --no-folding --dotfiles -d "$priv/hosts" -t ~ "$host"
+  stow -D --no-folding --dotfiles -d "$priv" -t ~ $(grep -v '^#' "$priv/stow-packages")
+fi
+true
+''',
   '''
 host="$(hostname)"
 if [ -d "hosts/$host" ]; then
@@ -475,7 +493,7 @@ depends = ["docs-update"]
 run = [
   'mkdir -p docs/pdf',
   '''
-for page in setup file-transfer calendar neovim-plugins justfile shortcuts/tmux shortcuts/herdr shortcuts/zellij shortcuts/niri shortcuts/shell wl-kbptr; do
+for page in setup file-transfer neovim-plugins justfile shortcuts/tmux shortcuts/herdr shortcuts/zellij shortcuts/niri shortcuts/shell wl-kbptr; do
   out="$(basename "$page")"
   case "$out" in tmux|herdr|zellij|niri|shell) out="$out-shortcuts";; esac
   pandoc "docs/$page.md" -o "docs/pdf/$out.pdf" --lua-filter=tools/pandoc-docs.lua \
@@ -483,7 +501,7 @@ for page in setup file-transfer calendar neovim-plugins justfile shortcuts/tmux 
 done
 ''',
   '''
-pandoc docs/setup.md docs/file-transfer.md docs/calendar.md docs/neovim-plugins.md docs/justfile.md \
+pandoc docs/setup.md docs/file-transfer.md docs/neovim-plugins.md docs/justfile.md \
   docs/shortcuts/tmux.md docs/shortcuts/herdr.md \
   docs/shortcuts/zellij.md docs/shortcuts/niri.md docs/shortcuts/shell.md \
   docs/wl-kbptr.md \

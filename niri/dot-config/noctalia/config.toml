@@ -659,7 +659,7 @@ only_active_workspace = true
 show_window_title = true
 inactive_opacity = 0.5 # dims unfocused windows
 
-# Workspace pills show niri's workspace names (base, brain, comms, games;
+# Workspace pills show niri's workspace names (base, brain, comms, ...;
 # unnamed ones fall back to their number).
 [widget.workspaces]
 label_source = "name"
@@ -724,9 +724,11 @@ enabled = true
 [calendar.reminders]
 all_day_digest_time = "07:30" # one morning notification listing all-day events
 
-# from each calendar's displayname file.
+# Events from the vdir that vdirsyncer keeps in sync (its config lives in
+# ~/.dotfiles-private). Names come from each calendar's displayname file.
 [calendar.account.google]
 type = "vdir"
+name = "Calendar"
 path = "~/.local/share/calendars/google"
 calendars = [] # all
 

@@ -10,7 +10,6 @@ phone ↔ computer, and **rsync over SSH** for computer ↔ computer. Everything
 local-network only, opened *temporarily* on untrusted networks (and auto-closed),
 and installs from a single recipe.
 
-
 ## Install
 
 ```sh
@@ -103,64 +102,6 @@ self-closing.
 - LLMNR is disabled (`file-transfer-harden`) — SMB discovery (mDNS + NetBIOS) is unaffected.
 - Every temporary firewall hole is runtime-only with a 30-minute expiry.
 
-
-with a full VFS cache. Everything that makes it work is **per host** and never in
-this repo:
-
-- the rclone config `~/.config/rclone/rclone.conf` (Drive token + OAuth client),
-  **encrypted**;
-- its password, in the Secret Service (oo7):
-  `secret-tool lookup service rclone key config_password`;
-
-
-
-of yours:
-
-   under **Audience** click **Publish app** so the status is **In production**.
-3. **Credentials** (Clients) → **Create credentials → OAuth client ID** →
-   application type **Desktop app**, named after the host (`xps`, `daisy`).
-
-> [!WARNING] Publish the app — don't leave it in Testing
-> after **7 days** and the mount stops working every week. Published but
-> verified this app" — click **Advanced → Go to … (unsafe)**.
-
-One client per host means a host can be revoked or rotated without touching the
-other.
-
-### Subcommands
-
-| Command | When |
-| --- | --- |
-
-At consent rclone asks two questions: answer **y** to "Use web browser" and **n**
-to "Shared Drive". Every command that rewrites the config stops the unit first
-(the running mount may rewrite the token) and starts it again afterwards. If
-`reauth` or `rotate-client` fails, or you press Ctrl-C at the browser step, the
-previous config (old client + token) is put back.
-
-`--config PATH` (or `$RCLONE_CONFIG`) points it at another config, e.g. a
-throwaway one for testing. The unit always mounts the default config.
-
-### How `rotate-password` avoids a lockout
-
-At every step, one of the passwords in the keyring decrypts one config on disk:
-
-1. Back up the config (still on the old password) to `rclone.conf.rotate-backup`.
-2. Generate the new password into a **staging** keyring entry
-   (`key config_password_next`), next to the current one.
-3. Re-encrypt straight from the old password to the new one
-   (`rclone config encryption set` with a password command that returns each in
-   turn), so no plaintext config is ever written. Check that the new one decrypts
-4. Promote: copy the staged password over `config_password`, check again, then
-   delete the staging entry and the backup.
-
-If a step fails, or the machine dies halfway, the next `rotate-password` (or
-`setup`) sees the leftovers and works out what to do from which password
-decrypts what: finish the promotion, restore the backup, or just clean up. If
-nothing decrypts, it stops and deletes nothing. rclone's exit code can't be
-trusted here (`encryption set` exits 0 even when it fails), so every step is
-checked with `rclone config encryption check`.
-
 ## Where it lives
 
 | Thing | Path |
@@ -170,3 +111,4 @@ checked with `rclone config encryption check`.
 | Menu entries | niri power menu (`rodii-power-menu`, Tools → Sharing) |
 | Doc templates | `~/.local/share/file-transfer/*.md` → rendered into `~/Downloads/Transfers/` |
 | Packages | `file-transfer` category in `setup/packages.yaml` |
+| Recipes | `just file-transfer`, `just file-transfer-harden` |

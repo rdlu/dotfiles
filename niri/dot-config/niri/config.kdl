@@ -50,14 +50,12 @@ workspace "brain" {
 workspace "comms" {
   open-on-output "eDP-1"
 }
-// Same screen as brain, same reason: the connector varies, the EDID doesn't.
-workspace "games" {
-  open-on-output "Invalid Vendor Codename - RTK HG540T40 0x01010101"
-}
+// Personal workspaces from ~/.dotfiles-private (absent on a public-only clone).
+include optional=true "private-workspaces.kdl"
 
 // Window rules
 include "window-rules.kdl"
-include "window-rules-games.kdl"
+include optional=true "private-rules.kdl"
 
 // Keybindings
 include "binds.kdl"

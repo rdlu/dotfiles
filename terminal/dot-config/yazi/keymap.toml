@@ -14,9 +14,6 @@ run = "cd ~/Downloads"
 desc = "Go to Downloads"
 
 [[mgr.prepend_keymap]]
-on = ["g", "G", "s"]
-
-[[mgr.prepend_keymap]]
 on = ["g", "m"]
 run = "cd ~/Music"
 desc = "Go to Music"

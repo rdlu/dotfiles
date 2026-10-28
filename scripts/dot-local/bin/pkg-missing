@@ -15,9 +15,16 @@
 set -euo pipefail
 
 dotfiles="${DOTFILES:-$HOME/.dotfiles}"
+private="${DOTFILES_PRIVATE:-$HOME/.dotfiles-private}"
 manifest="$dotfiles/setup/packages.yaml"
 host="${PKG_HOST:-$(hostname 2>/dev/null || uname -n)}"
 hostfile="$dotfiles/setup/hosts/$host.categories"
+# ~/.dotfiles-private adds personal categories, and this host's picks of them
+manifests=("$manifest")
+[[ -r $private/setup/packages.yaml ]] && manifests+=("$private/setup/packages.yaml")
+hostfiles=()
+[[ -r $hostfile ]] && hostfiles+=("$hostfile")
+[[ -r $private/setup/hosts/$host.categories ]] && hostfiles+=("$private/setup/hosts/$host.categories")
 
 list=0
 case "${1:-}" in
@@ -29,16 +36,16 @@ esac
 [[ -r $manifest ]] || { echo "pkg-missing: manifest not found: $manifest" >&2; exit 2; }
 
 # `category pkg` pairs, in manifest order
-pairs=$(awk '/^[a-z0-9][a-z0-9-]*:/ { c = $1; sub(":.*", "", c) } /^  - / { print c, $2 }' "$manifest")
+pairs=$(awk '/^[a-z0-9][a-z0-9-]*:/ { c = $1; sub(":.*", "", c) } /^  - / { print c, $2 }' "${manifests[@]}")
 
-if [[ -r $hostfile ]]; then
+if (( ${#hostfiles[@]} )); then
   # strip comments + whitespace; split into categories and !exclusions
-  entries=$(sed -e 's/#.*//' -e 's/[[:space:]]//g' -e '/^$/d' "$hostfile")
+  entries=$(sed -e 's/#.*//' -e 's/[[:space:]]//g' -e '/^$/d' "${hostfiles[@]}")
   cats=$(grep -v '^!' <<<"$entries" || true)
   excludes=$(sed -n 's/^!//p' <<<"$entries")
   known=$(cut -d' ' -f1 <<<"$pairs" | sort -u)
   for c in $(comm -23 <(sort -u <<<"$cats") <(echo "$known")); do
-    echo "pkg-missing: $hostfile: unknown category '$c'" >&2
+    echo "pkg-missing: ${hostfiles[*]}: unknown category '$c'" >&2
   done
   pairs=$(awk -v cats="$cats" -v excl="$excludes" '
     BEGIN { split(cats, a, "\n"); for (i in a) want[a[i]] = 1

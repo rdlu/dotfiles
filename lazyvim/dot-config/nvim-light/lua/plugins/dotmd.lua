@@ -7,7 +7,7 @@ return {
     -- your configuration comes here
     -- or leave it empty to use the default settings
     -- refer to the configuration section below
-    root_dir = "~/Documents/Notes", -- set it to your desired directory or remain at it is
+    root_dir = require("config.notes").root, -- main vault, see config/notes.lua
     default_split = "none", -- or "vertical" or "horizontal" or "none" based on your preference
     rollover_todo = {
       enabled = true, -- enable rollover

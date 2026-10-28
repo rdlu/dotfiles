@@ -46,21 +46,6 @@ window-rule {
     default-column-width { proportion 1.0; }
 }
 
-// The Notes vault launchers (dev.rdlu.Notes nvim inbox, and the
-// daisy-only dev.rdlu.ClinNotes / dev.rdlu.EmeraldianNotes TUIs): open
-// full-width.
-window-rule {
-    match app-id="Notes$"
-    default-column-width { proportion 1.0; }
-}
-
-// Terminal calendar launchers (home package .desktop entries, dev.rdlu.Khal /
-// dev.rdlu.Chroncal): open full-width so the month grid has room.
-window-rule {
-    match app-id="^dev\\.rdlu\\.(Khal|Chroncal)$"
-    default-column-width { proportion 1.0; }
-}
-
 window-rule {
     match title="^Calculator"
     default-column-width { proportion 0.33333; }
@@ -84,26 +69,6 @@ window-rule {
     opacity 0.95
 }
 
-// Camera gate live view (mpv launched by ~/Projects/camera-monitor):
-// small floating player in the corner that doesn't steal focus. Size comes from
-// mpv's --geometry (20% live, 35% debug); column width doesn't apply. Anchored: app-id is a regex, and the debug view's id contains this one.
-window-rule {
-    match app-id="^camera-monitor$"
-    open-floating true
-    open-focused false
-    default-floating-position x=32 y=32 relative-to="bottom-right"
-    opacity 1.0
-}
-
-// Camera debug view (`mise run watch debug`: boxes, zones, motion): bigger.
-window-rule {
-    match app-id="^camera-monitor-debug$"
-    open-floating true
-    open-focused false
-    default-floating-position x=32 y=32 relative-to="bottom-right"
-    opacity 1.0
-}
-
 window-rule {
     match app-id=r#"firefox$"# title="Bitwarden"
     match app-id="zen" title="Bitwarden"
@@ -125,7 +90,7 @@ window-rule {
   block-out-from "screen-capture"
 }
 
-// OBS (streaming). Game windows are in window-rules-games.kdl
+// OBS (streaming)
 window-rule {
   match app-id="com.obsproject.Studio"
   open-on-workspace "brain"

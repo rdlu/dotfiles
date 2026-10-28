@@ -13,16 +13,8 @@ return {
   ---@module 'obsidian'
   ---@type obsidian.config
   opts = {
-    workspaces = {
-      {
-        name = "Notes",
-        path = "~/Documents/Notes",
-      },
-      {
-        name = "Archive",
-        path = "~/Documents/Archive",
-      },
-    },
+    -- Vaults come from ~/.dotfiles-private (lua/private/notes.lua).
+    workspaces = require("config.notes").workspaces,
     notes_subdir = "00.notes",
     daily_notes = {
       -- Optional, if you keep daily notes in a separate directory.
