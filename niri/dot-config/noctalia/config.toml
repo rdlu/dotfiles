@@ -608,7 +608,7 @@ accordion = true
 [[bar.default.capsule_group]]
 id = "connectivity"
 opacity = 0.4
-members = [ "network", "bluetooth" ]
+members = [ "network", "bluetooth", "tailnet" ]
 
 [[bar.default.capsule_group]]
 id = "controls"
@@ -688,6 +688,13 @@ type = "lfdominguez/claude-sessions:bar"
 # Pomodoro plugin (25/5/15, long break every 4). No session history of its own.
 [widget.pomodoro]
 type = "thepunkoff/pomodoro:widget"
+
+# Tailnet plugin: peer count; click = panel (copy IP/name, ping, SSH, exit
+# nodes, Taildrop receive), right click = tailscale up/down. /tn in the
+# launcher copies a host's IP. Needs `tailscale set --operator=$USER` once
+# per host, or up/down/set fall back to a root prompt.
+[widget.tailnet]
+type = "rylos/tailnet:bar"
 
 # fcitx5 input-method pill. Its own left click does nothing under fcitx5, so
 # flip usbr <-> br like Mod+Space (fcitx5 EnumerateForwardKeys) does.
@@ -773,7 +780,7 @@ play_sound    = false
 # Plugins come from the official/community git catalogs. The GUI writes its own
 # toggles to ~/.local/state/noctalia/settings.toml; this list is merged with it.
 [plugins]
-enabled = [ "noctalia/translator", "noctalia/screen_recorder", "noctalia/world_clock", "noctalia/bitwarden", "kenn/keybind-cheatsheet", "lfdominguez/claude-sessions", "thepunkoff/pomodoro" ]
+enabled = [ "noctalia/translator", "noctalia/screen_recorder", "noctalia/world_clock", "noctalia/bitwarden", "kenn/keybind-cheatsheet", "lfdominguez/claude-sessions", "thepunkoff/pomodoro", "rylos/tailnet" ]
 
 # Declaring any source replaces the built-in list, so official and community
 # are spelled out too. "local" = plugins under development: symlinks into
