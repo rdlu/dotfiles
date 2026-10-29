@@ -724,7 +724,15 @@ body[data-page="sofle"] { --tool: var(--p-accent); }
 .sf-k.text { --kc: var(--p-yellow); }
 .sf-k.fw { --kc: var(--p-orange); }
 .sf-k.layer { --kc: var(--p-pink); }
-.sf-k:is(.niri, .run, .app, .text, .fw, .layer) .cap {
+/* Sent for a host bind that nothing binds yet, and the SysRq macro. */
+.sf-k.spare .cap {
+  background: transparent;
+  border: 1px dashed var(--p-pink);
+  border-bottom-width: 1px;
+  color: var(--p-pink);
+}
+.sf-k.sysrq { --kc: var(--p-red); }
+.sf-k:is(.niri, .run, .app, .text, .fw, .layer, .sysrq) .cap {
   background: color-mix(in srgb, var(--kc) 14%, var(--p-raised));
   color: color-mix(in srgb, var(--kc) 55%, var(--p-text));
 }
@@ -805,6 +813,8 @@ body[data-page="sofle"] { --tool: var(--p-accent); }
 .sf-legend .sw.text { --kc: var(--p-yellow); }
 .sf-legend .sw.fw { --kc: var(--p-orange); }
 .sf-legend .sw.layer { --kc: var(--p-pink); }
+.sf-legend .sw.sysrq { --kc: var(--p-red); }
+.sf-legend .sw.spare { background: transparent; border: 1px dashed var(--p-pink); color: var(--p-pink); }
 .sf-legend .sw.held { background: var(--p-accent); border-color: var(--p-accent); color: var(--p-on-accent); }
 .sf-legend .sw.trans { background: transparent; border-style: dashed; color: var(--p-faint); }
 .sf-legend .sw.key { background: var(--p-raised); color: var(--p-text); }

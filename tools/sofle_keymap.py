@@ -96,8 +96,27 @@ KEYS: dict[str, tuple[str, str, str]] = {
     "C_NEXT": ("Next", "XF86AudioNext", "XF86AudioNext"),
     "C_PREV": ("Prev", "XF86AudioPrev", "XF86AudioPrev"),
     "C_STOP": ("Stop", "XF86AudioStop", "XF86AudioStop"),
+    "C_BRI_UP": ("Bri+", "XF86MonBrightnessUp", "XF86MonBrightnessUp"),
+    "C_BRI_DN": ("Bri−", "XF86MonBrightnessDown", "XF86MonBrightnessDown"),
+    "C_AL_CALC": ("Calc", "XF86Calculator", "XF86Calculator"),
+    # The upper F-keys reach xkb as these keysyms (symbols/inet). F13 is
+    # XF86Tools, push-to-talk on the game layers; F22/F23 are touchpad
+    # on/off. F19 and F24 stay plain F-keys.
+    "F13": ("F13", "XF86Tools", "F13→XF86Tools"),
+    "F14": ("F14", "XF86Launch5", "F14→XF86Launch5"),
+    "F15": ("F15", "XF86Launch6", "F15→XF86Launch6"),
+    "F16": ("F16", "XF86Launch7", "F16→XF86Launch7"),
+    "F17": ("F17", "XF86Launch8", "F17→XF86Launch8"),
+    "F18": ("F18", "XF86Launch9", "F18→XF86Launch9"),
     "F20": ("F20", "XF86AudioMicMute", "F20→XF86AudioMicMute"),
+    "F21": ("F21", "XF86TouchpadToggle", "F21→XF86TouchpadToggle"),
+    "F22": ("F22", "XF86TouchpadOn", "F22→XF86TouchpadOn"),
+    "F23": ("F23", "XF86TouchpadOff", "F23→XF86TouchpadOff"),
 }
+
+# Keys the keyboard sends for host binds that nothing binds yet: drawn as
+# spare slots instead of plain keys.
+SPARE = {"F14", "F15", "F16", "F17", "F18", "F19", "F21", "F24", "C_AL_CALC"}
 for _c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
     KEYS[_c] = (_c, _c, _c)
 for _d in range(10):
@@ -131,7 +150,10 @@ SPAWN_SHORT = {
     "mic-mute": "Mic mute", "brightness-up": "Bright +",
     "brightness-down": "Bright −", "screenshot-annotate": "Shot + edit",
     "play-pause": "Play / pause", "next": "Next", "previous": "Prev",
+    "lock-session": "Lock",
 }
+# Scripts whose last argument is a step: "<short> <step>".
+SCRIPT_SHORT = {"ext-brightness": "Ext bri"}
 
 
 def niri_short(action: str) -> str:
@@ -150,6 +172,9 @@ def niri_short(action: str) -> str:
     if head in ("spawn", "spawn-sh"):
         args = re.findall(r'"((?:[^"\\]|\\.)*)"', action)
         last = (args[-1] if args else arg).split()[-1]
+        script = Path(args[0]).name if args else ""
+        if script in SCRIPT_SHORT and re.fullmatch(r"[+-]\d+", last):
+            return f"{SCRIPT_SHORT[script]} {last[0]}"
         return SPAWN_SHORT.get(last, last)
     return head.replace("-", " ").capitalize()
 
@@ -382,6 +407,8 @@ class Resolver:
         if key not in KEYS:
             out["t"] = key
         cmd = self.command(mods, key)
+        if not cmd and not mods and key in SPARE:
+            out.update(kind="spare", does="not bound on the host yet")
         if cmd:
             kind, cap, what, action, src = cmd
             out.update(kind=kind, s=out["t"], t=cap, does=what, action=action,
@@ -435,6 +462,12 @@ class Resolver:
         if b == "mmv":
             way = ARROWS.get(f[1].split("_")[1].lower(), f[1])
             return {"kind": "fw", "t": f"Ptr {way}", "does": "move the mouse pointer"}
+        if b == "SYSRQ":
+            return {"kind": "sysrq", "t": "SysRq", "sends": "Alt+SysRq, Alt held",
+                    "does": "kernel Magic SysRq: keep holding, tap a command "
+                            "letter; kernel.sysrq decides which work "
+                            "(16, the systemd default: S, sync, only)",
+                    "action": "macro SYSRQ"}
         if b in self.macros:
             m = self.macros[b]
             if m["text"] is not None:
@@ -535,7 +568,7 @@ def gen_md() -> str:
                 cmds.append(f"| {code(e['sends'])} | {at} | {cell(e['does'])} |")
             elif e["kind"] == "text":
                 typed.append(f"| {at} | {code(e['t'])} |")
-            elif e["kind"] == "fw" and layer["name"] != "BASE":
+            elif e["kind"] in ("fw", "sysrq", "spare") and layer["name"] != "BASE":
                 fw.append(f"| {at} | {cell(e['t'])} | {cell(e['does'])} |")
         blocks = []
         if cmds:

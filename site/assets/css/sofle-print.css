@@ -154,7 +154,7 @@ body.sf-print {
 }
 .sf-print .sf-k .s { color: #444; }
 .sf-print .sf-k .h { color: #000; font-weight: 700; }
-.sf-print .sf-k:is(.niri, .run, .app, .text, .fw, .layer) .cap {
+.sf-print .sf-k:is(.niri, .run, .app, .text, .fw, .layer, .sysrq) .cap {
   background: none;
   border-color: var(--kc);
   color: var(--kc);
@@ -164,6 +164,8 @@ body.sf-print {
 .sf-print .sf-k.app .cap { border-style: double; border-width: 2.2pt; }
 .sf-print .sf-k.text .cap { font-weight: 400; }
 .sf-print .sf-k.fw .cap { border-style: dotted; border-width: 1.2pt; }
+.sf-print .sf-k.spare .cap { border: 1pt dashed var(--p-pink); color: var(--p-pink); }
+.sf-print .sf-k.sysrq .cap { border-width: 1.6pt; border-bottom-width: 2.4pt; }
 .sf-print .sf-k.trans .cap { border: 0.8pt dashed #999; color: #999; opacity: 1; }
 .sf-print .sf-k.none .cap { border: 0.4pt solid #bbb; }
 .sf-print .sf-k.held .cap {
@@ -176,3 +178,4 @@ body.sf-print {
 .sf-print .sf-legend .sw:is(.niri, .run) { border-width: 1.4pt; font-weight: 700; }
 .sf-print .sf-legend .sw.app { border-style: double; border-width: 2.2pt; }
 .sf-print .sf-legend .sw.fw { border-style: dotted; border-width: 1.2pt; }
+.sf-print .sf-legend .sw.spare { border: 1pt dashed var(--p-pink); color: var(--p-pink); }

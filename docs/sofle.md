@@ -51,13 +51,39 @@ Hold the right thumb's CODE key. Digraphs and snippets typed as one key;
 
 Hold the right thumb's outer key. Volume and playback through Noctalia and
 playerctl; F20 is `XF86AudioMicMute` in xkb, so it toggles the microphone.
+E and D are the laptop panel's brightness, W and S an external monitor's
+(`ext-brightness`, DDC/CI).
+
+The number row and T send F14–F19 and F24, and B sends F21: keys kept free
+for host binds, drawn dashed while nothing binds them. xkb names most of
+the upper F-keys, so a niri bind uses those names:
+
+| Key | Sent | xkb keysym | Here |
+| --- | --- | --- | --- |
+| \` 1 2 3 4 | F14–F18 | `XF86Launch5`–`XF86Launch9` | spare |
+| 5 | F19 | `F19` | spare |
+| T | F24 | `F24` (Ctrl+Super+F24: `XF86TouchpadToggle`) | spare |
+| B | F21 | `XF86TouchpadToggle` | not bound: niri has no touchpad-toggle action |
+| N | F20 | `XF86AudioMicMute` | mic mute |
+| (game layers) | F13 | `XF86Tools` | push-to-talk in games; keep it unbound desktop-wide |
+| (none) | F22 / F23 | `XF86TouchpadOn` / `XF86TouchpadOff` | reserved |
 
 {{< sofle-layer "MEDIA" >}}
 
 ## SYS|NUM
 
-Hold the left thumb's outer key. Firmware only: Bluetooth profiles,
-underglow and the mouse on the left, a numpad on the right.
+Hold the left thumb's outer key. Bluetooth profiles, underglow and the
+mouse on the left, a numpad on the right. Three keys reach the host: B locks
+the screen (`Super+Alt+L`, `loginctl lock-session`), the top-right key sends
+`XF86Calculator`, and the key under it is **Magic SysRq**.
+
+SysRq holds Alt while you hold it, and Linux reads PrintScreen as SysRq, so
+holding it and tapping a letter sends a kernel SysRq command (R E I S U B
+and friends). Which ones run is `kernel.sysrq`'s bitmask: both notebooks
+have the systemd default, `16`, which allows only S (sync) and refuses
+reboot, kill and power-off. Raising it is a deliberate local choice
+(`/etc/sysctl.d/`), not something this repo sets. NAV's Alt+PrtSc
+(screenshot window) is the same chord, but as a single tap.
 
 {{< sofle-layer "SYS|NUM" >}}
 
@@ -138,7 +164,11 @@ The keys above that do more than type their legend, by layer.
 | Keys sent | Sofle key | Does |
 | --- | --- | --- |
 | `XF86AudioRaiseVolume` | joystick ↑ | run noctalia msg volume-up |
+| `Super+XF86MonBrightnessUp` | W | External monitor brightness up (works on the lock screen) |
+| `XF86MonBrightnessUp` | E | run noctalia msg brightness-up |
 | `XF86AudioLowerVolume` | joystick ↓ | run noctalia msg volume-down |
+| `Super+XF86MonBrightnessDown` | S | External monitor brightness down (works on the lock screen) |
+| `XF86MonBrightnessDown` | D | run noctalia msg brightness-down |
 | `XF86AudioPlay` | joystick ← | run playerctl play-pause |
 | `XF86AudioLowerVolume` | H | run noctalia msg volume-down |
 | `XF86AudioRaiseVolume` | J | run noctalia msg volume-up |
@@ -150,7 +180,22 @@ The keys above that do more than type their legend, by layer.
 | `XF86AudioNext` | . | run playerctl next |
 | `XF86AudioMute` | joystick press | run noctalia msg volume-mute |
 
+| Sofle key | Label | Does (in the firmware) |
+| --- | --- | --- |
+| &#96; | F14 | not bound on the host yet |
+| 1 | F15 | not bound on the host yet |
+| 2 | F16 | not bound on the host yet |
+| 3 | F17 | not bound on the host yet |
+| 4 | F18 | not bound on the host yet |
+| 5 | F19 | not bound on the host yet |
+| T | F24 | not bound on the host yet |
+| B | F21 | not bound on the host yet |
+
 ### SYS|NUM
+
+| Keys sent | Sofle key | Does |
+| --- | --- | --- |
+| `Super+Alt+L` | B | Lock the Screen |
 
 | Sofle key | Label | Does (in the firmware) |
 | --- | --- | --- |
@@ -161,6 +206,7 @@ The keys above that do more than type their legend, by layer.
 | 4 | BT 4 | select Bluetooth profile 4 |
 | 5 | BT 5 | select Bluetooth profile 5 |
 | joystick ↑ | Ptr ↑ | move the mouse pointer |
+| - | Calc | not bound on the host yet |
 | Tab | Bri+ | brightness up (+8, max 60) (zmk-rgb-layer, not the keymap) |
 | Q | Sat+ | underglow: RGB_SAI |
 | W | Hue+ | underglow: RGB_HUI |
@@ -168,6 +214,7 @@ The keys above that do more than type their legend, by layer.
 | R | Back | mouse button MB4 |
 | T | Fwd | mouse button MB5 |
 | joystick ↓ | Ptr ↓ | move the mouse pointer |
+| = | SysRq | kernel Magic SysRq: keep holding, tap a command letter; kernel.sysrq decides which work (16, the systemd default: S, sync, only) |
 | Esc | Bri− | brightness down (−8, min 4) (zmk-rgb-layer, not the keymap) |
 | A | Sat− | underglow: RGB_SAD |
 | S | Hue− | underglow: RGB_HUD |
