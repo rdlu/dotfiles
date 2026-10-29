@@ -1,18 +1,20 @@
-// xps display layout — laptop on the left, external on the right, bottom-aligned.
-// eDP-1 is 1920x1200 at scale 1.0, so 1920x1200 logical; the external is
-// 2560x1600 at scale 1.5, so 1706x1066 logical. x=1920 drops it immediately
-// right of the laptop, and y=134 (1200 - 1066) lines up their bottom edges so
-// the cursor crosses between them without a vertical jump.
+// xps display layout — external on top, laptop below, horizontally centered
+// (set via wdisplays). eDP-1 is 1920x1200 at scale 1.0, so 1920x1200 logical;
+// the external is 2560x1600 at scale 1.5, so ~1706x1067 logical. x=107
+// ((1920 - 1706) / 2) centers it over the laptop, and the laptop starts at
+// y=1067, right under the external's bottom edge.
 
 output "eDP-1" {
-  scale 1.0
-  position x=0 y=0
   variable-refresh-rate
+  position x=0 y=1067
+  scale 1.0
+  transform "normal"
 }
 
 output "Invalid Vendor Codename - RTK HG540T40 0x01010101" {
   focus-at-startup
-  scale 1.5
-  position x=1920 y=134
   variable-refresh-rate
+  position x=107 y=0
+  scale 1.5
+  transform "normal"
 }
