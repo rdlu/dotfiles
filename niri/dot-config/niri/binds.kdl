@@ -284,7 +284,8 @@ binds {
 
     // niri's own screenshot UI: unlike Noctalia's region picker, dragging
     // inside an existing selection starts a new one. Noctalia only does
-    // annotate (Shift+Print, settings in noctalia/config.toml).
+    // annotate (Shift+Print, settings in noctalia/config.toml): pick the
+    // region first, then draw; notes made before picking are dropped.
     Print hotkey-overlay-title="Screenshot region" { screenshot; }
     Ctrl+Print hotkey-overlay-title="Screenshot monitor" { screenshot-screen; }
     Shift+Print hotkey-overlay-title="Screenshot and annotate" { spawn "noctalia" "msg" "screenshot-annotate"; }

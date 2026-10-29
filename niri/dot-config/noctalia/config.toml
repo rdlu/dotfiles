@@ -53,6 +53,7 @@ save_to_file = true
 copy_to_clipboard = true
 freeze_screen = true
 remember_last_region = true # pre-select the last region, confirm with Enter/Space (like niri)
+copy_on_close = true # annotator: closing the editor copies the result
 
 [theme]
 source = "wallpaper" # palette generated from the current wallpaper
