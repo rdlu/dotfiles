@@ -301,10 +301,15 @@ binds {
     XF86TouchpadToggle allow-when-locked=true hotkey-overlay-title="Touchpad on/off" { spawn "~/.local/bin/touchpad-toggle"; }
     XF86TouchpadOn     allow-when-locked=true { spawn "~/.local/bin/touchpad-toggle" "on"; }
     XF86TouchpadOff    allow-when-locked=true { spawn "~/.local/bin/touchpad-toggle" "off"; }
-    // The ThinkPad E14's Fn+F7 is a display-switch key to the firmware
-    // (KEY_SWITCHVIDEOMODE); niri has no use for that, so it toggles the
-    // touchpad too.
-    XF86Display allow-when-locked=true hotkey-overlay-title="Touchpad on/off" { spawn "~/.local/bin/touchpad-toggle"; }
+    // ThinkPad E14 Gen 6 F-row specials (the manual's table; FnLock picks
+    // these or plain F1-F12). F7 "select and set up display devices" sends
+    // KEY_SWITCHVIDEOMODE: wdisplays, to arrange, mirror or turn off
+    // outputs (runtime only; host.kdl stays the saved layout). F12, the
+    // "customize in Vantage" key, sends KEY_BOOKMARKS (XF86Favorites): this
+    // model has no touchpad key, so that one does it. F11 (XF86LinkPhone,
+    // Windows Phone Link) stays unbound.
+    XF86Display hotkey-overlay-title="Display settings" { spawn "wdisplays"; }
+    XF86Favorites allow-when-locked=true hotkey-overlay-title="Touchpad on/off" { spawn "~/.local/bin/touchpad-toggle"; }
 
     // The Sofle's spare host keys (MEDIA layer: ` 1 2 3 4 5 send F14-F19, T
     // sends F24). xkb names F14-F18 XF86Launch5-9. F13 (XF86Tools) stays

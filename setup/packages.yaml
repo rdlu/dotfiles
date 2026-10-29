@@ -117,6 +117,7 @@ niri-wm: # niri-window-manager (nerd-fonts is a group: pulls all nerd fonts)
   - udiskie
   - wireplumber # wpctl: volume keys in binds.kdl
   - wl-clipboard
+  - wdisplays # ThinkPad F7 (XF86Display) in binds.kdl
   - wl-kbptr
   - woff2-font-awesome
   - xdg-desktop-portal-gnome
