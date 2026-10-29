@@ -541,9 +541,32 @@ wait_for = ["docs-pdf", "docs-cheatsheets"]
 dir = "site"
 run = 'hugo --minify --cleanDestinationDir'
 
+# The Sofle keymap page (docs/sofle.md) reads a snapshot of the sofleii
+# firmware repo in tools/sofle/, so CI needs no second checkout. Its PDF is
+# printed from the built site (site/public/sofle/print/) with headless
+# Chromium, so it comes after docs-html and lands straight in site/public/pdf.
+
+[tasks.docs-sofle-sync]
+description = "Refresh tools/sofle/ from a sofleii checkout (SOFLEII_DIR, default ~/Projects/sofleii)"
+run = '''
+src="${SOFLEII_DIR:-$HOME/Projects/sofleii}"
+[ -f "$src/config/eyelash_sofle.keymap" ] || { echo "error: no sofleii checkout at $src" >&2; exit 1; }
+cp "$src/config/eyelash_sofle.keymap" "$src/config/eyelash_sofle.json" \
+  "$src/zmk-rgb-layer/src/rgb_layer.c" "$src/site/data/keymap_overrides.yaml" tools/sofle/
+printf 'rdlu/sofleii %s %s\n' "$(git -C "$src" rev-parse --short HEAD)" \
+  "$(git -C "$src" log -1 --format=%cs)" > tools/sofle/SOURCE
+echo "tools/sofle/ <- $src ($(cat tools/sofle/SOURCE))"
+git status --short tools/sofle/
+'''
+
+[tasks.docs-sofle-pdf]
+description = "Print the Sofle keymap PDF (site/public/pdf/sofle-keymap.pdf) with Chromium"
+depends = ["docs-html"]
+run = 'tools/print-page-pdf.sh site/public sofle/print/ site/public/pdf/sofle-keymap.pdf'
+
 [tasks.docs]
-description = "Full docs build: regenerate markdown, then PDFs + cheatsheets, then the HTML site"
-depends = ["docs-pdf", "docs-cheatsheets", "docs-html"]
+description = "Full docs build: regenerate markdown, then PDFs + cheatsheets, then the HTML site + Sofle keymap PDF"
+depends = ["docs-pdf", "docs-cheatsheets", "docs-html", "docs-sofle-pdf"]
 
 [tasks.docs-serve]
 description = "Live-preview the docs site while editing (opens the browser once it's up)"

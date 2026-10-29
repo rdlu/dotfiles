@@ -28,3 +28,9 @@
 {{- with resources.Get "js/shortcuts.js" | minify | fingerprint }}
 <script defer src="{{ .RelPermalink }}" integrity="{{ .Data.Integrity }}"></script>
 {{- end }}
+{{- /* Tooltips for the Sofle keymap grids (docs/sofle.md). */ -}}
+{{- if in .RawContent "sofle-layer" }}
+{{- with resources.Get "js/sofle.js" | minify | fingerprint }}
+<script defer src="{{ .RelPermalink }}" integrity="{{ .Data.Integrity }}"></script>
+{{- end }}
+{{- end }}

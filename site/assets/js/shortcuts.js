@@ -6,7 +6,7 @@
 (function () {
   // Pages with their own accent color (matches the PDF cards on the home
   // page); anything else falls back to the default accent in custom.css.
-  var PAGES = ["tmux", "zellij", "niri", "shell", "justfile", "herdr"];
+  var PAGES = ["tmux", "zellij", "niri", "shell", "justfile", "herdr", "sofle"];
 
   function pageKey() {
     var path = window.location.pathname;
@@ -51,7 +51,7 @@
       var th = table.querySelector("thead th:first-child");
       if (!th) return;
       var head = th.textContent.trim().toLowerCase();
-      if (head !== "key" && head !== "keys") return;
+      if (head !== "key" && head !== "keys" && head !== "keys sent") return;
       // a data attribute, which custom.css styles
       table.setAttribute("data-shortcuts", "");
       table.querySelectorAll("tbody td:first-child code").forEach(keycapify);

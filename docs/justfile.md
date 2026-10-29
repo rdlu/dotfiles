@@ -91,7 +91,7 @@ Tasks are defined in the repo-root `mise.toml` — every recipe is equally runna
 
 | Recipe | Description | Runs |
 | --- | --- | --- |
-| `just docs` | Full docs build: regenerate markdown, then PDFs + cheatsheets, then the HTML site | `docs-pdf`, `docs-cheatsheets`, `docs-html` |
+| `just docs` | Full docs build: regenerate markdown, then PDFs + cheatsheets, then the HTML site | `docs-pdf`, `docs-cheatsheets`, `docs-html`, `docs-sofle-pdf` |
 | `just docs-cheatsheets` | Landscape cheatsheet PDFs, Catppuccin Latte (print) + Mocha (dark) variants | `docs-update` |
 | `just docs-html` | Build the HTML site into site/public/ (Hugo + Hextra) | `docs-update` |
 | `just docs-open` | Open a PDF (default: the combined handbook; e.g. `just docs-open tmux-shortcuts`) | `docs-pdf` |

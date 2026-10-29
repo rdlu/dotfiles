@@ -1,0 +1,14 @@
+# Keys whose binding in config/eyelash_sofle.keymap is `&none` but which a
+# firmware module acts on, so the `layer` grids don't show them as dead.
+# Keyed by layer display-name, then key position. Check against the module
+# source when either changes; the build warns if a listed position is no
+# longer `&none`.
+#
+# zmk-rgb-layer/src/rgb_layer.c: its position_state_changed listener acts
+# on these positions while SYS|NUM (layer 4) is the highest active layer.
+"SYS|NUM":
+  "13": { label: "Bri+", note: "brightness up (+8, max 60)" }
+  "26": { label: "Bri−", note: "brightness down (−8, min 4)" }
+  "40": { label: "Dark", note: "BASE mood: underglow off" }
+  "41": { label: "Dim", note: "BASE mood: solid dim teal" }
+  "42": { label: "FX", note: "BASE mood: step through breathe, spectrum, swirl" }

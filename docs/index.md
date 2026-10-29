@@ -23,6 +23,7 @@ Repo: [github.com/rdlu/dotfiles](https://github.com/rdlu/dotfiles)
 - **[niri shortcuts](shortcuts/niri.md)** — generated from `binds.kdl`
 - **[shell shortcuts](shortcuts/shell.md)** — fish binds (generated) + atuin/fzf/built-ins
 - **[wl-kbptr](wl-kbptr.md)** — keyboard-driven mouse pointer for niri
+- **[Sofle keymap](sofle.md)** — the split keyboard's layers, each key labelled with the niri/tmux command it triggers
 
 ## PDF downloads
 
@@ -76,6 +77,13 @@ Single-page landscape cheatsheets (A4, Catppuccin — **Latte** for print,
     <span class="pdf-links">
       <a href="pdf/neovim-cheatsheet.pdf">Latte</a>
       <a href="pdf/neovim-cheatsheet-mocha.pdf">Mocha</a>
+    </span>
+  </div>
+  <div class="pdf-card sofle">
+    <span class="pdf-title"><span class="pdf-icon">⌨️</span> Sofle keymap</span>
+    <span class="pdf-sub">A4 portrait · every layer, resolved to commands</span>
+    <span class="pdf-links">
+      <a href="pdf/sofle-keymap.pdf">Download</a>
     </span>
   </div>
   <div class="pdf-card handbook wide">

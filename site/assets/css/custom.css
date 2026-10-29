@@ -546,6 +546,7 @@ body {
 .pdf-card.niri, body[data-page="niri"] { --tool: var(--p-cyan); }
 .pdf-card.shell, body[data-page="shell"] { --tool: var(--p-pink); }
 .pdf-card.neovim { --tool: var(--p-accent); }
+.pdf-card.sofle { --tool: var(--p-pink); }
 .pdf-card.handbook, body[data-page="justfile"] { --tool: var(--p-red); }
 .pdf-card.refs { --tool: var(--p-faint); }
 
@@ -622,3 +623,189 @@ body {
 .content .keyseq kbd {
   border-bottom-color: color-mix(in srgb, var(--tool) 70%, var(--p-outline));
 }
+
+/* ── Sofle keymap (docs/sofle.md) ─────────────────────────────────────── */
+
+/* The layer grids from layouts/_partials/sofle/layer.html, after sofleii's
+   own (rdlu/sofleii site/assets/css/custom.css): keys sit where the board's
+   physical layout puts them, in units of --u (one key), and the grid scrolls
+   sideways below 44rem rather than shrinking past readable. Here each key is
+   coloured by what it does (--kc), not by keycode. */
+body[data-page="sofle"] { --tool: var(--p-accent); }
+.sf-layer {
+  margin: 1.25rem 0 2rem;
+  border: 1px solid var(--p-outline);
+  background: var(--p-panel);
+}
+.sf-layer .bar {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.3rem 0.75rem;
+  font-family: var(--p-mono);
+  font-size: 0.8rem;
+  color: var(--p-faint);
+  border-bottom: 1px solid var(--p-outline);
+}
+.sf-layer .bar span:first-child { color: var(--p-accent); }
+.sf-layer .scroll { overflow-x: auto; }
+.sf-board {
+  container-type: inline-size;
+  min-width: 44rem;
+  padding: 0.75rem;
+}
+.sf-keys {
+  --u: calc(100cqi / var(--w));
+  position: relative;
+  width: 100%;
+  height: calc(var(--u) * var(--h));
+  font-family: var(--p-mono);
+  font-variant-ligatures: none; /* 0xProto would draw |> -> => as arrows */
+}
+.sf-k {
+  --kc: var(--p-outline);
+  position: absolute;
+  left: calc(var(--x) * var(--u));
+  top: calc(var(--y) * var(--u));
+  width: var(--u);
+  height: var(--u);
+  padding: calc(var(--u) * 0.04);
+  transform-origin: calc(var(--ox) * var(--u)) calc(var(--oy) * var(--u));
+  transform: rotate(calc(var(--r) * 1deg));
+}
+.sf-k .cap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 0 calc(var(--u) * 0.05);
+  border: 1px solid var(--kc);
+  border-bottom-width: 3px;
+  border-radius: 2px;
+  background: var(--p-raised);
+  color: var(--p-text);
+  font-size: calc(var(--u) * 0.26);
+  line-height: 1.05;
+  text-align: center;
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+.sf-k.long .cap { font-size: calc(var(--u) * 0.2); }
+.sf-k.xlong .cap { font-size: calc(var(--u) * 0.17); }
+.sf-k .s,
+.sf-k .h {
+  position: absolute;
+  left: 0;
+  right: 0;
+  font-size: calc(var(--u) * 0.15);
+  color: var(--p-faint);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.sf-k .s { top: calc(var(--u) * 0.04); }
+.sf-k .h { bottom: calc(var(--u) * 0.03); color: var(--p-secondary); }
+.sf-k.ht .t { margin-bottom: calc(var(--u) * 0.14); }
+.sf-k:has(.s) .t { margin-top: calc(var(--u) * 0.12); }
+/* The tooltip text: visually hidden in the key, shown by sofle.js. */
+.sf-k .tip {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* What a key does. Commands get a tinted cap in their colour. */
+.sf-k.niri { --kc: var(--p-accent); }
+.sf-k.run { --kc: var(--p-cyan); }
+.sf-k.app { --kc: var(--p-green); }
+.sf-k.text { --kc: var(--p-yellow); }
+.sf-k.fw { --kc: var(--p-orange); }
+.sf-k.layer { --kc: var(--p-pink); }
+.sf-k:is(.niri, .run, .app, .text, .fw, .layer) .cap {
+  background: color-mix(in srgb, var(--kc) 14%, var(--p-raised));
+  color: color-mix(in srgb, var(--kc) 55%, var(--p-text));
+}
+.sf-k.trans .cap {
+  background: transparent;
+  border-style: dashed;
+  border-bottom-width: 1px;
+  color: var(--p-faint);
+  opacity: 0.6;
+}
+.sf-k.none .cap { background: transparent; border-bottom-width: 1px; }
+.sf-k.held .cap {
+  background: var(--p-accent);
+  border-color: var(--p-accent);
+  color: var(--p-on-accent);
+}
+.sf-k:hover .cap,
+.sf-k:focus-visible .cap {
+  border-color: var(--p-text);
+  outline: none;
+}
+.sf-k:focus-visible { outline: none; }
+.sf-layer figcaption {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8rem;
+  color: var(--p-faint);
+  border-top: 1px solid var(--p-outline);
+}
+
+/* The floating tooltip (sofle.js). */
+.sf-pop {
+  position: fixed;
+  z-index: 50;
+  max-width: min(26rem, calc(100vw - 16px));
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--p-outline);
+  border-top: 2px solid var(--p-accent);
+  background: var(--p-bg);
+  color: var(--p-text);
+  font-family: var(--p-mono);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.25);
+  pointer-events: none;
+  visibility: hidden;
+}
+.sf-pop.on { visibility: visible; }
+.sf-pop dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.1rem 0.75rem;
+  margin: 0;
+}
+.sf-pop dt { color: var(--p-faint); }
+.sf-pop dd { margin: 0; overflow-wrap: anywhere; }
+.sf-pop dt:nth-of-type(3) + dd { color: var(--p-accent); } /* "does" */
+
+/* The legend (sofle-legend shortcode). */
+.sf-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 1rem 0;
+  font-family: var(--p-mono);
+  font-size: 0.75rem;
+}
+.sf-legend .sw {
+  --kc: var(--p-outline);
+  padding: 0.1rem 0.45rem;
+  border: 1px solid var(--kc);
+  border-bottom-width: 2px;
+  background: color-mix(in srgb, var(--kc) 14%, var(--p-raised));
+  color: color-mix(in srgb, var(--kc) 55%, var(--p-text));
+}
+.sf-legend .sw.niri { --kc: var(--p-accent); }
+.sf-legend .sw.run { --kc: var(--p-cyan); }
+.sf-legend .sw.app { --kc: var(--p-green); }
+.sf-legend .sw.text { --kc: var(--p-yellow); }
+.sf-legend .sw.fw { --kc: var(--p-orange); }
+.sf-legend .sw.layer { --kc: var(--p-pink); }
+.sf-legend .sw.held { background: var(--p-accent); border-color: var(--p-accent); color: var(--p-on-accent); }
+.sf-legend .sw.trans { background: transparent; border-style: dashed; color: var(--p-faint); }
+.sf-legend .sw.key { background: var(--p-raised); color: var(--p-text); }
+.sf-legend .glyphs { flex-basis: 100%; color: var(--p-faint); }

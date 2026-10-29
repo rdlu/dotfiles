@@ -1,0 +1,178 @@
+/* The printable Sofle keymap (layouts/sofle-print.html), A4 portrait, after
+   sofleii's keymap-print.css. Loaded after custom.css and only on that page;
+   always the light (Alucard) palette. Colour only in lines and text on
+   white, to save ink: each grid's frame is its layer's underglow colour
+   (--lc, from zmk-rgb-layer, darkened to 4.5:1 on white by
+   tools/sofle_keymap.py), each key's outline the colour of what it does.
+   Line styles differ too, so the kinds still read on a mono printer. */
+
+@page {
+  size: A4 portrait;
+  margin: 9mm 10mm 11mm;
+  @bottom-left { font-family: "0xProto", ui-monospace, monospace; font-size: 7pt; color: #444; }
+  @bottom-right { font-family: "0xProto", ui-monospace, monospace; font-size: 7pt; color: #444; }
+}
+
+/* No Hextra CSS on this page, so no Tailwind preflight. */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  background: #fff;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+body.sf-print {
+  margin: 0;
+  background: #fff;
+  color: #000;
+  font-family: var(--p-sans);
+  font-size: 9pt;
+  line-height: 1.35;
+  font-variant-ligatures: none;
+}
+.sf-print code,
+.sf-print kbd { font-family: var(--p-mono); font-size: 0.92em; }
+.sf-print kbd {
+  padding: 0 0.25em;
+  border: 0.6pt solid #555;
+  border-bottom-width: 1.2pt;
+  border-radius: 1.5pt;
+}
+.sf-print a { color: inherit; }
+
+/* One sheet = one printed page (190 x 277 mm inside the margins). On screen
+   they stack, page-sized, so the view matches the PDF. */
+.sheet {
+  width: 190mm;
+  margin: 0 auto;
+  break-after: page;
+}
+.sheet:last-of-type { break-after: auto; }
+.sf-pop { display: none; } /* sofle.js's tooltip, appended after the sheets */
+@media screen {
+  body.sf-print { padding: 8mm 0; background: #ddd; }
+  .sheet {
+    min-height: 277mm;
+    margin-bottom: 8mm;
+    padding: 6mm;
+    width: 202mm;
+    background: #fff;
+    box-shadow: 0 0 0 1px #bbb;
+  }
+}
+
+/* Page 1: the basics. */
+.manual .head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 6mm;
+  padding-bottom: 2mm;
+  border-bottom: 1pt solid var(--p-accent);
+}
+.manual h1 { margin: 0; font-family: var(--p-mono); font-size: 15pt; line-height: 1.2; }
+.manual .head p { margin: 1mm 0 0; color: #333; }
+.manual .qr {
+  display: flex;
+  align-items: center;
+  gap: 2mm;
+  color: #000;
+  font-family: var(--p-mono);
+  font-size: 7pt;
+  text-decoration: none;
+}
+.manual .qr img { width: 18mm; height: 18mm; image-rendering: pixelated; }
+.manual .cols { column-count: 2; column-gap: 8mm; margin-top: 3mm; }
+.manual h2 {
+  break-after: avoid;
+  margin: 2.6mm 0 0.8mm;
+  font-family: var(--p-mono);
+  font-size: 9.5pt;
+  color: var(--p-accent);
+  border-bottom: 0.6pt solid var(--p-accent);
+}
+.manual .cols > h2:first-child { margin-top: 0; }
+.manual p, .manual ul { margin: 0 0 1.2mm; }
+.manual table { width: 100%; border-collapse: collapse; margin: 0 0 1.2mm; break-inside: avoid; }
+.manual th, .manual td {
+  padding: 0.5mm 1.2mm;
+  border: 0.5pt solid var(--p-accent);
+  text-align: left;
+  vertical-align: top;
+}
+.manual th { color: var(--p-accent); border-bottom-width: 1pt; }
+
+/* The command lists (sofle-commands shortcode). */
+.sf-cmds { break-inside: avoid-column; }
+.sf-cmds h3 {
+  margin: 1.6mm 0 0.4mm;
+  font-family: var(--p-mono);
+  font-size: 8.5pt;
+  color: var(--p-secondary);
+}
+.sf-cmds dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.2mm 2mm;
+  margin: 0;
+  font-size: 7.6pt;
+}
+.sf-cmds dt { white-space: nowrap; }
+.sf-cmds dt .at { display: inline-block; min-width: 9mm; font-family: var(--p-mono); color: #555; }
+.sf-cmds dd { margin: 0; }
+
+/* The legend, line-only like the keys. */
+.sf-print .sf-legend { gap: 1mm; margin: 1mm 0 1.5mm; font-size: 7pt; }
+.sf-print .sf-legend .sw { background: none; border-width: 0.8pt; color: var(--kc); }
+.sf-print .sf-legend .sw:is(.key, .trans) { color: #000; }
+.sf-print .sf-legend .sw.held { background: none; border: 2pt solid var(--p-accent); color: var(--p-accent); }
+.sf-print .sf-legend .glyphs { display: none; }
+
+/* Grid sheets: the site's grids at print width. */
+.grids { display: flex; flex-direction: column; align-items: center; gap: 4mm; }
+.sf-print .sf-layer { margin: 0; border: 1pt solid var(--lc); background: none; break-inside: avoid; }
+.grids.n1 .sf-layer, .grids.n2 .sf-layer { width: 190mm; }
+.grids.n3 .sf-layer { width: 182mm; }
+.sf-print .sf-layer .bar { color: var(--lc); border-bottom: 0.8pt solid var(--lc); font-size: 9pt; }
+.sf-print .sf-layer .bar span:first-child { color: var(--lc); font-weight: 700; }
+.sf-print .sf-layer .scroll { overflow: visible; }
+.sf-print .sf-board { min-width: 0; padding: 2.5mm; }
+.sf-print .sf-layer figcaption {
+  padding: 1mm 3mm 1.5mm;
+  border-top: 0.5pt solid var(--lc);
+  color: #222;
+  font-size: 8pt;
+}
+
+/* Keys: outlines only. */
+.sf-print .sf-k { padding: calc(var(--u) * 0.06); }
+.sf-print .sf-k .cap {
+  background: none;
+  border: 0.8pt solid #000;
+  border-bottom-width: 1.6pt;
+  color: #000;
+}
+.sf-print .sf-k .s { color: #444; }
+.sf-print .sf-k .h { color: #000; font-weight: 700; }
+.sf-print .sf-k:is(.niri, .run, .app, .text, .fw, .layer) .cap {
+  background: none;
+  border-color: var(--kc);
+  color: var(--kc);
+  font-weight: 700;
+}
+.sf-print .sf-k:is(.niri, .run) .cap { border-width: 1.4pt; border-bottom-width: 2.2pt; }
+.sf-print .sf-k.app .cap { border-style: double; border-width: 2.2pt; }
+.sf-print .sf-k.text .cap { font-weight: 400; }
+.sf-print .sf-k.fw .cap { border-style: dotted; border-width: 1.2pt; }
+.sf-print .sf-k.trans .cap { border: 0.8pt dashed #999; color: #999; opacity: 1; }
+.sf-print .sf-k.none .cap { border: 0.4pt solid #bbb; }
+.sf-print .sf-k.held .cap {
+  background: none;
+  border: 2pt solid var(--lc);
+  color: var(--lc);
+  font-weight: 700;
+}
+/* The legend swatches mirror those styles. */
+.sf-print .sf-legend .sw:is(.niri, .run) { border-width: 1.4pt; font-weight: 700; }
+.sf-print .sf-legend .sw.app { border-style: double; border-width: 2.2pt; }
+.sf-print .sf-legend .sw.fw { border-style: dotted; border-width: 1.2pt; }

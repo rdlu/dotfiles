@@ -1,0 +1,18 @@
+{{- /*
+  {{< sofle-commands >}}: a compact list of the keys that reach niri or tmux,
+  by layer, for the print page's first sheet (the site page has the full
+  generated tables instead).
+*/ -}}
+{{- range hugo.Data.sofle.layers -}}
+  {{- $rows := where .keys "kind" "in" (slice "niri" "run" "app") -}}
+  {{- if $rows }}
+<div class="sf-cmds">
+<h3>{{ .name }}</h3>
+<dl>
+  {{- range $rows }}
+  <dt><span class="at">{{ .at }}</span> <code>{{ .sends }}</code></dt><dd>{{ .does }}</dd>
+  {{- end }}
+</dl>
+</div>
+  {{- end -}}
+{{- end -}}

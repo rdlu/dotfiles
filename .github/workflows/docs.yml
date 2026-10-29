@@ -50,6 +50,9 @@ jobs:
           CHEAT_FONT_PATH: /usr/share/fonts/truetype/jetbrains-mono
       - name: Build HTML site
         run: mise run docs-html
+      # Printed from the built site by the runner's Chrome (CHROME_BIN).
+      - name: Print the Sofle keymap PDF
+        run: tools/print-page-pdf.sh site/public sofle/print/ site/public/pdf/sofle-keymap.pdf
       - uses: actions/upload-pages-artifact@v5
         with:
           path: site/public

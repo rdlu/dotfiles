@@ -1,0 +1,43 @@
+{{- /*
+  One Sofle layer on the board's physical layout, every key labelled with
+  what it does here (site/data/sofle.json, written by tools/sofle_keymap.py
+  on every `mise run docs-update`). Hover or focus a key for the tooltip
+  (assets/js/sofle.js); without JS the same text is in the key, visually
+  hidden, for screen readers.
+
+  Takes (dict "name" "NAV"), plus optional "caption" (shown under the grid).
+  Used by the `sofle-layer` shortcode and the print page (sofle-print.html).
+*/ -}}
+{{- $d := hugo.Data.sofle -}}
+{{- if not $d }}{{ errorf "sofle: site/data/sofle.json is missing; run `mise run docs-update`" }}{{ end -}}
+{{- $layer := dict -}}
+{{- range $d.layers }}{{ if eq .name $.name }}{{ $layer = . }}{{ end }}{{ end -}}
+{{- if not $layer }}{{ errorf "sofle-layer: no layer %q in site/data/sofle.json" .name }}{{ end -}}
+{{- $b := $d.box -}}
+<figure class="sf-layer not-prose" style="--lc:{{ $layer.color | safeCSS }}">
+  <div class="bar"><span>layer {{ $layer.num }} · {{ $layer.name }}</span><span>{{ $d.source.repo }} @ {{ $d.source.commit }}</span></div>
+  <div class="scroll">
+    <div class="sf-board">
+      <div class="sf-keys" role="list" aria-label="Sofle layer {{ $layer.name }}" style="--w:{{ $b.w }};--h:{{ $b.h }}">
+      {{- range $i, $k := $layer.keys -}}
+        {{- $p := index $d.keys $i -}}
+        {{- $cls := slice "sf-k" $k.kind -}}
+        {{- if $k.h }}{{ $cls = $cls | append "ht" }}{{ end -}}
+        {{- if gt $k.len 8 }}{{ $cls = $cls | append "xlong" }}{{ else if gt $k.len 4 }}{{ $cls = $cls | append "long" }}{{ end -}}
+        <div class="{{ delimit $cls " " }}" role="listitem" tabindex="0"
+          style="--x:{{ $p.x }};--y:{{ $p.y }};--r:{{ $p.r }};--ox:{{ $p.ox }};--oy:{{ $p.oy }}">
+          <span class="cap">
+            {{- with $k.s }}<span class="s">{{ . }}</span>{{ end -}}
+            <span class="t">{{ htmlEscape $k.t | replaceRE `([|+→])` "$1<wbr>" | safeHTML }}</span>
+            {{- with $k.h }}<span class="h">{{ . }}</span>{{ end -}}
+          </span>
+          <span class="tip"><dl>{{ range $k.tip }}<dt>{{ index . 0 }}</dt><dd>{{ index . 1 }}</dd>{{ end }}</dl></span>
+        </div>
+      {{- end -}}
+      </div>
+    </div>
+  </div>
+  {{- with .caption }}
+  <figcaption>{{ . }}</figcaption>
+  {{- end }}
+</figure>

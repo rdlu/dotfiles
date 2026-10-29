@@ -8,6 +8,7 @@ Reads:
   - fish/**/*.fish (top-level `bind` lines)  -> custom shell bindings
   - `just --dump --dump-format json`         -> justfile recipe reference
   - `mise tasks ls --json`                    -> task dependencies (mise.toml)
+  - tools/sofle/ (sofleii keymap snapshot)    -> Sofle keymap, via sofle_keymap.py
 
 Writes (in place, between markers):
   - docs/shortcuts/tmux.md     <!-- gen:tmux-binds -->
@@ -15,7 +16,9 @@ Writes (in place, between markers):
   - docs/shortcuts/niri.md     <!-- gen:niri-binds -->
   - docs/shortcuts/shell.md    <!-- gen:fish-binds -->
   - docs/justfile.md           <!-- gen:just-recipes -->
-plus tools/cheatsheets/data.json, the input for cheatsheet.typ.
+  - docs/sofle.md              <!-- gen:sofle-commands -->
+plus tools/cheatsheets/data.json, the input for cheatsheet.typ, and
+site/data/sofle.json, the input for the `sofle-layer` shortcode.
 
 Each generated block is replaced between `<!-- gen:NAME -->` and
 `<!-- /gen:NAME -->` markers; everything else in the files is hand-written
@@ -29,6 +32,8 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+
+import sofle_keymap
 
 REPO = Path(__file__).resolve().parent.parent
 TMUX_CONF = REPO / "terminal" / "dot-tmux.conf"
@@ -1180,6 +1185,7 @@ TARGETS = {
     DOCS / "shortcuts" / "shell.md": {"fish-binds": gen_fish},
     DOCS / "shortcuts" / "niri.md": {"niri-binds": gen_niri},
     DOCS / "justfile.md": {"just-recipes": gen_just},
+    DOCS / "sofle.md": {"sofle-commands": sofle_keymap.gen_md},
 }
 
 
@@ -1207,6 +1213,7 @@ def main() -> None:
     CHEAT_DATA.parent.mkdir(exist_ok=True)
     CHEAT_DATA.write_text(json.dumps(cheat_data(), indent=1) + "\n")
     print(f"written  {CHEAT_DATA.relative_to(REPO)}")
+    print(f"written  {sofle_keymap.write_data().relative_to(REPO)}")
     print(f"done ({changed} file(s) changed)")
 
 

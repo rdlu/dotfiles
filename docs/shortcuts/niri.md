@@ -39,8 +39,6 @@ binds see also the [wl-kbptr guide](../wl-kbptr.md).
 | `Mod+Period` | Emoji Finder |
 | `Mod+V` | Manage clipboard |
 | `Mod+B` | Toggle Bar |
-| `Print` | Screenshot region |
-| `Ctrl+Print` | Screenshot monitor |
 | `Shift+Print` | Screenshot and annotate |
 
 ### Mouse warp (wl-kbptr)
@@ -205,6 +203,8 @@ binds see also the [wl-kbptr guide](../wl-kbptr.md).
 
 | Keys | Action |
 | --- | --- |
+| `Print` | Screenshot region |
+| `Ctrl+Print` | Screenshot monitor |
 | `Alt+Print` | Screenshot window |
 | `Mod+P` | Set dynamic cast window |
 | `Mod+Ctrl+P` | Set dynamic cast monitor |

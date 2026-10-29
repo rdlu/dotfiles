@@ -1,0 +1,53 @@
+{{- /*
+  The printable Sofle keymap (content/sofle-print.md, /sofle/print/), after
+  sofleii's own keymap printout: a standalone page, no baseof, so no navbar,
+  sidebar, footer, search or theme script, and always the light palette.
+  Page 1 is the page's Markdown, then one A4-portrait sheet per entry in
+  `sheets`, drawn by the same partial as the `sofle-layer` shortcode.
+  `mise run docs-sofle-pdf` prints it to pdf/sofle-keymap.pdf.
+*/ -}}
+{{- $src := hugo.Data.sofle.source -}}
+{{- $built := now.Format "2006-01-02" -}}
+{{- $url := "https://dotfiles.dlu.one/sofle/" -}}
+{{- $foot := printf "Sofle keymap · %s @ %s · built %s" $src.repo $src.commit $built -}}
+<!DOCTYPE html>
+<html lang="{{ site.Language.Lang }}">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>{{ .Title }} · {{ site.Title }}</title>
+  <meta name="description" content="{{ .Description }}" />
+  <link rel="icon" href="{{ "favicon.svg" | relURL }}" type="image/svg+xml" />
+  {{- partial "custom/head-end.html" . }}
+  {{- $css := slice (resources.Get "css/custom.css") (resources.Get "css/sofle-print.css") | resources.Concat "css/sofle-print.bundle.css" | minify | fingerprint }}
+  <link rel="stylesheet" href="{{ $css.RelPermalink }}" integrity="{{ $css.Data.Integrity }}" />
+  <style>
+    @page {
+      @bottom-left { content: "{{ $foot }}"; }
+      @bottom-right { content: "{{ $url }}  ·  " counter(page) " / " counter(pages); }
+    }
+  </style>
+</head>
+<body class="sf-print">
+  <section class="sheet manual">
+    <header class="head">
+      <div>
+        <h1>The Sofle keymap, as it works here</h1>
+        <p>Eyelash Sofle (<a href="https://sofleii.dlu.one/">sofleii</a> firmware, {{ $src.repo }} @ {{ $src.commit }}, {{ $src.date }}) joined to rdlu's dotfiles: niri <code>binds.kdl</code> and <code>dot-tmux.conf</code> · built {{ $built }}</p>
+      </div>
+      {{- with images.QR $url (dict "level" "medium" "scale" 3 "targetDir" "images/qr") }}
+      <a class="qr" href="{{ $url }}"><img src="{{ .RelPermalink }}" width="{{ .Width }}" height="{{ .Height }}" alt="QR code: {{ $url }}" /><span>{{ $url }}</span></a>
+      {{- end }}
+    </header>
+    <div class="body">{{ .Content }}</div>
+  </section>
+  {{- range $s := .Params.sheets }}
+  <section class="sheet grids n{{ len $s.layers }}">
+    {{- range $s.layers }}
+      {{ partial "sofle/layer.html" (dict "name" . "caption" (index $.Params.captions .)) }}
+    {{- end }}
+  </section>
+  {{- end }}
+</body>
+</html>
