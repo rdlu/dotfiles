@@ -1,8 +1,10 @@
-// xps display layout — external on top, laptop below, horizontally centered
-// (set via wdisplays). eDP-1 is 1920x1200 at scale 1.0, so 1920x1200 logical;
-// the external is 2560x1600 at scale 1.5, so ~1706x1067 logical. x=107
-// ((1920 - 1706) / 2) centers it over the laptop, and the laptop starts at
-// y=1067, right under the external's bottom edge.
+// xps display layout — external on top, laptop below, horizontally centered.
+// eDP-1 is 1920x1200 at scale 1.0, so 1920x1200 logical; the external is
+// 2560x1600 at scale 1.5, so 1706.67x1066.67 logical (reported as 1706x1066).
+// x=107 ((1920 - 1706) / 2) centers it over the laptop, and y=1067 puts the
+// laptop right under its bottom edge — 1066 overlaps by the fraction and niri
+// shoves the laptop off to the right. wdisplays (XF86Display) only rearranges
+// the live session; copy positions from `niri msg outputs` here to keep them.
 
 output "eDP-1" {
   variable-refresh-rate
