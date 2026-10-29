@@ -40,6 +40,8 @@ binds see also the [wl-kbptr guide](../wl-kbptr.md).
 | `Mod+V` | Manage clipboard |
 | `Mod+B` | Toggle Bar |
 | `Shift+Print` | Screenshot and annotate |
+| `F19` | Clipboard history |
+| `F24` | Menu Power |
 
 ### Mouse warp (wl-kbptr)
 
@@ -64,16 +66,27 @@ binds see also the [wl-kbptr guide](../wl-kbptr.md).
 
 | Keys | Action |
 | --- | --- |
-| `XF86AudioRaiseVolume` | Run `noctalia msg volume-up` *(works on lock screen)* |
-| `XF86AudioLowerVolume` | Run `noctalia msg volume-down` *(works on lock screen)* |
-| `XF86AudioMute` | Run `noctalia msg volume-mute` *(works on lock screen)* |
-| `XF86AudioMicMute` | Run `noctalia msg mic-mute` *(works on lock screen)* |
-| `XF86MonBrightnessUp` | Run `noctalia msg brightness-up` *(works on lock screen)* |
-| `XF86MonBrightnessDown` | Run `noctalia msg brightness-down` *(works on lock screen)* |
+| `XF86AudioRaiseVolume` | Run `wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+` *(works on lock screen)* |
+| `XF86AudioLowerVolume` | Run `wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-` *(works on lock screen)* |
+| `XF86AudioMute` | Run `wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle` *(works on lock screen)* |
+| `XF86AudioMicMute` | Run `wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle` *(works on lock screen)* |
+| `XF86MonBrightnessUp` | Run `brightnessctl -q -c backlight set 5%+` *(works on lock screen)* |
+| `XF86MonBrightnessDown` | Run `brightnessctl -q -c backlight --min-value=1% set 5%-` *(works on lock screen)* |
 | `XF86AudioNext` | Run `playerctl next` *(works on lock screen)* |
 | `XF86AudioPause` | Run `playerctl play-pause` *(works on lock screen)* |
 | `XF86AudioPlay` | Run `playerctl play-pause` *(works on lock screen)* |
 | `XF86AudioPrev` | Run `playerctl previous` *(works on lock screen)* |
+| `XF86SelectiveScreenshot` | Screenshot region |
+| `XF86Calculator` | Calculator |
+| `XF86TouchpadToggle` | Touchpad on/off *(works on lock screen)* |
+| `XF86TouchpadOn` | Run `~/.local/bin/touchpad-toggle on` *(works on lock screen)* |
+| `XF86TouchpadOff` | Run `~/.local/bin/touchpad-toggle off` *(works on lock screen)* |
+| `XF86Display` | Touchpad on/off *(works on lock screen)* |
+| `XF86Launch5` | Caffeine on/off |
+| `XF86Launch6` | Do not disturb on/off |
+| `XF86Launch7` | Bluetooth on/off |
+| `XF86Launch8` | Control center |
+| `XF86Launch9` | Emoji picker |
 
 ### Focus
 

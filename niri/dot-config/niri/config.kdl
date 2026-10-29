@@ -10,6 +10,9 @@ include "environment.kdl"
 
 // Input devices (keyboard, mouse, touchpad, cursor)
 include "inputs.kdl"
+// Touchpad on/off, written by ~/.local/bin/touchpad-toggle: a local file, not
+// stowed, so toggling never touches the repo. Absent = touchpad on.
+include optional=true "touchpad-state.kdl"
 
 // Display outputs — per-host, since every machine has its own screens and
 // layout. host.kdl is stowed in from hosts/<hostname>/dot-config/niri/host.kdl

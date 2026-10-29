@@ -21,7 +21,7 @@ captions:
   BASE: "Always on. Joystick and encoder are media keys; F12 toggles tmux's nested OFF mode; hold the F12 key for AltGr."
   NAV: "Hold the left thumb's NAV key. Left half: niri workspaces, monitors and column moves, screenshots on the inner column. Right half: arrows and paging."
   CODE: "Hold the right thumb's CODE key. Brackets, digraphs and snippets; ▏ is where the cursor ends up."
-  MEDIA: "Hold the right thumb's outer key. Volume, playback and brightness (W/S: external monitor) via Noctalia; F20 is mic mute; F14-F19, F24 and F21 (touchpad toggle) are sent but not bound yet."
+  MEDIA: "Hold the right thumb's outer key. Volume, playback and brightness (wpctl, playerctl, brightnessctl; W/S: external monitor); F20 mic mute, B touchpad on/off; the number row and T are spare keys bound in binds.kdl."
   "SYS|NUM": "Hold the left thumb's outer key. Bluetooth, underglow and the mouse on the left, a numpad on the right; lock on B, Calculator top right, SysRq under it."
 ---
 

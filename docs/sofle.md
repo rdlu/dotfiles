@@ -49,24 +49,28 @@ Hold the right thumb's CODE key. Digraphs and snippets typed as one key;
 
 ## MEDIA
 
-Hold the right thumb's outer key. Volume and playback through Noctalia and
-playerctl; F20 is `XF86AudioMicMute` in xkb, so it toggles the microphone.
+Hold the right thumb's outer key. Volume and playback through `wpctl` and
+`playerctl`; F20 is `XF86AudioMicMute` in xkb, so it toggles the microphone.
 E and D are the laptop panel's brightness, W and S an external monitor's
 (`ext-brightness`, DDC/CI).
 
-The number row and T send F14–F19 and F24, and B sends F21: keys kept free
-for host binds, drawn dashed while nothing binds them. xkb names most of
-the upper F-keys, so a niri bind uses those names:
+The number row and T send F14–F19 and F24, and B sends F21: keys kept for
+host binds. xkb names most of the upper F-keys, so `binds.kdl` uses those
+names:
 
-| Key | Sent | xkb keysym | Here |
+| Key | Sent | xkb keysym | Bound to |
 | --- | --- | --- | --- |
-| \` 1 2 3 4 | F14–F18 | `XF86Launch5`–`XF86Launch9` | spare |
-| 5 | F19 | `F19` | spare |
-| T | F24 | `F24` (Ctrl+Super+F24: `XF86TouchpadToggle`) | spare |
-| B | F21 | `XF86TouchpadToggle` | not bound: niri has no touchpad-toggle action |
+| \` | F14 | `XF86Launch5` | caffeine on/off |
+| 1 | F15 | `XF86Launch6` | do not disturb on/off |
+| 2 | F16 | `XF86Launch7` | Bluetooth on/off (`rfkill`) |
+| 3 | F17 | `XF86Launch8` | Noctalia control center |
+| 4 | F18 | `XF86Launch9` | emoji picker |
+| 5 | F19 | `F19` | clipboard history |
+| T | F24 | `F24` | power menu |
+| B | F21 | `XF86TouchpadToggle` | touchpad on/off (`touchpad-toggle`) |
 | N | F20 | `XF86AudioMicMute` | mic mute |
-| (game layers) | F13 | `XF86Tools` | push-to-talk in games; keep it unbound desktop-wide |
-| (none) | F22 / F23 | `XF86TouchpadOn` / `XF86TouchpadOff` | reserved |
+| (game layers) | F13 | `XF86Tools` | push-to-talk in games; kept unbound desktop-wide |
+| (none) | F22 / F23 | `XF86TouchpadOn` / `XF86TouchpadOff` | touchpad on / off |
 
 {{< sofle-layer "MEDIA" >}}
 
@@ -75,7 +79,7 @@ the upper F-keys, so a niri bind uses those names:
 Hold the left thumb's outer key. Bluetooth profiles, underglow and the
 mouse on the left, a numpad on the right. Three keys reach the host: B locks
 the screen (`Super+Alt+L`, `loginctl lock-session`), the top-right key sends
-`XF86Calculator`, and the key under it is **Magic SysRq**.
+`XF86Calculator` (GNOME Calculator), and the key under it is **Magic SysRq**.
 
 SysRq holds Alt while you hold it, and Linux reads PrintScreen as SysRq, so
 holding it and tapping a letter sends a kernel SysRq command (R E I S U B
@@ -96,12 +100,12 @@ The keys above that do more than type their legend, by layer.
 
 | Keys sent | Sofle key | Does |
 | --- | --- | --- |
-| `XF86AudioRaiseVolume` | joystick ↑ | run noctalia msg volume-up |
-| `XF86AudioLowerVolume` | joystick ↓ | run noctalia msg volume-down |
-| `XF86AudioPlay` | joystick ← | run playerctl play-pause |
-| `XF86AudioNext` | joystick → | run playerctl next |
-| `XF86AudioMute` | encoder press | run noctalia msg volume-mute |
-| `XF86AudioMute` | joystick press | run noctalia msg volume-mute |
+| `XF86AudioRaiseVolume` | joystick ↑ | Vol + (wpctl) |
+| `XF86AudioLowerVolume` | joystick ↓ | Vol − (wpctl) |
+| `XF86AudioPlay` | joystick ← | Play / pause (playerctl) |
+| `XF86AudioNext` | joystick → | Next (playerctl) |
+| `XF86AudioMute` | encoder press | Mute (wpctl) |
+| `XF86AudioMute` | joystick press | Mute (wpctl) |
 | `F12` | F12 | tmux: toggle nested OFF mode (pass keys to an inner tmux) |
 
 ### NAV
@@ -163,38 +167,36 @@ The keys above that do more than type their legend, by layer.
 
 | Keys sent | Sofle key | Does |
 | --- | --- | --- |
-| `XF86AudioRaiseVolume` | joystick ↑ | run noctalia msg volume-up |
-| `Super+XF86MonBrightnessUp` | W | External monitor brightness up (works on the lock screen) |
-| `XF86MonBrightnessUp` | E | run noctalia msg brightness-up |
-| `XF86AudioLowerVolume` | joystick ↓ | run noctalia msg volume-down |
-| `Super+XF86MonBrightnessDown` | S | External monitor brightness down (works on the lock screen) |
-| `XF86MonBrightnessDown` | D | run noctalia msg brightness-down |
-| `XF86AudioPlay` | joystick ← | run playerctl play-pause |
-| `XF86AudioLowerVolume` | H | run noctalia msg volume-down |
-| `XF86AudioRaiseVolume` | J | run noctalia msg volume-up |
-| `XF86AudioPlay` | K | run playerctl play-pause |
-| `XF86AudioNext` | joystick → | run playerctl next |
-| `F20→XF86AudioMicMute` | N | run noctalia msg mic-mute |
-| `XF86AudioMute` | M | run noctalia msg volume-mute |
-| `XF86AudioPrev` | , | run playerctl previous |
-| `XF86AudioNext` | . | run playerctl next |
-| `XF86AudioMute` | joystick press | run noctalia msg volume-mute |
-
-| Sofle key | Label | Does (in the firmware) |
-| --- | --- | --- |
-| &#96; | F14 | not bound on the host yet |
-| 1 | F15 | not bound on the host yet |
-| 2 | F16 | not bound on the host yet |
-| 3 | F17 | not bound on the host yet |
-| 4 | F18 | not bound on the host yet |
-| 5 | F19 | not bound on the host yet |
-| T | F24 | not bound on the host yet |
-| B | F21 | not bound on the host yet |
+| `F14→XF86Launch5` | &#96; | Caffeine on/off |
+| `F15→XF86Launch6` | 1 | Do not disturb on/off |
+| `F16→XF86Launch7` | 2 | Bluetooth on/off |
+| `F17→XF86Launch8` | 3 | Control center |
+| `F18→XF86Launch9` | 4 | Emoji picker |
+| `F19` | 5 | Clipboard history |
+| `XF86AudioRaiseVolume` | joystick ↑ | Vol + (wpctl) |
+| `Super+XF86MonBrightnessUp` | W | External monitor brightness up |
+| `XF86MonBrightnessUp` | E | Bright + (brightnessctl) |
+| `F24` | T | Menu Power |
+| `XF86AudioLowerVolume` | joystick ↓ | Vol − (wpctl) |
+| `Super+XF86MonBrightnessDown` | S | External monitor brightness down |
+| `XF86MonBrightnessDown` | D | Bright − (brightnessctl) |
+| `XF86AudioPlay` | joystick ← | Play / pause (playerctl) |
+| `XF86AudioLowerVolume` | H | Vol − (wpctl) |
+| `XF86AudioRaiseVolume` | J | Vol + (wpctl) |
+| `XF86AudioPlay` | K | Play / pause (playerctl) |
+| `F21→XF86TouchpadToggle` | B | Touchpad on/off |
+| `XF86AudioNext` | joystick → | Next (playerctl) |
+| `F20→XF86AudioMicMute` | N | Mic mute (wpctl) |
+| `XF86AudioMute` | M | Mute (wpctl) |
+| `XF86AudioPrev` | , | Prev (playerctl) |
+| `XF86AudioNext` | . | Next (playerctl) |
+| `XF86AudioMute` | joystick press | Mute (wpctl) |
 
 ### SYS|NUM
 
 | Keys sent | Sofle key | Does |
 | --- | --- | --- |
+| `XF86Calculator` | - | Calculator |
 | `Super+Alt+L` | B | Lock the Screen |
 
 | Sofle key | Label | Does (in the firmware) |
@@ -206,7 +208,6 @@ The keys above that do more than type their legend, by layer.
 | 4 | BT 4 | select Bluetooth profile 4 |
 | 5 | BT 5 | select Bluetooth profile 5 |
 | joystick ↑ | Ptr ↑ | move the mouse pointer |
-| - | Calc | not bound on the host yet |
 | Tab | Bri+ | brightness up (+8, max 60) (zmk-rgb-layer, not the keymap) |
 | Q | Sat+ | underglow: RGB_SAI |
 | W | Hue+ | underglow: RGB_HUI |

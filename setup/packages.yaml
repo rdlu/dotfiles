@@ -94,8 +94,9 @@ terminals: # kitty-terminal recipe installs this (kitty + the other emulators)
 niri-wm: # niri-window-manager (nerd-fonts is a group: pulls all nerd fonts)
   - bluetui
   - bluez-utils # bluetoothctl, for bt-doctor
-  - brightnessctl
+  - brightnessctl # brightness keys in binds.kdl
   - fuzzel
+  - gnome-calculator # XF86Calculator in binds.kdl
   - greetd
   - greetd-tuigreet
   - gtk3-demos # theme-tui preview window (gtk3-widget-factory)
@@ -114,6 +115,7 @@ niri-wm: # niri-window-manager (nerd-fonts is a group: pulls all nerd fonts)
   - qt6ct # Qt-widget palette from Noctalia's qt template
   - ttf-jetbrains-mono
   - udiskie
+  - wireplumber # wpctl: volume keys in binds.kdl
   - wl-clipboard
   - wl-kbptr
   - woff2-font-awesome

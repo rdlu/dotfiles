@@ -48,21 +48,19 @@ binds {
     // Note: the entire command goes as a single argument in the end.
     // Mod+T { spawn "bash" "-c" "notify-send hello && exec alacritty"; }
 
-    // Example volume keys mappings for PipeWire & WirePlumber.
-    // The allow-when-locked=true property makes them work even when the session is locked.
-    // XF86AudioRaiseVolume allow-when-locked=true { spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "0.1+"; }
-    // XF86AudioLowerVolume allow-when-locked=true { spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "0.1-"; }
-    // XF86AudioMute        allow-when-locked=true { spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SINK@" "toggle"; }
-    // XF86AudioMicMute     allow-when-locked=true { spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SOURCE@" "toggle"; }
-    XF86AudioRaiseVolume allow-when-locked=true { spawn "noctalia" "msg" "volume-up"; }
-    XF86AudioLowerVolume allow-when-locked=true { spawn "noctalia" "msg" "volume-down"; }
-    XF86AudioMute        allow-when-locked=true { spawn "noctalia" "msg" "volume-mute"; }
-    XF86AudioMicMute     allow-when-locked=true { spawn "noctalia" "msg" "mic-mute"; }
-    XF86MonBrightnessUp  allow-when-locked=true { spawn "noctalia" "msg" "brightness-up"; }
-    XF86MonBrightnessDown allow-when-locked=true { spawn "noctalia" "msg" "brightness-down"; }
-    // Brightness keys follow the focused monitor (internal backlight, or the
-    // external one over DDC/CI); 5% steps, since a custom step needs a fixed
-    // target. Mod+ variants always drive the external monitor.
+    // Volume, mic and backlight talk to PipeWire and the backlight directly,
+    // not through `noctalia msg`, so they keep working while the shell is down
+    // or restarting. Noctalia still shows its OSD: it watches PipeWire and the
+    // backlight, whoever changes them. allow-when-locked=true: they work on
+    // the lock screen too. -l 1.0 caps volume at 100%.
+    XF86AudioRaiseVolume allow-when-locked=true { spawn "wpctl" "set-volume" "-l" "1.0" "@DEFAULT_AUDIO_SINK@" "5%+"; }
+    XF86AudioLowerVolume allow-when-locked=true { spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "5%-"; }
+    XF86AudioMute        allow-when-locked=true { spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SINK@" "toggle"; }
+    XF86AudioMicMute     allow-when-locked=true { spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SOURCE@" "toggle"; }
+    // The laptop panel's backlight; --min-value keeps it from going fully dark.
+    XF86MonBrightnessUp  allow-when-locked=true { spawn "brightnessctl" "-q" "-c" "backlight" "set" "5%+"; }
+    XF86MonBrightnessDown allow-when-locked=true { spawn "brightnessctl" "-q" "-c" "backlight" "--min-value=1%" "set" "5%-"; }
+    // External monitors (DDC/CI) are on the Mod+ variants.
     Mod+XF86MonBrightnessUp   allow-when-locked=true hotkey-overlay-title="External monitor brightness up" { spawn "~/.local/bin/ext-brightness" "+10"; }
     Mod+XF86MonBrightnessDown allow-when-locked=true hotkey-overlay-title="External monitor brightness down" { spawn "~/.local/bin/ext-brightness" "-10"; }
     XF86AudioNext allow-when-locked=true { spawn-sh "playerctl next"; }
@@ -291,6 +289,33 @@ binds {
     Ctrl+Print hotkey-overlay-title="Screenshot monitor" { screenshot-screen; }
     Shift+Print hotkey-overlay-title="Screenshot and annotate" { spawn "noctalia" "msg" "screenshot-annotate"; }
     Alt+Print { screenshot-window; }
+    // The ThinkPad's snipping key (F10 row) sends KEY_SELECTIVE_SCREENSHOT.
+    XF86SelectiveScreenshot hotkey-overlay-title="Screenshot region" { screenshot; }
+
+    // Calculator key (Sofle SYS|NUM, top right).
+    XF86Calculator hotkey-overlay-title="Calculator" { spawn "gnome-calculator"; }
+
+    // Touchpad: niri has no action for it, so touchpad-toggle writes `off`
+    // into an included file (see config.kdl). Sofle MEDIA B sends F21, which
+    // xkb names XF86TouchpadToggle; laptops send these keysyms directly.
+    XF86TouchpadToggle allow-when-locked=true hotkey-overlay-title="Touchpad on/off" { spawn "~/.local/bin/touchpad-toggle"; }
+    XF86TouchpadOn     allow-when-locked=true { spawn "~/.local/bin/touchpad-toggle" "on"; }
+    XF86TouchpadOff    allow-when-locked=true { spawn "~/.local/bin/touchpad-toggle" "off"; }
+    // The ThinkPad E14's Fn+F7 is a display-switch key to the firmware
+    // (KEY_SWITCHVIDEOMODE); niri has no use for that, so it toggles the
+    // touchpad too.
+    XF86Display allow-when-locked=true hotkey-overlay-title="Touchpad on/off" { spawn "~/.local/bin/touchpad-toggle"; }
+
+    // The Sofle's spare host keys (MEDIA layer: ` 1 2 3 4 5 send F14-F19, T
+    // sends F24). xkb names F14-F18 XF86Launch5-9. F13 (XF86Tools) stays
+    // unbound: it is push-to-talk on the Sofle's game layers.
+    XF86Launch5 hotkey-overlay-title="Caffeine on/off" { spawn "~/.local/bin/caffeine"; }
+    XF86Launch6 hotkey-overlay-title="Do not disturb on/off" { spawn "noctalia" "msg" "notification-dnd-toggle"; }
+    XF86Launch7 hotkey-overlay-title="Bluetooth on/off" { spawn "rfkill" "toggle" "bluetooth"; }
+    XF86Launch8 hotkey-overlay-title="Control center" { spawn "noctalia" "msg" "panel-toggle" "control-center"; }
+    XF86Launch9 hotkey-overlay-title="Emoji picker" { spawn "noctalia" "msg" "panel-toggle" "launcher" "/emo"; }
+    F19 hotkey-overlay-title="Clipboard history" { spawn "noctalia" "msg" "panel-toggle" "clipboard"; }
+    F24 hotkey-overlay-title="Menu Power" { spawn "~/.local/bin/rodii-power-menu"; }
     Mod+P {
         set-dynamic-cast-window
     }

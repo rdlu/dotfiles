@@ -1,0 +1,44 @@
+#!/usr/bin/fish
+
+# touchpad-toggle — turn the laptop touchpad off and on.
+#
+# niri has no touchpad action; the only switch is `off` in
+# `input { touchpad { } }`. So this writes that flag, or nothing, into
+# ~/.config/niri/touchpad-state.kdl, which config.kdl includes (optional=true)
+# right after inputs.kdl; niri sees the file change and reloads. The file is
+# a plain local file, not a stow symlink, so toggling never dirties the repo.
+#
+#   touchpad-toggle          flip it
+#   touchpad-toggle on|off   set it (XF86TouchpadOn / XF86TouchpadOff)
+#   touchpad-toggle status   print on or off
+
+set -l state ~/.config/niri/touchpad-state.kdl
+
+function _is_off --argument-names file
+    test -f $file; and string match -q -r '^\s*input\s*\{\s*touchpad\s*\{\s*off' <$file
+end
+
+set -l want
+switch "$argv[1]"
+    case on off
+        set want $argv[1]
+    case status
+        _is_off $state; and echo off; or echo on
+        exit 0
+    case ''
+        _is_off $state; and set want on; or set want off
+    case '*'
+        echo "usage: touchpad-toggle [on|off|status]" >&2
+        exit 2
+end
+
+if test $want = off
+    echo 'input { touchpad { off; }; }' >$state
+else
+    echo '// touchpad on (touchpad-toggle writes `off` here to disable it)' >$state
+end
+
+if command -q notify-send
+    notify-send -a touchpad-toggle -i input-touchpad -h string:x-canonical-private-synchronous:touchpad \
+        "Touchpad $want"
+end

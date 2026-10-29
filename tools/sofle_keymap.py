@@ -156,7 +156,13 @@ SPAWN_SHORT = {
 SCRIPT_SHORT = {"ext-brightness": "Ext bri"}
 
 
-def niri_short(action: str) -> str:
+# Keycap names for binds' hotkey-overlay-titles that are too long.
+TITLE_SHORT = {"Do not disturb": "DND", "Clipboard history": "Clipboard",
+               "Control center": "Control center", "Emoji picker": "Emoji",
+               "Menu Power": "Power menu", "Calculator": "Calc"}
+
+
+def niri_short(action: str, title: str = "") -> str:
     head, _, arg = action.partition(" ")
     if head in NIRI_SHORT:
         return NIRI_SHORT[head]
@@ -175,7 +181,18 @@ def niri_short(action: str) -> str:
         script = Path(args[0]).name if args else ""
         if script in SCRIPT_SHORT and re.fullmatch(r"[+-]\d+", last):
             return f"{SCRIPT_SHORT[script]} {last[0]}"
-        return SPAWN_SHORT.get(last, last)
+        if script == "wpctl":
+            if "set-mute" in args:
+                return "Mic mute" if "@DEFAULT_AUDIO_SOURCE@" in args else "Mute"
+            return "Vol +" if last.endswith("+") else "Vol −"
+        if script == "brightnessctl":
+            return "Bright +" if last.endswith("+") else "Bright −"
+        if last in SPAWN_SHORT:
+            return SPAWN_SHORT[last]
+        if title and title != "null":
+            title = title.removesuffix(" on/off")
+            return TITLE_SHORT.get(title, title)
+        return last
     return head.replace("-", " ").capitalize()
 
 
@@ -185,7 +202,8 @@ def niri_long(action: str, title: str) -> str:
     head, _, _ = action.partition(" ")
     if head in ("spawn", "spawn-sh"):
         args = re.findall(r'"((?:[^"\\]|\\.)*)"', action)
-        return "run " + " ".join(args)
+        tool = Path((args[0] if args else action.split()[1]).split()[0]).name
+        return f"{niri_short(action)} ({tool})"
     return action.replace('"', "").replace("-", " ").capitalize()
 
 
@@ -385,10 +403,11 @@ class Resolver:
             spawn = hit["action"].startswith(("spawn", "spawn-sh"))
             src = f"niri/dot-config/niri/binds.kdl:{hit['line']}"
             what = niri_long(hit["action"], hit["title"])
+            bind = f"niri: {hit['action']}"
             if hit["locked"]:
-                what += " (works on the lock screen)"
-            return ("run" if spawn else "niri", niri_short(hit["action"]),
-                    what, f"niri: {hit['action']}", src)
+                bind += " · works on the lock screen"
+            return ("run" if spawn else "niri", niri_short(hit["action"], hit["title"]),
+                    what, bind, src)
         if not mods and key in self.tmux:
             desc, line = self.tmux[key]
             return ("app", "tmux OFF", f"tmux: {desc}", f"tmux: bind -T root {key}",
