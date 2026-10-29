@@ -81,7 +81,7 @@ binds see also the [wl-kbptr guide](../wl-kbptr.md).
 | `XF86TouchpadToggle` | Touchpad on/off *(works on lock screen)* |
 | `XF86TouchpadOn` | Run `~/.local/bin/touchpad-toggle on` *(works on lock screen)* |
 | `XF86TouchpadOff` | Run `~/.local/bin/touchpad-toggle off` *(works on lock screen)* |
-| `XF86Display` | Display settings |
+| `XF86Display` | Monitor layout |
 | `XF86Favorites` | Touchpad on/off *(works on lock screen)* |
 | `XF86Launch5` | Caffeine on/off |
 | `XF86Launch6` | Do not disturb on/off |

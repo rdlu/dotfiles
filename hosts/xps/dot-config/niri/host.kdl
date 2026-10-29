@@ -3,8 +3,8 @@
 // 2560x1600 at scale 1.5, so 1706.67x1066.67 logical (reported as 1706x1066).
 // x=107 ((1920 - 1706) / 2) centers it over the laptop, and y=1067 puts the
 // laptop right under its bottom edge — 1066 overlaps by the fraction and niri
-// shoves the laptop off to the right. wdisplays (XF86Display) only rearranges
-// the live session; copy positions from `niri msg outputs` here to keep them.
+// shoves the laptop off to the right. Rearrange with monitor-tui (F7 or the
+// power menu's "Monitor layout"): its ctrl-s rewrites the output blocks here.
 
 output "eDP-1" {
   variable-refresh-rate
