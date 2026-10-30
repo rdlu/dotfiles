@@ -1,0 +1,8 @@
+#!/bin/sh
+# Shadows /usr/bin/claude-desktop to force the libsecret password store.
+# Electron picks its secret backend from XDG_CURRENT_DESKTOP, not D-Bus; "niri"
+# is unknown to it, so it falls back to plaintext "basic" and Claude Desktop
+# complains that no system keyring is available -- even with oo7 serving
+# org.freedesktop.secrets. Every .desktop entry runs the bare `claude-desktop`,
+# so this wins as long as ~/.local/bin precedes /usr/bin (fish conf.d/10-local-bin).
+exec /usr/lib/claude-desktop/claude-desktop --password-store=gnome-libsecret "$@"
