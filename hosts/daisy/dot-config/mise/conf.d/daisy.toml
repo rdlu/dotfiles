@@ -14,3 +14,10 @@
 # stowed at hosts/daisy/dot-config/eilmeldung. Static musl release binary.
 # Daisy-only while under test.
 "github:christo-auer/eilmeldung" = { version = "latest", bin = "eilmeldung", matching_regex = "x86_64-unknown-linux-musl-.*\\.tar\\.gz$" }
+
+# rustel: native Rust port of the Strudel live-coding language (terminal Studio,
+# `play --watch` with any editor, WAV/MP3 export, VST3, MIDI/OSC, Link).
+# Upstream ships its own updater (rustelup → ~/.rustel/bin); we use the github
+# backend instead so `mise up` handles it. Needs alsa-lib + systemd-libs; rtkit
+# avoids xruns. Samples/settings live in ~/.rustel. Daisy-only while under test.
+"github:tzfm/rustel" = { version = "latest", bin = "rustel", matching_regex = "linux_amd64\\.tar\\.gz$" }
