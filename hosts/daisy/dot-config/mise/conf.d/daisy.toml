@@ -4,8 +4,7 @@
 "cargo:probe-rs-tools" = "latest"  # microcontroller side project
 
 # emeraldian: Obsidian-vault TUI (live preview, backlinks, kitty-graphics
-# images). Trialing against clin over the notes vault; keep only the winner. Its
-# config rewrites itself, so it stays unstowed in ~/.config/emeraldian, with
+# images) over the notes vault. Its config rewrites itself, so it stays unstowed in ~/.config/emeraldian, with
 # the assistant set to provider = "offline". Daisy-only while under test.
 "github:iamrohithrnair/emeraldian" = { version = "latest", bin = "emeraldian", matching_regex = "x86_64-unknown-linux-gnu\\.tar\\.gz$" }
 
