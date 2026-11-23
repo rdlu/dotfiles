@@ -1,4 +1,4 @@
-# ThinkPad E14 Gen 6 (daisy), ABNT2: the "/ ?" key right of AltGr sends Right
+# ThinkPad E14 Gen 6 (knight, ex-daisy), ABNT2: the "/ ?" key right of AltGr sends Right
 # Ctrl's scancode (0x9d) and relies on xkb br(thinkpad) to remap it. Apps that
 # read the physical key (Ghostty) see a modifier and drop the "?". Report it
 # as KEY_RO, the real ABNT2 "/ ?" key, so every layout and app agrees. The

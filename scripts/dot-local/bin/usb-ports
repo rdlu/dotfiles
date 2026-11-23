@@ -24,7 +24,7 @@
 # a name the same way, by its ESRT GUID:
 #   esrt:<guid>  <label>               e.g.  esrt:a77b326c-…  USB-C PD firmware
 # The USB 2 and USB 3 halves of a socket are paired by the kernel's `peer`
-# link when firmware describes it (daisy). Where it doesn't (the XPS 9320's
+# link when firmware describes it (the ThinkPad E14). Where it doesn't (the XPS 9320's
 # Thunderbolt ports have none), pair them by hand, USB 2 key → USB 3 key:
 #   peer:<usb2-key>  <usb3-key>        e.g.  peer:0000:00:14.0-1  0000:00:0d.0-1
 # (plug a USB 3 device in; the USB 3 key is its SuperSpeed root port's
@@ -300,7 +300,7 @@ lit_connectors() {
 }
 
 # Thunderbolt/USB4: domain security and each attached device (router). Only
-# where the bus exists — daisy's USB-C ports aren't USB4, so no section there.
+# where the bus exists — the ThinkPad E14's USB-C ports aren't USB4, so no section there.
 thunderbolt() {
   local tb=/sys/bus/thunderbolt/devices doms d r n dom sec secs=() unauth=() devs=0 link bolt
   doms=("$tb"/domain[0-9]*)

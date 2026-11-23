@@ -1,0 +1,9 @@
+# knight-only mise tools (work computer). Merged additively on top of
+# ~/.config/mise/config.toml. Only present on knight (this overlay is stowed
+# only there).
+[tools]
+"pipx:playwright" = "latest"
+"pipx:posting" = "latest"
+"cargo:rainfrog" = "latest"
+"cargo:xleak" = "latest"
+"npm:@agentclientprotocol/claude-agent-acp" = "latest"

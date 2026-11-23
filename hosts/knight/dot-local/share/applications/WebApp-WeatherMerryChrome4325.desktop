@@ -1,0 +1,19 @@
+[Desktop Entry]
+Version=1.0
+Name=Weather (Merry Chrome)
+Comment=Weather Forecasting
+Exec=chromium --app="https://merrysky.net/" --class=WebApp-WeatherMerryChrome4325 --name=WebApp-WeatherMerryChrome4325
+Terminal=false
+X-MultipleArgs=false
+Type=Application
+Icon=weather-few-clouds-night
+Categories=GTK;WebApps;
+MimeType=text/html;text/xml;application/xhtml_xml;
+StartupWMClass=WebApp-WeatherMerryChrome4325
+StartupNotify=true
+X-WebApp-Browser=Chromium
+X-WebApp-URL=https://merrysky.net/
+X-WebApp-CustomParameters=
+X-WebApp-Navbar=false
+X-WebApp-PrivateWindow=false
+X-WebApp-Isolated=false

@@ -47,7 +47,9 @@ Configuration is deployed as symlinks with **GNU Stow** (`--dotfiles` mode:
   `home git idea scripts terminal lazyvim vim systemd niri`
 - **Host overlays** in `hosts/<hostname>/` (stowed only on the matching
   machine): display layout, thermal sensors, machine-specific tools. The
-  hosts are `hornet` (Intel + NVIDIA), `daisy` (AMD) and `xps` (Intel).
+  hosts are `hornet` (Intel + NVIDIA) and `knight` (AMD, on xps's old SSD);
+  `xps` (Intel) has no disk for now, and `daisy` no longer names a machine
+  (its ThinkPad is knight, its SSD is hornet).
 
 ```sh
 just stow         # symlink base + this host's overlay (auto-detected)

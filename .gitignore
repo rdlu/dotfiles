@@ -18,11 +18,11 @@ home/dot-local/share/applications/mimeinfo.cache
 home/dot-local/share/applications/mimeapps.list
 # App-auto-registered .desktop launchers (Claude Code URL handler, Chrome PWAs).
 # Intentional shortcuts are tracked explicitly (hide-stubs, custom launchers, and
-# the WebApp-* entries under hosts/xps/) — only these auto-generated ones are ignored.
+# the WebApp-* entries under hosts/xps/ and hosts/knight/) — only these auto-generated ones are ignored.
 home/dot-local/share/applications/claude-code-url-handler.desktop
 home/dot-local/share/applications/chrome-*.desktop
 # LazyVim plugin lockfiles — churn constantly and conflict across the two
-# machines (daisy/xps); let each host manage its own rather than syncing via git.
+# machines; let each host manage its own rather than syncing via git.
 lazyvim/dot-config/nvim-full/lazy-lock.json
 lazyvim/dot-config/nvim-light/lazy-lock.json
 

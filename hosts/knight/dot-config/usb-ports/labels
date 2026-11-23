@@ -1,0 +1,14 @@
+# usb-ports labels for knight (ThinkPad E14 Gen 6): <pci-address>-<port> <label>
+# Mapped 2026-09-27 (as daisy, same hardware) by plugging devices in and
+# reading which line they appear on.
+0000:06:00.3-1  USB-C (hinge)
+0000:06:00.4-1  USB-C (caps lock)
+0000:05:00.4-1  USB-A (right)
+0000:05:00.4-2  USB-A (left)
+
+# UCSI ports: port0 = caps lock (the monitor and the hub both showed up there
+# when plugged in; the hinge port never reports to UCSI).
+typec:port0  USB-C (caps lock)
+
+# Firmware fwupd only calls "UEFI Device Firmware": 0x105 = Lenovo PD fw 1.0.1.5.
+esrt:a77b326c-bbf9-4867-af3b-a01f96f274f5  USB-C PD firmware

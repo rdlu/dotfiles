@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Tidewave
+Comment=A Tauri App
+Icon=/home/rdlu/Applications/.icons/tidewave.png
+TryExec=/home/rdlu/Applications/tidewave.appimage
+Exec=/home/rdlu/Applications/tidewave.appimage
+Terminal=false
+MimeType=text/plain;
+Categories=;
+StartupWMClass=tidewave-app
+X-AppImage-Version=5bb066

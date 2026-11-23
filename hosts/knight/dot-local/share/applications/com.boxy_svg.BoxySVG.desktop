@@ -1,0 +1,26 @@
+[Desktop Entry]
+Name=Boxy SVG
+Comment=Scalable Vector Graphics (SVG) editor
+Exec=/usr/bin/flatpak run --branch=stable --arch=x86_64 --command=boxy-svg --file-forwarding com.boxy_svg.BoxySVG --ozone-platform=wayland @@ %f @@
+Icon=com.boxy_svg.BoxySVG
+Type=Application
+Terminal=false
+Categories=Graphics
+StartupWMClass=Boxy SVG
+MimeType=image/svg+xml;image/png;image/jpeg;image/gif;image/webp;application/pdf;application/illustrator;
+Keywords=SVG;Vector;Graphics;Editor;
+X-Flatpak-Tags=proprietary;
+X-Flatpak=com.boxy_svg.BoxySVG
+Name[en]=Boxy SVG
+Name[en_US]=Boxy SVG
+Name[en_US.UTF-8]=Boxy SVG
+Comment[en]=Scalable Vector Graphics (SVG) editor
+Comment[en_US]=Scalable Vector Graphics (SVG) editor
+Comment[en_US.UTF-8]=Scalable Vector Graphics (SVG) editor
+Keywords[en]=SVG;Vector;Graphics;Editor;
+Keywords[en_US]=SVG;Vector;Graphics;Editor;
+Keywords[en_US.UTF-8]=SVG;Vector;Graphics;Editor;
+Hidden=false
+NoDisplay=false
+StartupNotify=false
+

@@ -1,0 +1,27 @@
+# Manifest categories (setup/packages.yaml) the knight work laptop (ThinkPad
+# E14 Gen 6, running on the SSD that xps used to have) is expected to have
+# installed — read by pkg-missing, pkg-tui [missing] and
+# `mise run pkg-install` (no args).
+#
+# One category per line; `!pkgname` excludes a single package; # comments.
+
+bootstrap-mirrors
+bootstrap-aur-helper
+languages
+cli-essentials
+fish-shell
+helix-editor
+niri-wm
+desktop-themes
+yazi
+fastfetch
+docs-toolchain
+containers
+emacs
+file-transfer
+input-method
+printing
+keyboard-firmware
+security
+
+# No `thunderbolt`: unlike the XPS, this ThinkPad has no TB/USB4 domain.
