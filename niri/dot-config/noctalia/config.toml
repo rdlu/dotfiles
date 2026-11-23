@@ -95,7 +95,7 @@ transition_duration = 250 # ms
 tint_intensity = 0.2
 
 # Desktop and lock-screen widgets (laid out in the GUI editor). Placement is
-# per output name: DP-2 = daisy's external monitor, eDP-1 = the laptop panel.
+# per output name: DP-2 = the external monitor, eDP-1 = the laptop panel.
 
 [desktop_widgets]
 schema_version = 2
