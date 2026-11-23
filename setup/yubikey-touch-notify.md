@@ -1,85 +1,77 @@
-# YubiKey touch-prompt notification (Claude Code hooks)
+# YubiKey touch-prompt notification
 
-Goal: when a Claude Code Bash command makes the FIDO2/SK ssh key **blink for a
-touch** (`git push/pull/fetch/…`, `ssh`, `scp`, `jj push`…), pop a desktop
-notification with the command and a **draining progress bar** sized to the key's
-touch window, and **clear it the instant the key stops waiting**.
+Goal: when anything makes the FIDO2/SK key **blink for a touch** (`git
+push/pull/fetch`, `ssh`, `scp`, WebAuthn, pam-u2f, GPG), show a desktop
+notification. The notification **clears the instant the key stops waiting**.
 
-The toast is driven by the key, not by guessing from the command line: the
-stowed `yubikey-touch-notifier` service (consumes `yubikey-touch-detector`'s
-socket) is the only thing that shows it, and only after a request has been
-pending for 0.6s, so brief probes never surface. The Claude hooks just *arm* it
-with the command text; ssh over a live ControlMaster or an https remote matches
-the hook but never toasts. Touches from anything else (terminal ssh, WebAuthn,
-pam-u2f, GPG) get a low-urgency toast naming the process holding the key.
-
-The two hooks are **machine-local** (they live in `~/.claude/`, not stow), so on
-a new machine ask a Claude Code agent to recreate them from this file.
+The key drives the toast, not a guess from the command line. Two user services
+do the work for every process in the session, Claude Code included. No Claude
+Code hooks are needed (they were removed on purpose).
 
 ## Components
 
-1. `yubikey-touch-detector` (package) + `yubikey-touch-notifier.service`
-   (stowed, `systemctl --user enable --now`). `TOUCH_WINDOW` and `DEBOUNCE` are
-   constants at the top of the notifier script.
-2. Two scripts in `~/.claude/hooks/` (below), `chmod +x`.
-3. Hook wiring in `~/.claude/settings.json` (merge — don't clobber existing hooks).
+1. `yubikey-touch-detector` (package) with its user service. It watches the key
+   and writes 5-byte events to `$XDG_RUNTIME_DIR/yubikey-touch-detector.socket`:
+   `U2F_1`/`U2F_0`, `GPG_1`/`GPG_0`, `MAC_1`/`MAC_0`.
+2. `yubikey-touch-notifier` (stowed: `scripts/dot-local/bin/`) and
+   `yubikey-touch-notifier.service` (stowed: `niri/dot-config/systemd/user/`).
+   It reads the detector socket:
+   - A `*_1` event must stay pending for `DEBOUNCE` (0.6 s) before a toast
+     shows, so short probes (libfido2 enumeration, browsers that poll the key)
+     never show one.
+   - The toast is low urgency and names the process that holds the YubiKey's
+     FIDO hidraw, as a hint.
+   - A `*_0` event closes it through the freedesktop `CloseNotification` D-Bus
+     call.
 
-### `~/.claude/hooks/yubikey-touch-notify.sh`  — PreToolUse / Bash
+Enable both:
 
-```bash
-#!/usr/bin/env bash
-# Arm the notifier's touch toast for a command that may need the SK key.
-# Reads the hook JSON on stdin; ALWAYS exits 0 so it never blocks the command.
-cmd=$(jq -r '.tool_input.command // empty' 2>/dev/null)
-[ -z "$cmd" ] && exit 0
-# Strip quoted args so `git commit -m "...push..."` doesn't arm it.
-scan=$(printf '%s' "$cmd" | sed "s/'[^']*'//g; s/\"[^\"]*\"//g")
-printf '%s' "$scan" | grep -qE '(\bgit\b[^;&|]*\b(push|pull|fetch|clone|ls-remote)\b|\bjj\b[^;&|]*\b(push|fetch)\b|(^|[[:space:];&|(])(ssh|scp|sftp)( |$))' || exit 0
-printf '%s' "$cmd" > "${XDG_RUNTIME_DIR:-/tmp}/claude-yubikey.cmd"
-exit 0
+```
+systemctl --user enable --now yubikey-touch-detector.service yubikey-touch-notifier.service
 ```
 
-### `~/.claude/hooks/yubikey-touch-dismiss.sh`  — PostToolUse + PostToolUseFailure / Bash
+The notifier still has a second mode: a normal-urgency toast with a draining
+progress bar when `$XDG_RUNTIME_DIR/claude-yubikey.cmd` exists. Claude Code hooks
+used to write that file. Nothing writes it now, so that mode does not run.
 
-```bash
-#!/usr/bin/env bash
-# Disarm when the command returns; the notifier closes the toast itself on *_0.
-rm -f "${XDG_RUNTIME_DIR:-/tmp}/claude-yubikey.cmd"
-exit 0
-```
+## The SSH key and the agent
 
-### `~/.claude/settings.json` (merge into existing `hooks`)
+- `~/.ssh/id_ed25519_sk` has a passphrase. `ssh-unlock` (stowed:
+  `niri/dot-local/bin/`, also in the power menu, Mod+Escape) loads it into
+  `ssh-agent.service` (socket `$XDG_RUNTIME_DIR/ssh-agent.socket`).
+- After the unlock, **each signature still needs a touch**. The key waits about
+  `TOUCH_WINDOW` (30 s) for it.
+- LED **steady** = the key is idle. LED **flashing** = it waits for a touch.
+  A short touch on a steady LED types an OTP string into the focused window.
+- A signature that gets no touch in time fails. Through the agent, ssh then
+  prints `sign_and_send_pubkey: signing failed … agent refused operation`
+  and `Permission denied (publickey)`.
 
-Add the notify hook to **PreToolUse/Bash**, and the dismiss hook to **both
-PostToolUse/Bash and PostToolUseFailure/Bash**, alongside whatever is already
-there (e.g. the `atuin hook claude-code` entries). Use `async: true`.
+## Troubleshooting
 
-```jsonc
-// in hooks.PreToolUse[] matcher "Bash" -> hooks[]:
-{ "type": "command", "command": "bash '/home/USER/.claude/hooks/yubikey-touch-notify.sh'", "async": true, "timeout": 5 }
-// in hooks.PostToolUse[] AND hooks.PostToolUseFailure[] matcher "Bash" -> hooks[]:
-{ "type": "command", "command": "bash '/home/USER/.claude/hooks/yubikey-touch-dismiss.sh'", "async": true, "timeout": 5 }
-```
-
-Validate after editing:
-`jq -e '.hooks.PreToolUse' ~/.claude/settings.json` (a malformed file silently
-disables ALL settings). If hooks don't fire this session, open `/hooks` once or
-restart (the settings watcher only tracks dirs that had a settings file at start).
+- `ssh-unlock status`: `loaded`, `locked` or `noagent`.
+- Test one signature through the agent, and watch the LED:
+  `echo hi | ssh-keygen -Y sign -f ~/.ssh/id_ed25519_sk.pub -n test`
+- Skip the agent (ssh uses the key file and asks for the passphrase and touch):
+  `SSH_AUTH_SOCK= git push`
+- The key sits on a hub port that is not reliable. After a failure, look for a
+  drop: `journalctl -k | grep -i 'usb 3-1'`.
+- No toast at all: `systemctl --user status yubikey-touch-detector yubikey-touch-notifier`.
 
 ## Machine-specific things to ADAPT on a new host
 
-1. **Notification daemon.** Dismissal is daemon-agnostic (`CloseNotification`
-   over D-Bus); replace-in-place (`notify-send -r`) and the progress `value`
-   hint depend on the daemon (Noctalia supports both). Confirm the daemon:
-   `busctl --user status org.freedesktop.Notifications | grep Comm=`.
+1. **Notification daemon.** The close step works with any daemon
+   (`CloseNotification` over D-Bus). Replace-in-place (`notify-send -r`) and the
+   progress `value` hint depend on the daemon (Noctalia supports both). Find the
+   daemon: `busctl --user status org.freedesktop.Notifications | grep Comm=`.
 2. **Touch-window length.** `TOUCH_WINDOW = 30` in the notifier matches THIS
-   key's FIDO2 user-presence timeout. Measure it — run this and **do not touch**
-   the key; the `real` time ≈ the window:
+   key's FIDO2 user-presence timeout. To measure it, run this and **do not
+   touch** the key. The `real` time is about the window:
    `time timeout 40 ssh -o ControlMaster=no -o ControlPath=none -T git@gitlab.com < /dev/null`
-3. **Deps**: `jq`, `notify-send` with `-p`/`-r` (libnotify), `gdbus`. Replace
-   `/home/USER` with the real `$HOME`.
+3. **Deps**: `python3`, `notify-send` with `-p`/`-r` (libnotify), `gdbus`.
 
 ## Verify
 
-A real `git push` from Claude Code: the bar appears ~0.6s after the key starts
-blinking and clears on tap. `ssh <host>` with a live ControlMaster: no toast.
+Run `ssh -T git@github.com` in a terminal. The toast shows about 0.6 s after
+the key starts to flash, and it closes when you touch the key. `ssh <host>` with
+a live ControlMaster needs no signature, so it shows no toast.
