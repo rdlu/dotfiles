@@ -7,7 +7,7 @@ My personal dotfiles, managed with **GNU Stow** + a **`justfile`**. Two machines
 - **xps** — Intel i7 notebook (Dell XPS), currently has no disk
 
 `daisy` no longer names a machine: its ThinkPad is now knight and its SSD is
-now hornet. `hosts/daisy` is kept for reference.
+now hornet.
 
 Both run [CachyOS](https://cachyos.org/) (Arch) with niri · Noctalia · fish · tmux.
 

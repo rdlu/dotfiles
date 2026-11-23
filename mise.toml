@@ -329,7 +329,7 @@ run = [
 # (e.g. ~/.config/mise) without tree-folding conflicts.
 # CRITICAL: the -D lines need --no-folding too — unstowing WITHOUT it re-folds
 # a shared dir around the other stow root's remaining links (e.g. mise/conf.d
-# around hosts/daisy's daisy.toml), and the next -S dies parsing that cross-root link.
+# around hosts/knight's knight.toml), and the next -S dies parsing that cross-root link.
 # `|| true` tolerates a first run where nothing is stowed yet.
 
 [tasks.stow]
