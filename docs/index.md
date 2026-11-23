@@ -4,8 +4,8 @@ title: "rdlu's dotfiles"
 
 # rdlu's dotfiles
 
-Personal dotfiles for two [CachyOS](https://cachyos.org/) (Arch) notebooks —
-**daisy** (AMD Ryzen) and **xps** (Intel/Dell XPS) — managed with
+Personal dotfiles for [CachyOS](https://cachyos.org/) (Arch) notebooks —
+**hornet** (Intel + NVIDIA, Lenovo Legion), **daisy** (AMD Ryzen) and **xps** (Intel/Dell XPS) — managed with
 **GNU Stow** + a **justfile**, running niri · Noctalia · fish · tmux.
 
 Repo: [github.com/rdlu/dotfiles](https://github.com/rdlu/dotfiles)

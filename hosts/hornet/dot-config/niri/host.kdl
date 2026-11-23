@@ -1,0 +1,27 @@
+// hornet display layout (Lenovo Legion 5 15IAX10). External on top, laptop
+// below, horizontally centred. eDP-1 is 2560x1600@165 at scale 1.0, so
+// 2560x1600 logical. The external is 2560x1600 at scale 1.5, which is
+// 1706.67x1066.67 logical. Round up to 1707x1067: a position computed from
+// niri's truncated 1706x1066 overlaps the next output by a fraction of a
+// pixel, and niri then auto-places the output without any error. That gives
+// y=1067 and x=427 ((2560 - 1707) / 2).
+//
+// monitor-tui rewrites position, scale and transform. The rest of this file
+// is maintained by hand, and monitor-tui leaves it alone.
+
+output "Invalid Vendor Codename - RTK HG540T40 0x01010101" {
+  focus-at-startup
+  variable-refresh-rate
+  mode "2560x1600@60.002"
+  position x=427 y=0
+  scale 1.5
+  transform "normal"
+}
+
+// The panel reports VRR as unsupported, so it gets no variable-refresh-rate line.
+output "eDP-1" {
+  mode "2560x1600@165.000"
+  position x=0 y=1067
+  scale 1.0
+  transform "normal"
+}

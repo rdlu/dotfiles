@@ -1,11 +1,12 @@
 # Rodrigo Dlu dotfiles
 
-My personal dotfiles, managed with **GNU Stow** + a **`justfile`**. Two machines:
+My personal dotfiles, managed with **GNU Stow** + a **`justfile`**. Three machines:
 
-- **daisy** — AMD Ryzen notebook
+- **hornet** — Intel Arrow Lake + RTX 5070 notebook (Lenovo Legion 5 15IAX10), running on the SSD that daisy used to have
+- **daisy** — AMD Ryzen notebook (ThinkPad E14 Gen 6), currently has no disk
 - **xps** — Intel i7 notebook (Dell XPS)
 
-Both run [CachyOS](https://cachyos.org/) (Arch) with niri · Noctalia · fish · tmux.
+All run [CachyOS](https://cachyos.org/) (Arch) with niri · Noctalia · fish · tmux.
 
 Shared config lives in the top-level stow packages; per-host differences (display
 layout, thermal sensor, machine-specific tools/apps) live under
