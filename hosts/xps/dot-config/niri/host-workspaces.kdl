@@ -1,0 +1,6 @@
+// xps's per-host workspaces, included by config.kdl between brain and the
+// private workspaces so the order stays the same on every host.
+// comms lives on the laptop panel (eDP-1 never moves).
+workspace "comms" {
+  open-on-output "eDP-1"
+}

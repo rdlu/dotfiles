@@ -1,0 +1,7 @@
+// hornet's per-host workspaces, included by config.kdl between brain and the
+// private workspaces so the order stays the same on every host.
+// comms follows the external screen by EDID name, like brain (it's on DP-3
+// here); undocked, niri puts it on the panel.
+workspace "comms" {
+  open-on-output "Invalid Vendor Codename - RTK HG540T40 0x01010101"
+}
