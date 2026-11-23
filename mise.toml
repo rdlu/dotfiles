@@ -207,6 +207,19 @@ run = [
   'sudo udevadm trigger --subsystem-match=input --action=change --settle',
 ]
 
+# Limine boot hooks (setup/boot-hooks), run by the limine tools from
+# /etc/boot/hooks/post.d. 95-sync-efi-fallback copies the signed,
+# config-enrolled EFI/Limine/limine_x64.efi over EFI/BOOT/BOOTX64.EFI whenever
+# they differ. knight needs it: its firmware boots the fallback path, and a
+# stale copy carries an old limine.conf checksum and refuses to boot. Harmless
+# on other Limine hosts. Needs sudo; limine-update runs the hooks once.
+[tasks.boot-hooks]
+description = "Install the Limine boot hooks (keeps the UEFI fallback loader in sync)"
+run = [
+  'sudo install -Dm755 -t /etc/boot/hooks/post.d setup/boot-hooks/*',
+  'sudo limine-update',
+]
+
 [tasks.keybase-ssh]
 description = "Import the Keybase PGP key into GPG and expose it for SSH auth"
 run = [

@@ -1,0 +1,26 @@
+#!/bin/bash
+# Keep the UEFI fallback loader identical to the signed, config-enrolled Limine.
+#
+# 90-limine-enroll-config embeds limine.conf's checksum into
+# EFI/Limine/limine_x64.efi and re-signs it every time the config changes.
+# The ThinkPad firmware on knight boots EFI/BOOT/BOOTX64.EFI (its own NVRAM
+# "Limine" entry does not survive a reboot), so a stale copy there carries an
+# old checksum and Limine refuses to boot. Must run after 90-.
+#
+# Exit codes below 100 are warnings to the caller, never fatal.
+
+ESP_PATH=/boot
+[[ -r /etc/default/limine ]] && source /etc/default/limine
+
+src="${ESP_PATH}/EFI/Limine/limine_x64.efi"
+dst="${ESP_PATH}/EFI/BOOT/BOOTX64.EFI"
+
+[[ -f "$src" ]] || exit 0
+cmp -s "$src" "$dst" && exit 0
+
+install -dm 700 "${ESP_PATH}/EFI/BOOT" || exit 1
+cp -f "$src" "${dst}.new" && mv -f "${dst}.new" "$dst" && sync -f "$dst" || {
+	echo "95-sync-efi-fallback: failed to update $dst" >&2
+	exit 1
+}
+echo "Synced UEFI fallback loader with $src"
