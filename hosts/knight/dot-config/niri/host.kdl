@@ -12,7 +12,7 @@
 
 output "Invalid Vendor Codename - RTK HG540T40 0x01010101" {
   focus-at-startup
-  variable-refresh-rate
+  variable-refresh-rate on-demand=true
   mode "2560x1600@60.002"
   position x=107 y=0
   scale 1.5
