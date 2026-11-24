@@ -44,3 +44,6 @@ keyboard-firmware
 
 # Plain helix is enough here.
 !evil-helix-bin
+
+# No fingerprint reader on the Legion; sudo/polkit PAM lines removed too.
+!pam-fprint-grosshack
