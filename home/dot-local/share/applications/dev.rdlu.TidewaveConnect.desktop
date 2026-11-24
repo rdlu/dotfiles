@@ -2,7 +2,7 @@
 Name=Tidewave Connect
 GenericName=Coding Agent
 Comment=Chromium app window for the local Phoenix Tidewave connect page (localhost:4000)
-Exec=chromium --profile-directory=Default --app=http://localhost:4000/tidewave/connect
+Exec=chromium --user-data-dir=/home/rdlu/.local/share/tidewave-connect/chromium --profile-directory=Default --app=http://localhost:4000/tidewave/connect
 Icon=Tidewave
 Type=Application
 Terminal=false
