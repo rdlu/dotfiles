@@ -483,6 +483,11 @@ run = [
   '''echo -e "\033[1;33m\n2) niri-session helpers\033[0m"''',
   'systemctl --user enable noctalia.service',
   'systemctl --user mask mako.service dunst.service swaync.service',
+  '''echo -e "\033[1;33m\n3) System services\033[0m"''',
+  # OOM killer: cachyos-settings ships the per-slice kill policy (swap + 80%
+  # pressure) but leaves the daemon disabled. Without it a runaway build just
+  # swaps zram until the desktop freezes.
+  'systemctl is-enabled -q systemd-oomd.service || pkexec systemctl enable --now systemd-oomd.service',
 ]
 
 # Docs pipeline: gen-docs.py rewrites the generated markdown blocks from the
