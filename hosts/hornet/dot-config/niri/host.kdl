@@ -18,8 +18,13 @@ output "Invalid Vendor Codename - RTK HG540T40 0x01010101" {
   transform "normal"
 }
 
-// The panel reports VRR as unsupported, so it gets no variable-refresh-rate line.
+// The panel offers VRR (G-Sync) only when the BIOS MUX is set to Discrete (dGPU),
+// which it has been since 2026-11-24. With the panel on the iGPU, niri reports VRR as
+// unsupported and ignores this line. on-demand: VRR switches on only while a window
+// with the variable-refresh-rate rule (the game rules) is on screen, so the desktop
+// stays at a fixed 165 Hz and the OLED doesn't flicker.
 output "eDP-1" {
+  variable-refresh-rate on-demand=true
   mode "2560x1600@165.000"
   position x=0 y=1067
   scale 1.0
