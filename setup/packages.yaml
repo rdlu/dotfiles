@@ -305,6 +305,7 @@ system:
   - gparted
   - iio-sensor-proxy
   - iptables
+  - kernel-modules-hook # keeps the running kernel's modules after an upgrade until reboot
   - nfs-utils
   - ntfs-3g
   - plymouth # boot splash; kept deliberately

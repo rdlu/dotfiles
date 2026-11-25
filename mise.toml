@@ -488,6 +488,10 @@ run = [
   # pressure) but leaves the daemon disabled. Without it a runaway build just
   # swaps zram until the desktop freezes.
   'systemctl is-enabled -q systemd-oomd.service || pkexec systemctl enable --now systemd-oomd.service',
+  # kernel-modules-hook saves the running kernel's modules on upgrade so
+  # hotplugged devices (USB audio etc.) still load until reboot; this unit
+  # deletes the saved copy on the next boot.
+  'systemctl is-enabled -q linux-modules-cleanup.service || pkexec systemctl enable linux-modules-cleanup.service',
 ]
 
 # Docs pipeline: gen-docs.py rewrites the generated markdown blocks from the
