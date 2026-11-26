@@ -153,3 +153,10 @@ window-rule {
         inactive-color "#aa0000"
     }
 }
+
+// mpv: VRR while on screen, so on-demand outputs (hornet's eDP-1) can match
+// the panel to the video's frame rate instead of judder at 165 Hz.
+window-rule {
+    match app-id="^mpv$"
+    variable-refresh-rate true
+}

@@ -314,6 +314,22 @@ run = [
   'herdr server reload-config',
 ]
 
+# uosc (mpv on-screen UI) is fetched, not stowed: its release ships 18 MB of
+# prebuilt ziggy binaries (subtitle downloads) that don't belong in a public
+# repo. mpv.conf (stowed, niri package) turns the stock OSC off for it.
+[tasks.mpv-uosc]
+description = "Install or update the uosc mpv UI into ~/.config/mpv"
+run = '''
+set -e
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+curl -fsSL https://github.com/tomasklaen/uosc/releases/latest/download/uosc.zip -o "$tmp/uosc.zip"
+mkdir -p ~/.config/mpv
+rm -rf ~/.config/mpv/scripts/uosc
+unzip -oq "$tmp/uosc.zip" -d ~/.config/mpv
+echo "uosc installed in ~/.config/mpv"
+'''
+
 [tasks.yazi-file-manager]
 description = "Yazi terminal file manager and plugins"
 run = [
@@ -612,6 +628,7 @@ run = [
   'mise upgrade || true',
   'fish -c "fisher update" || true',
   'ya pkg upgrade || true',
+  'mise run mpv-uosc || true',
   'nvim --headless "+Lazy! sync" +qa || true',
 ]
 
